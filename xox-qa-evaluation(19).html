@@ -1,0 +1,2902 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>XOX CC — Call Monitoring Evaluation</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" onerror="supabaseLoadFailed()"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+  :root {
+    --bg:#0f1117; --surface:#171b26; --surface2:#1e2333; --surface3:#252c3f;
+    --border:#2a3050; --border2:#3a4468;
+    --accent:#4f8ef7; --accent2:#6366f1;
+    --green:#22c55e; --red:#ef4444; --amber:#f59e0b; --purple:#a855f7; --cyan:#06b6d4;
+    --text:#e8eaf0; --text2:#9ba3bc; --text3:#5c6480;
+    --fatal-bg:#2d0f0f; --fatal-border:#7f1d1d; --fatal-text:#fca5a5;
+    --radius:8px; --radius-lg:12px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;font-size:14px;min-height:100vh}
+
+  /* ── LOGIN ── */
+  .login-wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px}
+  .login-box{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:36px;width:100%;max-width:400px}
+  .login-logo{width:48px;height:48px;background:linear-gradient(135deg,var(--accent),var(--accent2));border-radius:12px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:18px;color:#fff;margin:0 auto 20px}
+  .login-title{text-align:center;font-size:20px;font-weight:700;margin-bottom:4px}
+  .login-sub{text-align:center;font-size:13px;color:var(--text3);margin-bottom:28px}
+  .login-err{background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);color:#fca5a5;border-radius:8px;padding:10px 12px;font-size:13px;margin-bottom:14px;display:none}
+
+  /* ── TOP NAV ── */
+  .topbar{background:var(--surface);border-bottom:1px solid var(--border);padding:0 24px;height:56px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100}
+  .topbar-brand{display:flex;align-items:center;gap:10px}
+  .topbar-brand .logo{width:32px;height:32px;background:linear-gradient(135deg,var(--accent),var(--accent2));border-radius:7px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;color:#fff}
+  .topbar-brand span{font-weight:600;font-size:15px}
+  .topbar-brand small{font-size:11px;color:var(--text3);margin-left:4px}
+  .topbar-right{display:flex;align-items:center;gap:12px}
+  .role-badge{padding:4px 10px;border-radius:20px;font-size:11px;font-weight:600;letter-spacing:.5px;text-transform:uppercase}
+  .role-qa{background:rgba(79,142,247,.15);color:var(--accent);border:1px solid rgba(79,142,247,.3)}
+  .role-tl{background:rgba(168,85,247,.15);color:var(--purple);border:1px solid rgba(168,85,247,.3)}
+  .role-agent{background:rgba(34,197,94,.15);color:var(--green);border:1px solid rgba(34,197,94,.3)}
+  .role-mgr{background:rgba(245,158,11,.15);color:var(--amber);border:1px solid rgba(245,158,11,.3)}
+  .user-chip{display:flex;align-items:center;gap:8px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:5px 10px;font-size:13px}
+  .user-avatar{width:24px;height:24px;border-radius:50%;background:var(--accent2);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff}
+
+  /* ── LAYOUT ── */
+  .app{display:flex;height:calc(100vh - 56px)}
+  .sidebar{width:260px;min-width:260px;background:var(--surface);border-right:1px solid var(--border);overflow-y:auto;padding:16px 0}
+  .main{flex:1;overflow-y:auto;padding:24px}
+
+  /* ── SIDEBAR ── */
+  .sidebar-label{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:1px;color:var(--text3);padding:6px 16px;margin-bottom:2px}
+  .sidebar-item{display:flex;align-items:center;gap:10px;padding:9px 16px;cursor:pointer;border-radius:6px;margin:1px 8px;transition:background .15s;color:var(--text2);font-weight:500}
+  .sidebar-item:hover{background:var(--surface2);color:var(--text)}
+  .sidebar-item.active{background:rgba(79,142,247,.12);color:var(--accent)}
+  .sidebar-item .icon{font-size:15px;width:18px;text-align:center}
+  .sidebar-item .badge{margin-left:auto;background:var(--accent);color:#fff;font-size:10px;font-weight:700;padding:1px 6px;border-radius:10px}
+  .sidebar-item .badge.red{background:var(--red)}
+  .sidebar-item .badge.amber{background:var(--amber)}
+  .sidebar-divider{height:1px;background:var(--border);margin:10px 16px}
+  .sidebar-user{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:12px;margin:0 8px 16px}
+  .sidebar-user .su-name{font-weight:600;font-size:13px;margin-bottom:2px}
+  .sidebar-user .su-role{font-size:11px;color:var(--text3)}
+  .sidebar-user .su-logout{margin-top:10px;width:100%;text-align:left;background:none;border:1px solid var(--border);color:var(--text3);padding:5px 8px;border-radius:6px;font-size:12px;cursor:pointer;font-family:inherit}
+  .sidebar-user .su-logout:hover{color:var(--red);border-color:var(--red)}
+
+  /* ── PAGES ── */
+  .page{display:none}.page.active{display:block}
+
+  /* ── CARDS ── */
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:20px;margin-bottom:16px}
+  .card-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+  .card-title{font-size:15px;font-weight:600}
+  .card-subtitle{font-size:12px;color:var(--text3);margin-top:2px}
+
+  /* ── STATS ── */
+  .stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px}
+  .stat-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:16px;text-align:center}
+  .stat-card .stat-num{font-size:28px;font-weight:700;font-family:'JetBrains Mono',monospace}
+  .stat-card .stat-label{font-size:11px;color:var(--text3);margin-top:4px;font-weight:500;text-transform:uppercase;letter-spacing:.5px}
+  .stat-card.blue .stat-num{color:var(--accent)}
+  .stat-card.green .stat-num{color:var(--green)}
+  .stat-card.amber .stat-num{color:var(--amber)}
+  .stat-card.red .stat-num{color:var(--red)}
+
+  /* ── TABLE ── */
+  .eval-table{width:100%;border-collapse:collapse}
+  .eval-table th{text-align:left;padding:10px 12px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:var(--text3);border-bottom:1px solid var(--border);background:var(--surface2)}
+  .eval-table td{padding:11px 12px;border-bottom:1px solid var(--border);vertical-align:middle}
+  .eval-table tr:last-child td{border-bottom:none}
+  .eval-table tr:hover td{background:var(--surface2)}
+
+  /* ── STATUS ── */
+  .status{display:inline-flex;align-items:center;gap:5px;padding:3px 9px;border-radius:12px;font-size:11px;font-weight:600}
+  .status::before{content:'';width:5px;height:5px;border-radius:50%}
+  .status-draft{background:rgba(92,100,128,.2);color:var(--text3)}.status-draft::before{background:var(--text3)}
+  .status-submitted{background:rgba(79,142,247,.15);color:var(--accent)}.status-submitted::before{background:var(--accent)}
+  .status-tl-approved{background:rgba(168,85,247,.15);color:var(--purple)}.status-tl-approved::before{background:var(--purple)}
+  .status-tl-disputed{background:rgba(245,158,11,.15);color:var(--amber)}.status-tl-disputed::before{background:var(--amber)}
+  .status-agent-acknowledged{background:rgba(34,197,94,.15);color:var(--green)}.status-agent-acknowledged::before{background:var(--green)}
+  .status-agent-disputed{background:rgba(239,68,68,.15);color:var(--red)}.status-agent-disputed::before{background:var(--red)}
+  .status-closed{background:rgba(6,182,212,.15);color:var(--cyan)}.status-closed::before{background:var(--cyan)}
+
+  /* ── SCORE ── */
+  .score-badge{font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:600;padding:3px 8px;border-radius:6px}
+  .score-high{background:rgba(34,197,94,.15);color:var(--green)}
+  .score-mid{background:rgba(245,158,11,.15);color:var(--amber)}
+  .score-low{background:rgba(239,68,68,.15);color:var(--red)}
+
+  /* ── BUTTONS ── */
+  .btn{display:inline-flex;align-items:center;gap:6px;padding:8px 14px;border-radius:var(--radius);border:none;cursor:pointer;font-family:inherit;font-size:13px;font-weight:500;transition:all .15s}
+  .btn-primary{background:var(--accent);color:#fff}.btn-primary:hover{background:#3b7de8}
+  .btn-success{background:var(--green);color:#fff}.btn-success:hover{background:#16a34a}
+  .btn-danger{background:var(--red);color:#fff}.btn-danger:hover{background:#dc2626}
+  .btn-ghost{background:var(--surface3);color:var(--text2);border:1px solid var(--border)}.btn-ghost:hover{background:var(--border);color:var(--text)}
+  .btn-amber{background:var(--amber);color:#000}.btn-amber:hover{background:#d97706}
+  .btn-sm{padding:5px 10px;font-size:12px}
+  .btn:disabled{opacity:.4;cursor:not-allowed}
+
+  /* ── FORM ── */
+  .form-group{margin-bottom:16px}
+  .form-label{display:block;font-size:12px;font-weight:500;color:var(--text2);margin-bottom:6px}
+  .form-input,.form-select,.form-textarea{width:100%;background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:9px 12px;border-radius:var(--radius);font-family:inherit;font-size:14px;transition:border-color .15s}
+  .form-input:focus,.form-select:focus,.form-textarea:focus{outline:none;border-color:var(--accent)}
+  .form-textarea{resize:vertical;min-height:80px}
+  .form-row{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  .form-row-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px}
+
+  /* ── TEMPLATE SELECTOR ── */
+  .template-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:8px}
+  .template-card{border:2px solid var(--border);border-radius:var(--radius-lg);padding:16px;cursor:pointer;transition:all .2s;background:var(--surface2);position:relative}
+  .template-card:hover{border-color:var(--border2);background:var(--surface3)}
+  .template-card.selected{border-color:var(--accent);background:rgba(79,142,247,.08)}
+  .template-card.selected::after{content:'✓';position:absolute;top:10px;right:12px;color:var(--accent);font-weight:700;font-size:14px}
+  .template-card .tc-icon{font-size:22px;margin-bottom:8px}
+  .template-card .tc-title{font-weight:600;font-size:13px;margin-bottom:3px}
+  .template-card .tc-desc{font-size:11px;color:var(--text3);line-height:1.4}
+  .template-card .tc-badge{display:inline-flex;align-items:center;gap:4px;margin-top:8px;padding:2px 8px;border-radius:10px;font-size:10px;font-weight:600}
+  .tc-badge.historical{background:rgba(168,85,247,.15);color:var(--purple)}
+  .tc-badge.live{background:rgba(6,182,212,.15);color:var(--cyan)}
+  .tc-badge.csat{background:rgba(34,197,94,.15);color:var(--green)}
+  .tc-badge.no-csat{background:rgba(92,100,128,.15);color:var(--text3)}
+
+  /* ── EVAL FORM ── */
+  .eval-section-hdr{background:var(--surface3);border:1px solid var(--border);border-radius:var(--radius);padding:10px 14px;margin:16px 0 8px;font-size:12px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.8px;display:flex;align-items:center;gap:8px}
+  .fatal-section-hdr{background:var(--fatal-bg);border:1px solid var(--fatal-border);border-radius:var(--radius);padding:10px 14px;margin:20px 0 8px;font-size:12px;font-weight:700;color:var(--fatal-text);text-transform:uppercase;letter-spacing:.8px}
+  .eval-row{display:grid;align-items:start;border-bottom:1px solid var(--border);padding:10px 0;gap:12px}
+  .eval-row:last-child{border-bottom:none}
+  .eval-row.std-row{grid-template-columns:26px 1fr 60px 150px 1fr}
+  .eval-row.fat-row{grid-template-columns:26px 1fr 120px 1fr}
+  .eval-num{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--text3);padding-top:2px}
+  .eval-q{font-size:13px;line-height:1.5}
+  .eval-wt{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--accent);text-align:center;padding-top:2px}
+  .answer-group{display:flex;gap:6px;flex-wrap:wrap}
+  .ans-btn{padding:4px 11px;border-radius:5px;border:1px solid var(--border2);background:var(--surface3);color:var(--text2);cursor:pointer;font-size:12px;font-weight:500;transition:all .15s;font-family:inherit}
+  .ans-btn:hover{border-color:var(--accent);color:var(--text)}
+  .ans-btn.sel-y{background:rgba(34,197,94,.2);border-color:var(--green);color:var(--green)}
+  .ans-btn.sel-n{background:rgba(239,68,68,.2);border-color:var(--red);color:var(--red)}
+  .ans-btn.sel-2{background:rgba(34,197,94,.2);border-color:var(--green);color:var(--green)}
+  .ans-btn.sel-1{background:rgba(245,158,11,.2);border-color:var(--amber);color:var(--amber)}
+  .ans-btn.sel-0x{background:rgba(239,68,68,.2);border-color:var(--red);color:var(--red)}
+  .fat-btn.sel-y{background:rgba(239,68,68,.2);border-color:var(--red);color:var(--red)}
+  .fat-btn.sel-n{background:rgba(34,197,94,.2);border-color:var(--green);color:var(--green)}
+  .cmt-input{width:100%;background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:5px 8px;border-radius:5px;font-family:inherit;font-size:12px;margin-top:4px}
+  .cmt-input:focus{outline:none;border-color:var(--accent)}
+
+  /* ── SCORE SUMMARY ── */
+  .score-summary{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-lg);padding:16px;margin:20px 0;display:flex;align-items:center;justify-content:space-between;gap:16px}
+  .score-big{font-family:'JetBrains Mono',monospace;font-size:40px;font-weight:700}
+
+  /* ── WORKFLOW ── */
+  .wf-timeline{display:flex;flex-direction:column;gap:0}
+  .wf-step{display:flex;gap:16px;padding-bottom:20px;position:relative}
+  .wf-step:last-child{padding-bottom:0}
+  .wf-line{display:flex;flex-direction:column;align-items:center;width:32px;min-width:32px}
+  .wf-dot{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0}
+  .wf-dot.done{background:rgba(34,197,94,.2);border:2px solid var(--green);color:var(--green)}
+  .wf-dot.active{background:rgba(79,142,247,.2);border:2px solid var(--accent);color:var(--accent)}
+  .wf-dot.pending{background:var(--surface3);border:2px solid var(--border);color:var(--text3)}
+  .wf-dot.disputed{background:rgba(239,68,68,.2);border:2px solid var(--red);color:var(--red)}
+  .wf-connector{width:2px;flex:1;background:var(--border);margin-top:4px}
+  .wf-content{flex:1;padding-top:4px}
+  .wf-title{font-weight:600;font-size:14px;margin-bottom:2px}
+  .wf-meta{font-size:12px;color:var(--text3);margin-bottom:8px}
+  .wf-note{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:10px 12px;font-size:13px;color:var(--text2);margin-top:6px}
+
+  /* ── MODAL ── */
+  .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:200;display:flex;align-items:center;justify-content:center;padding:16px}
+  .modal-overlay.hidden{display:none}
+  .modal{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);width:100%;max-width:560px;max-height:90vh;overflow-y:auto;box-shadow:0 24px 64px rgba(0,0,0,.5)}
+  .modal-header{padding:20px 20px 0;display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+  .modal-title{font-size:16px;font-weight:600}
+  .modal-close{background:none;border:none;color:var(--text3);cursor:pointer;font-size:20px;padding:0}.modal-close:hover{color:var(--text)}
+  .modal-body{padding:0 20px}
+  .modal-footer{padding:16px 20px;display:flex;justify-content:flex-end;gap:8px;border-top:1px solid var(--border);margin-top:16px}
+
+  /* ── TABS ── */
+  .tab-bar{display:flex;gap:2px;background:var(--surface2);padding:4px;border-radius:var(--radius);margin-bottom:20px;border:1px solid var(--border)}
+  .tab-btn{flex:1;padding:7px 12px;border-radius:6px;border:none;background:transparent;color:var(--text2);font-family:inherit;font-size:13px;font-weight:500;cursor:pointer;transition:all .15s}
+  .tab-btn.active{background:var(--surface);color:var(--text);box-shadow:0 1px 3px rgba(0,0,0,.3)}
+  .tab-btn:hover:not(.active){color:var(--text)}
+
+  /* ── ALERT ── */
+  .alert{border-radius:var(--radius);padding:12px 14px;margin-bottom:16px;font-size:13px;display:flex;gap:10px;align-items:flex-start}
+  .alert-info{background:rgba(79,142,247,.1);border:1px solid rgba(79,142,247,.3);color:#93b4f8}
+  .alert-warning{background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.3);color:#fbbf24}
+  .alert-danger{background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.3);color:#fca5a5}
+  .alert-success{background:rgba(34,197,94,.1);border:1px solid rgba(34,197,94,.3);color:#86efac}
+
+  /* ── MISC ── */
+  .page-header{margin-bottom:24px}
+  .page-header h1{font-size:22px;font-weight:700}
+  .page-header p{font-size:13px;color:var(--text3);margin-top:4px}
+  .page-header-row{display:flex;justify-content:space-between;align-items:center}
+  .empty-state{text-align:center;padding:60px 20px;color:var(--text3)}
+  .empty-state .icon{font-size:40px;margin-bottom:12px}
+  .empty-state p{font-size:14px;margin-bottom:16px}
+  .pill{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:12px;font-size:11px;font-weight:500;background:var(--surface3);color:var(--text3);border:1px solid var(--border)}
+  .text-sm{font-size:12px;color:var(--text3)}
+  .mt-8{margin-top:8px}
+  .spinner{display:inline-block;width:16px;height:16px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .loading-overlay{position:fixed;inset:0;background:rgba(15,17,23,.8);z-index:300;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px}
+  .loading-overlay.hidden{display:none}
+  .loading-overlay p{color:var(--text2);font-size:14px}
+  /* Role management */
+  .role-pick-card{border:2px solid var(--border);border-radius:var(--radius);padding:12px;cursor:pointer;transition:all .2s;background:var(--surface2);text-align:center}
+  .role-pick-card:hover{border-color:var(--border2);background:var(--surface3)}
+  .role-pick-card.selected{border-color:var(--accent);background:rgba(79,142,247,.1)}
+  .rm-role-badge{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:12px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.4px}
+  .rm-admin{background:rgba(245,158,11,.15);color:var(--amber)}
+  .rm-manager{background:rgba(34,197,94,.15);color:var(--green)}
+  .rm-tl{background:rgba(168,85,247,.15);color:var(--purple)}
+  .rm-qa{background:rgba(79,142,247,.15);color:var(--accent)}
+  .rm-agent{background:rgba(92,100,128,.15);color:var(--text2)}
+  .rm-override{border-left:3px solid var(--accent)}
+  .coach-tag{background:var(--surface3);border:1px solid var(--border2);color:var(--text2);border-radius:20px;padding:4px 10px;font-size:11px;font-weight:500;cursor:pointer;font-family:inherit;transition:all .15s}
+  .coach-tag:hover{border-color:var(--amber);color:var(--amber)}
+  .coach-tag.selected{background:rgba(245,158,11,.15);border-color:var(--amber);color:var(--amber)}
+  .vr-btn{background:var(--surface3);border:1px solid var(--border);color:var(--text3);border-radius:6px;padding:5px 4px;font-size:11px;font-weight:600;cursor:pointer;font-family:inherit;transition:all .15s;text-align:center}
+  .vr-btn:hover{border-color:var(--border2);color:var(--text)}
+  .vr-btn.vr-active{background:rgba(79,142,247,.15);border-color:var(--accent);color:var(--accent)}
+  .autocomplete-wrap{position:relative}
+  .autocomplete-list{position:absolute;top:100%;left:0;right:0;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);z-index:50;max-height:200px;overflow-y:auto;margin-top:2px;display:none}
+  .autocomplete-list.open{display:block}
+  .autocomplete-item{padding:9px 12px;cursor:pointer;font-size:13px;display:flex;flex-direction:column;gap:2px}
+  .autocomplete-item:hover{background:var(--surface3)}
+  .autocomplete-item .ai-name{font-weight:500}
+  .autocomplete-item .ai-meta{font-size:11px;color:var(--text3)}
+</style>
+</head>
+<body>
+
+<!-- LOADING OVERLAY -->
+<div class="loading-overlay" id="loadingOverlay">
+  <div class="spinner" style="width:36px;height:36px;border-width:3px;border-color:rgba(79,142,247,.3);border-top-color:var(--accent)"></div>
+  <p id="loadingMsg" style="color:var(--text2);margin-top:4px">Connecting to Supabase…</p>
+  <button id="skipLoadBtn" onclick="forceShowLogin()" style="display:none;margin-top:16px;background:none;border:1px solid var(--border);color:var(--text3);padding:6px 16px;border-radius:6px;cursor:pointer;font-size:12px;font-family:inherit">
+    Taking too long? Go to login →
+  </button>
+</div>
+
+<!-- LOGIN -->
+<div class="login-wrap" id="loginWrap" style="display:none">
+  <div class="login-box">
+    <div class="login-logo">QA</div>
+    <div class="login-title">XOX Contact Centre</div>
+    <div class="login-sub">Call Monitoring Evaluation System</div>
+    <div class="login-err" id="loginErr"></div>
+    <div class="form-group">
+      <label class="form-label">Email</label>
+      <input class="form-input" type="email" id="loginEmail" placeholder="your@email.com" onkeydown="if(event.key==='Enter')doLogin()" oninput="hideLoginError()">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Password</label>
+      <input class="form-input" type="password" id="loginPass" placeholder="••••••••" onkeydown="if(event.key==='Enter')doLogin()" oninput="hideLoginError()">
+    </div>
+    <button class="btn btn-primary w-full" id="loginBtn" onclick="doLogin()" style="width:100%;justify-content:center">Sign In</button>
+    <div style="margin-top:14px;text-align:center">
+      <a href="#" onclick="showForgotPw()" style="font-size:12px;color:var(--text3)">Forgot password?</a>
+    </div>
+  </div>
+</div>
+
+<!-- MAIN APP -->
+<div id="appWrap" style="display:none">
+  <nav class="topbar">
+    <div class="topbar-brand">
+      <div class="logo">QA</div>
+      <div><span>XOX Contact Centre</span><small>Call Monitoring</small></div>
+    </div>
+    <div class="topbar-right">
+      <span class="role-badge" id="topRoleBadge">—</span>
+      <div class="user-chip">
+        <div class="user-avatar" id="topAvatar">?</div>
+        <span id="topUserName" style="font-size:13px">—</span>
+      </div>
+    </div>
+  </nav>
+
+  <div class="app">
+    <aside class="sidebar">
+      <div class="sidebar-user">
+        <div class="su-name" id="sbUserName">—</div>
+        <div class="su-role" id="sbUserRole">—</div>
+        <button class="su-logout" onclick="doLogout()">⏻ Sign out</button>
+        <div id="sbStaffCount" style="font-size:10px;color:var(--text3);margin-top:6px;padding-top:6px;border-top:1px solid var(--border)">Loading staff…</div>
+      </div>
+
+      <!-- Role Switcher -->
+      <div style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:10px 12px;margin:0 8px 12px">
+        <div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.8px;color:var(--text3);margin-bottom:8px">Acting as</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px" id="roleSwitcherBtns">
+          <button onclick="setViewRole('qa')"     id="vr-qa"      class="vr-btn vr-active">QA</button>
+          <button onclick="setViewRole('tl')"     id="vr-tl"      class="vr-btn">TL</button>
+          <button onclick="setViewRole('agent')"  id="vr-agent"   class="vr-btn">Agent</button>
+          <button onclick="setViewRole('manager')" id="vr-manager" class="vr-btn">Manager</button>
+        </div>
+      </div>
+
+      <div class="sidebar-label">Menu</div>
+      <div class="sidebar-item active" onclick="showPage('dashboard')" id="nav-dashboard"><span class="icon">📊</span>Dashboard</div>
+      <div class="sidebar-item" onclick="showPage('new-eval')" id="nav-new-eval"><span class="icon">✏️</span>New Evaluation</div>
+      <div class="sidebar-item" onclick="showPage('evaluations')" id="nav-evaluations"><span class="icon">📋</span>Evaluations<span class="badge" id="sbEvalCount">0</span></div>
+
+      <div class="sidebar-divider"></div>
+      <div class="sidebar-label" id="sb-admin-label" style="display:none">Admin</div>
+      <div class="sidebar-item" onclick="showPage('role-mgmt')" id="nav-role-mgmt" style="display:none"><span class="icon">🔐</span>Role Management</div>
+      <div class="sidebar-divider" id="sb-admin-divider" style="display:none"></div>
+      <div class="sidebar-label">Workflow</div>
+      <div class="sidebar-item" onclick="showPage('my-team')" id="nav-my-team"><span class="icon">👥</span>My Team<span class="badge" id="sbMyTeam">0</span></div>
+      <div class="sidebar-item" onclick="showPage('pending-tl')" id="nav-pending-tl"><span class="icon">⏳</span>Pending TL Review<span class="badge amber" id="sbPendingTL">0</span></div>
+      <div class="sidebar-item" onclick="showPage('pending-agent')" id="nav-pending-agent"><span class="icon">👤</span>Pending Agent Ack<span class="badge amber" id="sbPendingAgent">0</span></div>
+      <div class="sidebar-item" onclick="showPage('disputes')" id="nav-disputes"><span class="icon">⚠️</span>Disputes<span class="badge red" id="sbDisputes">0</span></div>
+    </aside>
+
+    <main class="main">
+
+      <!-- DASHBOARD -->
+      <div class="page active" id="page-dashboard">
+        <div class="page-header">
+          <div class="page-header-row">
+            <div><h1>Dashboard</h1><p>Call monitoring evaluation overview</p></div>
+            <button class="btn btn-primary" onclick="showPage('new-eval')">+ New Evaluation</button>
+          </div>
+        </div>
+        <div class="stats-row">
+          <div class="stat-card blue"><div class="stat-num" id="st-total">—</div><div class="stat-label">Total Evals</div></div>
+          <div class="stat-card amber"><div class="stat-num" id="st-pending">—</div><div class="stat-label">Pending Review</div></div>
+          <div class="stat-card red"><div class="stat-num" id="st-disputed">—</div><div class="stat-label">Disputed</div></div>
+          <div class="stat-card green"><div class="stat-num" id="st-closed">—</div><div class="stat-label">Closed</div></div>
+        </div>
+        <!-- QA Performance + Score Overview -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">
+          <div class="card" style="margin-bottom:0">
+            <div class="card-header" style="margin-bottom:12px">
+              <div><div class="card-title">📝 QA Evaluator Performance</div><div class="card-subtitle">Evaluations submitted per QA staff</div></div>
+            </div>
+            <div id="qaPerformanceList"><div class="text-sm" style="text-align:center;padding:20px">Loading...</div></div>
+          </div>
+          <div class="card" style="margin-bottom:0">
+            <div class="card-header" style="margin-bottom:12px">
+              <div><div class="card-title">📊 Score Overview</div><div class="card-subtitle">Average scores across all evaluations</div></div>
+            </div>
+            <div id="scoreOverviewContent"><div class="text-sm" style="text-align:center;padding:20px">Loading...</div></div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <div><div class="card-title">Recent Evaluations</div><div class="card-subtitle">Latest call monitoring records</div></div>
+            <button class="btn btn-ghost btn-sm" onclick="showPage('evaluations')">View all</button>
+          </div>
+          <table class="eval-table"><thead><tr><th>Ref</th><th>Agent</th><th>TL</th><th>Template</th><th>Score</th><th>Status</th><th>Call Date</th><th>Eval Date</th><th>QA</th><th></th></tr></thead>
+          <tbody id="dashRecentBody"><tr><td colspan="8"><div class="empty-state"><div class="icon">📋</div><p>Loading…</p></div></td></tr></tbody></table>
+        </div>
+      </div>
+
+      <!-- NEW EVALUATION -->
+      <div class="page" id="page-new-eval">
+        <div class="page-header">
+          <div class="page-header-row">
+            <div><h1>New Evaluation</h1><p>Complete the call monitoring form below</p></div>
+            <button class="btn btn-ghost" onclick="showPage('evaluations')">← Back</button>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header"><div class="card-title">📋 Evaluation Template</div></div>
+          <div class="template-grid">
+            <div class="template-card" id="tpl-hist-no" onclick="selectTemplate('historical','no')">
+              <div class="tc-icon">📁</div>
+              <div class="tc-title">Historical — No CSAT</div>
+              <div class="tc-desc">Standard &amp; General Enquiries criteria without CSAT script check</div>
+              <div style="display:flex;gap:6px;margin-top:8px">
+                <span class="tc-badge historical">📂 Historical</span>
+                <span class="tc-badge no-csat">No CSAT</span>
+              </div>
+            </div>
+            <div class="template-card" id="tpl-hist-csat" onclick="selectTemplate('historical','yes')">
+              <div class="tc-icon">📁</div>
+              <div class="tc-title">Historical — With CSAT</div>
+              <div class="tc-desc">Standard &amp; General Enquiries criteria including CSAT script evaluation</div>
+              <div style="display:flex;gap:6px;margin-top:8px">
+                <span class="tc-badge historical">📂 Historical</span>
+                <span class="tc-badge csat">✓ CSAT</span>
+              </div>
+            </div>
+            <div class="template-card" id="tpl-live-no" onclick="selectTemplate('live','no')">
+              <div class="tc-icon">🔴</div>
+              <div class="tc-title">Live — No CSAT</div>
+              <div class="tc-desc">Real-time call monitoring, Standard &amp; General criteria without CSAT</div>
+              <div style="display:flex;gap:6px;margin-top:8px">
+                <span class="tc-badge live">🔴 Live</span>
+                <span class="tc-badge no-csat">No CSAT</span>
+              </div>
+            </div>
+            <div class="template-card" id="tpl-live-csat" onclick="selectTemplate('live','yes')">
+              <div class="tc-icon">🔴</div>
+              <div class="tc-title">Live — With CSAT</div>
+              <div class="tc-desc">Real-time call monitoring, Standard &amp; General criteria with CSAT</div>
+              <div style="display:flex;gap:6px;margin-top:8px">
+                <span class="tc-badge live">🔴 Live</span>
+                <span class="tc-badge csat">✓ CSAT</span>
+              </div>
+            </div>
+          </div>
+          <div id="tplSelectedInfo" style="display:none;margin-top:12px">
+            <div class="alert alert-info" id="tplInfoAlert"></div>
+            <div class="form-group" style="margin-bottom:0">
+              <label class="form-label">Call Category *</label>
+              <select class="form-select" id="fCallCategory" onchange="renderEvalForm()">
+                <option value="">— Select Category —</option>
+                <option value="standard">Standard Call</option>
+                <option value="general">General Enquiries</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div class="card" id="callDetailsCard" style="display:none">
+          <div class="card-header"><div class="card-title">📞 Call Details</div></div>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Agent Name *</label>
+              <div class="autocomplete-wrap">
+                <input class="form-input" id="fAgentName" placeholder="Type to search agent…" autocomplete="off"
+                  oninput="filterAgents(this.value)" onfocus="filterAgents(this.value)">
+                <input type="hidden" id="fAgentId">
+                <div class="autocomplete-list" id="agentList"></div>
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Team Leader</label>
+              <div class="autocomplete-wrap">
+                <input class="form-input" id="fTLName" placeholder="Auto-filled or type to search…" autocomplete="off"
+                  oninput="filterTLs(this.value)" onfocus="filterTLs(this.value)">
+                <input type="hidden" id="fTLId">
+                <div class="autocomplete-list" id="tlList"></div>
+              </div>
+            </div>
+          </div>
+          <div class="form-row-3">
+            <div class="form-group">
+              <label class="form-label">Date *</label>
+              <input class="form-input" type="date" id="fDate">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Timestamp</label>
+              <input class="form-input" type="time" id="fTimestamp">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Duration</label>
+              <input class="form-input" id="fDuration" placeholder="e.g. 5:23">
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Calling Number</label>
+              <input class="form-input" id="fCallingNum" placeholder="601x-xxxxxxxx">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Contact ID / Case ID</label>
+              <input class="form-input" id="fContactID" placeholder="e.g. CX-12345">
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Remarks</label>
+            <textarea class="form-textarea" id="fRemarks" rows="2" placeholder="General remarks about this evaluation…"></textarea>
+          </div>
+        </div>
+
+        <div id="evalFormContainer"></div>
+
+        <div id="evalSubmitSection" style="display:none">
+          <div class="score-summary">
+            <div><div class="text-sm">Total Score</div><div class="score-big" id="scoreBig">0%</div></div>
+            <div id="fatalIndicator" style="font-size:13px;font-weight:600;color:var(--green)">✅ No Fatal Errors</div>
+            <div style="text-align:right">
+              <div class="text-sm">Sub-total</div>
+              <div style="font-family:'JetBrains Mono',monospace;font-size:20px;font-weight:600;color:var(--accent)" id="scoreSubtotal">0 / 0</div>
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">QA Coaching Notes</label>
+            <textarea class="form-textarea" id="fCallRemarks" rows="3" placeholder="Summarize findings, coaching points, areas of improvement…"></textarea>
+          </div>
+          <div style="display:flex;gap:10px;justify-content:flex-end">
+            <button class="btn btn-ghost" onclick="saveEval('draft')">💾 Save Draft</button>
+            <button class="btn btn-primary" onclick="saveEval('submitted')">Submit to TL →</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ALL EVALUATIONS -->
+      <div class="page" id="page-evaluations">
+        <div class="page-header">
+          <div class="page-header-row">
+            <div><h1>All Evaluations</h1><p>Full evaluation history</p></div>
+            <button class="btn btn-primary" onclick="showPage('new-eval')">+ New</button>
+          </div>
+        </div>
+        <div class="card">
+          <table class="eval-table"><thead><tr><th>Ref</th><th>Agent</th><th>TL</th><th>Template</th><th>Score</th><th>Fatal</th><th>Status</th><th>Call Date</th><th>Eval Date</th><th>Eval Time</th><th>QA</th><th>Actions</th></tr></thead>
+          <tbody id="allEvalsBody"><tr><td colspan="9"><div class="empty-state"><div class="icon">⏳</div><p>Loading…</p></div></td></tr></tbody></table>
+        </div>
+      </div>
+
+      <!-- PENDING TL -->
+      <div class="page" id="page-pending-tl">
+        <div class="page-header"><h1>⏳ Pending TL Review</h1><p>Submitted by QA — awaiting TL approval or dispute</p></div>
+        <div class="card">
+          <table class="eval-table"><thead><tr><th>Ref</th><th>Agent</th><th>TL</th><th>Score</th><th>Fatal</th><th>Call Date</th><th>Eval Date/Time</th><th>QA</th><th>Actions</th></tr></thead>
+          <tbody id="pendingTLBody"><tr><td colspan="7"><div class="empty-state"><div class="icon">✅</div><p>Nothing pending.</p></div></td></tr></tbody></table>
+        </div>
+      </div>
+
+      <!-- PENDING AGENT -->
+      <div class="page" id="page-pending-agent">
+        <div class="page-header"><h1>👤 Pending Agent Acknowledgement</h1><p>Awaiting your acknowledgement or dispute — you are the final step before closing</p></div>
+        <div class="card">
+          <table class="eval-table"><thead><tr><th>Ref</th><th>Agent</th><th>Score</th><th>TL Decision</th><th>Actions</th></tr></thead>
+          <tbody id="pendingAgentBody"><tr><td colspan="5"><div class="empty-state"><div class="icon">✅</div><p>Nothing pending.</p></div></td></tr></tbody></table>
+        </div>
+      </div>
+
+      <!-- DISPUTES -->
+      <div class="page" id="page-disputes">
+        <div class="page-header"><h1>⚠️ Disputes</h1><p>Evaluations under dispute — requiring resolution</p></div>
+        <div class="card">
+          <table class="eval-table"><thead><tr><th>Ref</th><th>Agent</th><th>Score</th><th>Disputed By</th><th>Reason</th><th>Actions</th></tr></thead>
+          <tbody id="disputesBody"><tr><td colspan="6"><div class="empty-state"><div class="icon">✅</div><p>No active disputes.</p></div></td></tr></tbody></table>
+        </div>
+      </div>
+
+      <!-- MY TEAM PAGE -->
+      <div class="page" id="page-my-team">
+        <div class="page-header">
+          <div class="page-header-row">
+            <div>
+              <h1>👥 My Team</h1>
+              <p id="myTeamSubtitle">All evaluations for your team's agents</p>
+            </div>
+            <div style="display:flex;gap:8px;align-items:center">
+              <select class="form-select" id="myTeamStatusFilter" onchange="loadMyTeam()" style="width:180px;padding:7px 10px">
+                <option value="">All Statuses</option>
+                <option value="submitted">Pending My Review</option>
+                <option value="tl-approved">Sent to Agent</option>
+                <option value="tl-disputed">I Disputed</option>
+                <option value="agent-acknowledged">Agent Acknowledged</option>
+                <option value="agent-disputed">Agent Disputed</option>
+                <option value="closed">Closed</option>
+              </select>
+            </div>
+          </div>
+        </div>
+        <div class="card">
+          <table class="eval-table">
+            <thead><tr><th>Ref</th><th>Agent</th><th>Template</th><th>Score</th><th>Fatal</th><th>Status</th><th>Call Date</th><th>Eval Date</th><th>Eval Time</th><th>QA</th><th>Actions</th></tr></thead>
+            <tbody id="myTeamBody"><tr><td colspan="11"><div class="empty-state"><div class="icon">👥</div><p>Loading...</p></div></td></tr></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ROLE MANAGEMENT PAGE (Admin only) -->
+      <div class="page" id="page-role-mgmt">
+        <div class="page-header">
+          <div class="page-header-row">
+            <div><h1>🔐 Role Management</h1><p>Manage staff roles and system access</p></div>
+            <button class="btn btn-primary" onclick="openAddRoleModal()">+ Add / Update User</button>
+          </div>
+        </div>
+
+        <!-- Stats row -->
+        <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:20px">
+          <div class="stat-card" style="border-color:rgba(79,142,247,.3)"><div class="stat-num" id="rm-total" style="color:var(--accent);font-size:22px">-</div><div class="stat-label">Total Users</div></div>
+          <div class="stat-card" style="border-color:rgba(245,158,11,.3)"><div class="stat-num" id="rm-admin" style="color:var(--amber);font-size:22px">-</div><div class="stat-label">Admin</div></div>
+          <div class="stat-card" style="border-color:rgba(168,85,247,.3)"><div class="stat-num" id="rm-tl" style="color:var(--purple);font-size:22px">-</div><div class="stat-label">Team Leaders</div></div>
+          <div class="stat-card" style="border-color:rgba(34,197,94,.3)"><div class="stat-num" id="rm-manager" style="color:var(--green);font-size:22px">-</div><div class="stat-label">Managers</div></div>
+          <div class="stat-card" style="border-color:rgba(79,142,247,.3)"><div class="stat-num" id="rm-qa" style="color:var(--accent);font-size:22px">-</div><div class="stat-label">QA Evaluators</div></div>
+        </div>
+
+        <!-- Search + filter -->
+        <div class="card" style="padding:14px 16px;margin-bottom:12px">
+          <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+            <input class="form-input" id="rmSearch" placeholder="Search by name or email..." oninput="renderRoleTable()" style="flex:1;min-width:200px;padding:7px 12px">
+            <select class="form-select" id="rmRoleFilter" onchange="renderRoleTable()" style="width:160px;padding:7px 10px">
+              <option value="">All Roles</option>
+              <option value="admin">Admin</option>
+              <option value="manager">Manager</option>
+              <option value="tl">Team Leader</option>
+              <option value="qa">QA Evaluator</option>
+              <option value="agent">Agent</option>
+            </select>
+            <button class="btn btn-ghost btn-sm" onclick="loadRoleManagement()">Refresh</button>
+          </div>
+        </div>
+
+        <div class="card" style="padding:0;overflow:hidden">
+          <table class="eval-table" id="rmTable">
+            <thead>
+              <tr>
+                <th style="width:40px"></th>
+                <th>Name</th>
+                <th>Email</th>
+                <th>Role Override</th>
+                <th>Source</th>
+                <th>Team</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="rmBody">
+              <tr><td colspan="7"><div class="empty-state"><div class="icon">🔐</div><p>Loading users...</p></div></td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Password Reset section -->
+        <div class="card" style="margin-top:16px">
+          <div class="card-header" style="margin-bottom:12px">
+            <div><div class="card-title">🔑 Password Reset</div><div class="card-subtitle">Send a password reset email to any user</div></div>
+          </div>
+          <div style="display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap">
+            <div class="form-group" style="flex:1;min-width:220px;margin-bottom:0">
+              <label class="form-label">User Email</label>
+              <input class="form-input" id="pwResetEmail" placeholder="email@xox.com.my" type="email">
+            </div>
+            <button class="btn btn-amber" onclick="sendPasswordReset()" style="height:38px">Send Reset Email</button>
+          </div>
+          <div id="pwResetResult" style="margin-top:10px;font-size:13px;display:none"></div>
+        </div>
+      </div>
+
+    </main>
+  </div>
+</div>
+
+<!-- ADD/EDIT ROLE MODAL -->
+<div class="modal-overlay hidden" id="roleModal">
+  <div class="modal" style="max-width:500px">
+    <div class="modal-header">
+      <div class="modal-title" id="roleModalTitle">Add / Update User Role</div>
+      <button class="modal-close" onclick="closeModal('roleModal')">x</button>
+    </div>
+    <div class="modal-body">
+      <div class="alert alert-info" style="margin-bottom:16px">
+        Role overrides apply immediately on next login. They are stored locally in this app and take priority over the staff table.
+      </div>
+      <div class="form-group">
+        <label class="form-label">Staff Member</label>
+        <div class="autocomplete-wrap">
+          <input class="form-input" id="rmStaffName" placeholder="Type to search staff..." autocomplete="off"
+            oninput="filterRmStaff(this.value)" onfocus="filterRmStaff(this.value)">
+          <input type="hidden" id="rmStaffId">
+          <div class="autocomplete-list" id="rmStaffList"></div>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Email (for password reset & role matching)</label>
+        <input class="form-input" id="rmStaffEmail" placeholder="staff@xox.com.my" type="email">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Assign Role</label>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px" id="rolePickerGrid">
+          <div class="role-pick-card" data-role="admin" onclick="selectRolePick(this)">
+            <div style="font-size:20px">🔐</div>
+            <div style="font-weight:600;font-size:13px;margin-top:4px">Admin</div>
+            <div style="font-size:11px;color:var(--text3);margin-top:2px">Full access, all views</div>
+          </div>
+          <div class="role-pick-card" data-role="manager" onclick="selectRolePick(this)">
+            <div style="font-size:20px">⭐</div>
+            <div style="font-weight:600;font-size:13px;margin-top:4px">Manager</div>
+            <div style="font-size:11px;color:var(--text3);margin-top:2px">All teams, resolve disputes</div>
+          </div>
+          <div class="role-pick-card" data-role="tl" onclick="selectRolePick(this)">
+            <div style="font-size:20px">👔</div>
+            <div style="font-weight:600;font-size:13px;margin-top:4px">Team Leader</div>
+            <div style="font-size:11px;color:var(--text3);margin-top:2px">Own team evals, approve/dispute</div>
+          </div>
+          <div class="role-pick-card" data-role="qa" onclick="selectRolePick(this)">
+            <div style="font-size:20px">📝</div>
+            <div style="font-weight:600;font-size:13px;margin-top:4px">QA Evaluator</div>
+            <div style="font-size:11px;color:var(--text3);margin-top:2px">Create & submit evaluations</div>
+          </div>
+          <div class="role-pick-card" data-role="agent" onclick="selectRolePick(this)">
+            <div style="font-size:20px">👤</div>
+            <div style="font-weight:600;font-size:13px;margin-top:4px">Agent</div>
+            <div style="font-size:11px;color:var(--text3);margin-top:2px">View & acknowledge own evals</div>
+          </div>
+          <div class="role-pick-card" data-role="none" onclick="selectRolePick(this)">
+            <div style="font-size:20px">🚫</div>
+            <div style="font-weight:600;font-size:13px;margin-top:4px">Remove Override</div>
+            <div style="font-size:11px;color:var(--text3);margin-top:2px">Revert to staff table role</div>
+          </div>
+        </div>
+        <input type="hidden" id="rmSelectedRole">
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('roleModal')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveRoleOverride()">Save Role</button>
+    </div>
+  </div>
+</div>
+
+<!-- DETAIL MODAL -->
+<div class="modal-overlay hidden" id="detailModal">
+  <div class="modal" style="max-width:740px">
+    <div class="modal-header">
+      <div class="modal-title" id="detailModalTitle">Evaluation Detail</div>
+      <button class="modal-close" onclick="closeModal('detailModal')">×</button>
+    </div>
+    <div class="modal-body" id="detailModalBody"></div>
+    <div class="modal-footer" id="detailModalFooter"></div>
+  </div>
+</div>
+
+<!-- ACTION MODAL -->
+<div class="modal-overlay hidden" id="actionModal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title" id="actionModalTitle">Action</div>
+      <button class="modal-close" onclick="closeModal('actionModal')">×</button>
+    </div>
+    <div class="modal-body" id="actionModalBody"></div>
+    <div class="modal-footer" id="actionModalFooter"></div>
+  </div>
+</div>
+
+<script>
+// Global error catcher -- shows any crash on screen
+window.onerror = function(msg, src, line, col, err) {
+  console.error('[QA CRASH]', msg, 'at', src, line+':'+col, err);
+  var el = document.getElementById('loginErr');
+  var wrap = document.getElementById('loginWrap');
+  var overlay = document.getElementById('loadingOverlay');
+  if (overlay) overlay.classList.add('hidden');
+  if (wrap) wrap.style.display = 'flex';
+  if (el) { el.textContent = 'App error: ' + msg + ' (line ' + line + ')'; el.style.display = 'block'; }
+  return false;
+};
+window.onunhandledrejection = function(e) {
+  console.error('[QA PROMISE]', e.reason);
+};
+
+// ===============================================
+//  SUPABASE INIT
+// ===============================================
+const SUPA_URL = 'https://jrfiyliesitsgnehxqtv.supabase.co';
+const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpyZml5bGllc2l0c2duZWh4cXR2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk2ODAwNjAsImV4cCI6MjA5NTI1NjA2MH0.ZO-4OYF9_1NRduLZlKiSVStOfg07W4Ozx7vhvUTuozA';
+const supa = supabase.createClient(SUPA_URL, SUPA_KEY);
+
+// ===============================================
+//  QUESTION DATA
+// ===============================================
+const STD_QS = [
+  {id:'s1',num:'1.1',q:'Opening script - Thank, company name, agent name, offer assistance (Must follow)',wt:3,type:'yn'},
+  {id:'s2',num:'1.2',q:"Did agent's greeting was hearable?",wt:2,type:'yn'},
+  {id:'s3',num:'1.3',q:'Did agent alert on incoming calls? (2 Secs)',wt:2,type:'yn'},
+  {id:'s4',num:'1.4',q:'Did agent ask which phone number having the issue? (Must be Specific)',wt:4,type:'yn'},
+  {id:'s5',num:'1.5',q:'Did agent verify the registered owner for the account/number? (Compulsory)',wt:3,type:'yn'},
+  {id:'s6',num:'1.6',q:'Did agent explain the purpose of asking subs personal detail?',wt:2,type:'yn'},
+  {id:'s7',num:'1.7',q:'Did agent request caller full name?',wt:2,type:'yn'},
+  {id:'s8',num:'1.8',q:'Did agent verify caller NRIC number?',wt:2,type:'yn'},
+  {id:'s9',num:'1.9',q:'Did agent request for alternate contact number?',wt:3,type:'yn'},
+  {id:'s10',num:'1.10',q:'Did agent thank subscriber for verification?',wt:2,type:'yn'},
+  {id:'s11',num:'1.11',q:'Did agent complete fully PPID in correct flow?',wt:2,type:'yn'},
+  {id:'s12',num:'1.12',q:"Did agent used the caller's name throughout the call?",wt:3,type:'012'},
+  {id:'s13',num:'1.13',q:"Did agent summarized the customer's main points before troubleshooting or offering a solution?",wt:2,type:'yn'},
+  {id:'s14',num:'1.14',q:"Did agent ask the caller's permission to place them on hold before or after doing so?",wt:2,type:'yn'},
+  {id:'s15',num:'1.15',q:'Did agent provide alternative solution to the customer?',wt:3,type:'012'},
+  {id:'s16',num:'1.16',q:'Did agent limited the duration of hold time to an appropriate amount?',wt:2,type:'yn'},
+  {id:'s17',num:'1.17',q:"Did agent FULLY answered the customer's question correctly?",wt:3,type:'yn'},
+  {id:'s18',num:'1.18',q:"Did agent adequately addressed the caller's needs?",wt:2,type:'yn'},
+  {id:'s19',num:'1.19',q:'Did agent spoke clearly and fluently (No stutter)?',wt:2,type:'012'},
+  {id:'s20',num:'1.20',q:'Did agent shows a courtesy to help subscriber?',wt:4,type:'012'},
+  {id:'s21',num:'1.21',q:'Did agent maintained proper tone, pitch, volume and pace throughout the call?',wt:4,type:'012'},
+  {id:'s22',num:'1.22',q:'Productive and effective active listening skills were used by the agent',wt:3,type:'yn'},
+  {id:'s23',num:'1.23',q:'Did agent avoided silent moment during the call (not more 3 seconds)?',wt:3,type:'yn'},
+  {id:'s24',num:'1.24',q:'Did agent interrupt or talk over the customer?',wt:3,type:'yn'},
+  {id:'s25',num:'1.25',q:'Did agent have a good understanding skills?',wt:3,type:'yn'},
+  {id:'s26',num:'1.26',q:'Did agent use appropriate questioning skills?',wt:3,type:'012'},
+  {id:'s27',num:'1.27',q:'Did agent remained confident throughout the call?',wt:3,type:'yn'},
+  {id:'s28',num:'1.28',q:'Did agent use appropriate language (mix language), courtesy words and phrases?',wt:4,type:'012'},
+  {id:'s29',num:'1.29',q:'Did agent stay firm and fair control?',wt:3,type:'yn'},
+  {id:'s30',num:'1.30',q:'Did agent refrained from using complicated jargon?',wt:2,type:'yn'},
+  {id:'s31',num:'1.31',q:'Did agent being friendly, polite & welcoming?',wt:3,type:'yn'},
+  {id:'s32',num:'1.32',q:'Did agent show professionalism?',wt:2,type:'yn'},
+  {id:'s33',num:'1.33',q:'Did agent asked customer if they have any additional questions or issues before ending the call?',wt:3,type:'yn'},
+  {id:'s34',num:'1.34',q:'Did agent thanked the customer for calling? (Closing)',wt:3,type:'yn'},
+  {id:'s35',num:'1.35',q:'Did agent put correct category for Caselog?',wt:4,type:'012'},
+  {id:'s36',num:'1.36',q:'Did the agent update the notes in the CRM case correctly?',wt:4,type:'012'},
+];
+const STD_CSAT = {id:'s_csat',num:'1.34c',q:'Did agent use the CSAT script before ending the call?',wt:4,type:'yn'};
+
+const GEN_QS = [
+  {id:'g1',num:'1.1',q:'Opening script - Thank, company name, agent name, offer assistance (Must follow)',wt:3,type:'yn'},
+  {id:'g2',num:'1.2',q:"Did agent's greeting was hearable?",wt:2,type:'yn'},
+  {id:'g3',num:'1.3',q:'Did agent alert on incoming calls? (2 Secs)',wt:3,type:'yn'},
+  {id:'g4',num:'1.4',q:"Did agent request for caller's name?",wt:4,type:'yn'},
+  {id:'g5',num:'1.5',q:"Did agent used the caller's name throughout the call?",wt:4,type:'012'},
+  {id:'g6',num:'1.6',q:"Did agent summarized the customer's main points before troubleshooting or offering a solution?",wt:3,type:'yn'},
+  {id:'g7',num:'1.7',q:"Did agent ask the caller's permission to place them on hold before or after doing so?",wt:3,type:'yn'},
+  {id:'g8',num:'1.8',q:'Did agent provide alternative solution to the customer?',wt:3,type:'012'},
+  {id:'g9',num:'1.9',q:'Did agent limited the duration of hold time to an appropriate amount?',wt:3,type:'yn'},
+  {id:'g10',num:'1.10',q:"Did agent FULLY answered the customer's question correctly?",wt:4,type:'yn'},
+  {id:'g11',num:'1.11',q:"Did agent adequately addressed the caller's needs?",wt:4,type:'yn'},
+  {id:'g12',num:'1.12',q:'Did agent spoke clearly and fluently (No stutter)?',wt:4,type:'012'},
+  {id:'g13',num:'1.13',q:'Did agent shows a courtesy to help subscriber?',wt:4,type:'012'},
+  {id:'g14',num:'1.14',q:'Did agent maintained proper tone, pitch, volume and pace throughout the call?',wt:4,type:'012'},
+  {id:'g15',num:'1.15',q:'Productive and effective active listening skills were used by the agent',wt:4,type:'yn'},
+  {id:'g16',num:'1.16',q:'Did agent avoided silent moment during the call (not more 3 seconds)?',wt:3,type:'yn'},
+  {id:'g17',num:'1.17',q:'Did agent interrupt or talk over the customer?',wt:3,type:'yn'},
+  {id:'g18',num:'1.18',q:'Did agent have a good understanding skills?',wt:4,type:'yn'},
+  {id:'g19',num:'1.19',q:'Did agent use appropriate questioning skills?',wt:4,type:'012'},
+  {id:'g20',num:'1.20',q:'Did agent remained confident throughout the call?',wt:3,type:'yn'},
+  {id:'g21',num:'1.21',q:'Did agent use appropriate language (mix language), courtesy words and phrases?',wt:4,type:'012'},
+  {id:'g22',num:'1.22',q:'Did agent stay firm and fair control?',wt:3,type:'yn'},
+  {id:'g23',num:'1.23',q:'Did agent refrained from using complicated jargon?',wt:3,type:'yn'},
+  {id:'g24',num:'1.24',q:'Did agent being friendly, polite & welcoming?',wt:4,type:'yn'},
+  {id:'g25',num:'1.25',q:'Did agent show professionalism?',wt:3,type:'yn'},
+  {id:'g26',num:'1.26',q:'Did agent asked customer if they have any additional questions or issues before ending the call?',wt:3,type:'yn'},
+  {id:'g27',num:'1.27',q:'Did agent thanked the customer for calling? (Closing)',wt:3,type:'yn'},
+  {id:'g28',num:'1.28',q:'Did agent put correct category for Caselog?',wt:4,type:'012'},
+  {id:'g29',num:'1.29',q:'Did the agent update the notes in the CRM case?',wt:4,type:'012'},
+];
+const GEN_CSAT = {id:'g_csat',num:'1.27c',q:'Did agent use the CSAT script before ending the call?',wt:4,type:'yn'};
+
+const FATALS = [
+  {id:'f1',q:'Drop call without insufficient reason'},
+  {id:'f2',q:'Failure to answer call'},
+  {id:'f3',q:'Failed to verify authorized user when required (PDPA)'},
+  {id:'f4',q:'Failed to assist caller and transferred back into same Queue'},
+  {id:'f5',q:'Rude/Sarcastic/Shouting to subscriber'},
+  {id:'f6',q:'Update wrong Information'},
+];
+
+// ===============================================
+//  STATE
+// ===============================================
+let currentUser = null;      // supabase auth user
+let currentStaff = null;     // row from staff table
+let allStaff = [];           // all staff for autocomplete
+let evaluations = [];
+let currentAnswers = {};
+let currentFatalAnswers = {};
+let selectedTemplate = null; // {evalType:'historical'|'live', csat:'yes'|'no'}
+
+// ===============================================
+//  ROLE PERMISSION HELPER
+// ===============================================
+
+// The role the current user is *viewing as* -- can be overridden via sidebar switcher
+// Defaults to actual DB role, but managers/QA can switch to act as TL or Agent
+let activeViewRole = 'qa'; // updated after login
+
+function canActAs(requiredRole) {
+  const r    = activeViewRole.toLowerCase();
+  const base = (currentStaff?.role || '').toLowerCase();
+  const email = (currentUser?.email || '').toLowerCase();
+  const isAdmin = base === 'admin' || ROLE_MAP_EMAIL[email] === 'admin' || roleOverrides[email] === 'admin';
+
+  if (isAdmin) return true; // admin can always do everything
+
+  if (requiredRole === 'tl')      return ['tl','team leader','team_leader','manager','mgr'].includes(r);
+  if (requiredRole === 'agent')   return ['agent','manager','mgr'].includes(r);
+  if (requiredRole === 'manager') return ['manager','mgr','qa'].includes(r);
+  if (requiredRole === 'qa')      return ['qa','manager','mgr'].includes(r);
+  return false;
+}
+
+function setViewRole(role) {
+  activeViewRole = role;
+  // Highlight active button
+  document.querySelectorAll('.vr-btn').forEach(b => b.classList.remove('vr-active'));
+  document.getElementById('vr-' + role)?.classList.add('vr-active');
+  // Update nav visibility
+  updateNavVisibility();
+  // Update topbar badge
+  const labels = { qa:'QA Evaluator', tl:'Team Leader', agent:'Agent', manager:'Manager' };
+  const clsMap  = { qa:'role-qa', tl:'role-tl', agent:'role-agent', manager:'role-mgr' };
+  document.getElementById('topRoleBadge').textContent = labels[role] || role;
+  document.getElementById('topRoleBadge').className   = `role-badge ${clsMap[role]||'role-qa'}`;
+  // Re-render current page so action buttons update
+  const activePage = document.querySelector('.page.active')?.id?.replace('page-','');
+  if (activePage) showPage(activePage);
+}
+
+// ===============================================
+//  SUPABASE SQL SETUP NOTE
+// ===============================================
+// Run once in Supabase SQL editor:
+// CREATE TABLE IF NOT EXISTS qa_evaluations (
+//   id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
+//   ref serial,
+//   agent_id uuid REFERENCES staff(id),
+//   agent_name text,
+//   tl_id uuid REFERENCES staff(id),
+//   tl_name text,
+//   eval_type text,
+//   csat text,
+//   call_category text,
+//   date date,
+//   timestamp time,
+//   duration text,
+//   calling_num text,
+//   contact_id text,
+//   remarks text,
+//   call_remarks text,
+//   questions jsonb,
+//   answers jsonb,
+//   fatal_answers jsonb,
+//   has_fatal boolean DEFAULT false,
+//   score numeric DEFAULT 0,
+//   earned_pts numeric DEFAULT 0,
+//   total_wt numeric DEFAULT 0,
+//   status text DEFAULT 'draft',
+//   workflow jsonb DEFAULT '[]',
+//   qa_user_id uuid,
+//   qa_user_name text,
+//   created_at timestamptz DEFAULT now(),
+//   updated_at timestamptz DEFAULT now()
+// );
+// ALTER TABLE qa_evaluations ENABLE ROW LEVEL SECURITY;
+// CREATE POLICY "all_access" ON qa_evaluations FOR ALL USING (true) WITH CHECK (true);
+
+// ===============================================
+//  AUTH
+// ===============================================
+async function init() {
+  setLoading(true, 'Connecting to Supabase...');
+  try {
+    // Race getSession against a 6s timeout
+    const sessionResult = await Promise.race([
+      supa.auth.getSession(),
+      new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 6000))
+    ]);
+    const session = sessionResult?.data?.session;
+    if (session?.user) {
+      await onLoggedIn(session.user);
+    } else {
+      setLoading(false);
+      document.getElementById('loginWrap').style.display = 'flex';
+    }
+  } catch (err) {
+    console.warn('[QA App] getSession error:', err.message);
+    setLoading(false);
+    document.getElementById('loginWrap').style.display = 'flex';
+    if (err.message === 'timeout') {
+      showLoginError('Connection timed out. Check your network and try again.');
+    }
+  }
+}
+
+// Safe error display — handles any type (string, Error object, plain object)
+function showLoginError(msg) {
+  const el = document.getElementById('loginErr');
+  if (!el) return;
+  let text = '';
+  if (typeof msg === 'string')      text = msg;
+  else if (msg?.message)            text = msg.message;
+  else if (msg?.error_description)  text = msg.error_description;
+  else if (msg?.error)              text = String(msg.error);
+  else                              text = 'Sign in failed. Check your email and password.';
+  el.textContent = text;
+  el.style.display = text ? 'block' : 'none';
+}
+
+function hideLoginError() {
+  const el = document.getElementById('loginErr');
+  if (el) { el.textContent = ''; el.style.display = 'none'; }
+}
+
+async function doLogin() {
+  console.log('[QA Login] doLogin() called');
+  const email = document.getElementById('loginEmail').value.trim();
+  const pass = document.getElementById('loginPass').value;
+  const err = document.getElementById('loginErr');
+  const btn = document.getElementById('loginBtn');
+  hideLoginError();
+  btn.innerHTML = '<div class="spinner"></div> Signing in...';
+  btn.disabled = true;
+
+  const { data, error } = await supa.auth.signInWithPassword({ email, password: pass });
+  console.log('[QA Login] data:', data, 'error:', error);
+  if (error || !data?.user) {
+    // Extract every possible field from the error object
+    let msg = 'Sign in failed. Please check your email and password.';
+    if (error) {
+      console.log('[QA Login] error keys:', Object.keys(error));
+      console.log('[QA Login] error JSON:', JSON.stringify(error));
+      msg = error.message
+         || error.error_description
+         || error.msg
+         || error.error
+         || (typeof error === 'string' ? error : null)
+         || ('Code: ' + (error.status || error.code || 'unknown'));
+    }
+    showLoginError(msg);
+    btn.innerHTML = 'Sign In'; btn.disabled = false;
+    return;
+  }
+  await onLoggedIn(data.user);
+}
+
+// ===============================================
+//  HARDCODED ROLE MAP  (email-primary, name-fallback)
+// ===============================================
+
+// EMAIL-based map (exact emails from Supabase Auth)
+const ROLE_MAP_EMAIL = {
+  // Admin
+  'suffian@xox.com.my':             'admin',
+  'sarifen@yahoo.com':              'admin',
+  // Managers
+  'hk.lim@xox.com.my':             'manager',
+  'syahrul.nizam@xox.com.my':      'manager',
+  'nadiah.fuad@xox.com.my':        'manager',
+  // Team Leaders
+  'asriza.anwar@xox.com.my':       'tl',
+  'asrul.rezman@xox.com.my':       'tl',
+  'ardina@xox.com.my':             'tl',
+  'saputra.hanim@xox.com.my':      'tl',
+  'zaid.amirul@xox.com.my':        'tl',
+  // QA
+  'asri.syafiq@xox.com.my':        'qa',
+  'nur.syafiqa@xox.com.my':        'qa',
+  // Agents
+  'amalina.sofea@xox.com.my':      'agent',
+  'ammar.shabry@xox.com.my':       'agent',
+  'anis.izzati@xox.com.my':        'agent',
+  'fatin.nadhirah@xox.com.my':     'agent',
+  'johari.bahardin@xox.com.my':    'agent',
+  // maria.affifah@xox.com.my -- wrong spelling, use maria.afifah@xox.com.my
+  'noor.shah@xox.com.my':          'agent',
+  'syafiq.izzat@xox.com.my':       'agent',
+  'ilham.hairol@xox.com.my':       'agent',
+  'ashraf.mukhtar@xox.com.my':     'agent',
+  'azim.kamal@xox.com.my':         'agent',
+  'danial.rusli@xox.com.my':       'agent',
+  'iman.hadzri@xox.com.my':        'agent',
+  'nazam.nasir@xox.com.my':        'agent',
+  'muhammad.rasdan@xox.com.my':    'agent',
+  'norazira.saidin@xox.com.my':    'agent',
+  'hakimah.hanafiah@xox.com.my':   'agent',
+  'nor.hasyimah@xox.com.my':       'agent',
+  'nur.erika@xox.com.my':          'agent',
+  'nur.suhailah@xox.com.my':       'agent',
+  'nuranati.zulaika@xox.com.my':   'agent',
+  'nurzamalisa.zamri@xox.com.my':  'agent',
+  'fatimah.mansor@xox.com.my':     'agent',
+  'siti.nursafwanah@xox.com.my':   'agent',
+  'ruqaiyah.hussain@xox.com.my':   'agent',
+  'nurfatini.idayu@xox.com.my':     'agent',
+  // Extra/alternate emails found in Auth
+  'maria.afifah@xox.com.my':        'agent',   // correct spelling
+  'syatbi.shabry@xox.com.my':       'agent',   // Ammar Syatbi alternate email
+  'bcchow@xox.com.my':              'manager', // BC Chow
+};
+
+// NAME-based map (fallback -- from staff table name column)
+const ROLE_MAP_NAME = {
+  // Admin
+  'suffian bin arifen':                      'admin',
+  'suffian':                                 'admin',
+  // Managers
+  'lim han kit':                             'manager',
+  'syahrul nizam bin kamaruzaman':           'manager',
+  'nadiah binti mohammad fuad':              'manager',
+  // Team Leaders
+  'asriza bin anwar':                        'tl',
+  'asrul rezman bin muhamad fauzi':          'tl',
+  'intan ardina binti ramli':                'tl',
+  'saputra hanim purnama bin tarsan':        'tl',
+  'zaid amirul bin shaharom':                'tl',
+  // QA
+  'mohd asri syafiq bin ashaari':            'qa',
+  'nur syafiqa binti mohd ismail':           'qa',
+  // Agents
+  'amalina sofea binti fauzi':               'agent',
+  'ammar syatbi bin mohd shabry':            'agent',
+  'anis izzati binti abd khani':             'agent',
+  'fatin nadhirah binti aziz':               'agent',
+  'johari bin bahardin':                     'agent',
+  'maria afifah binti hamir':                'agent',
+  'mohamad noor shah bin nordin':            'agent',
+  'mohamad syafiq izzat bin mohamad yusof':  'agent',
+  'muammar ilham bin hairol bakti':          'agent',
+  'muhammad aidil ashraf bin mukhtar':       'agent',
+  'muhammad azim bin kamal bacha':           'agent',
+  'muhammad danial bin rusli':               'agent',
+  'muhammad iman hadzri bin mohd nadziri':   'agent',
+  'muhammad nazam bin muhammad nasir':       'agent',
+  'muhammad rasdan bin sulaiman':            'agent',
+  'nor azira binti saidin':                  'agent',
+  'nor hakimah ahmad hanafiah':              'agent',
+  'nor hasyimah binti abdul latif':          'agent',
+  'nur erika adlyn binti mohd rashdy':       'agent',
+  'nur suhailah ros mustapha kamal':         'agent',
+  'nuranati zulaika binti zulkiefly':        'agent',
+  'nurfatini idayu binti suti':              'agent',
+  'nurzamalisa binti mohammed zamri':        'agent',
+  'siti fatimah binti mansor':               'agent',
+  'siti nursafwanah binti daim':             'agent',
+  'siti ruqaiyah binti hussain':             'agent',
+};
+
+// Resolve role: email first, then name
+function resolveRole(name, email) {
+  if (email) {
+    const byEmail = ROLE_MAP_EMAIL[email.toLowerCase().trim()];
+    if (byEmail) return byEmail;
+  }
+  if (name) {
+    // Try exact match first, then partial (first word)
+    const n = name.toLowerCase().trim();
+    if (ROLE_MAP_NAME[n]) return ROLE_MAP_NAME[n];
+    // Try matching if the name STARTS WITH a known key
+    for (const [key, role] of Object.entries(ROLE_MAP_NAME)) {
+      if (n.startsWith(key) || key.startsWith(n)) return role;
+    }
+  }
+  return null;
+}
+
+// Roles the switcher shows per base role
+// admin = full switcher; manager = manager+tl+agent; tl = tl only; qa = qa only; agent = agent only
+const ROLE_SWITCHER_ACCESS = {
+  admin:   ['qa', 'tl', 'agent', 'manager'],
+  manager: ['manager', 'tl', 'agent'],
+  qa:      ['qa'],
+  tl:      ['tl'],
+  agent:   ['agent'],
+};
+
+async function onLoggedIn(user) {
+  currentUser = user;
+  setLoading(true, 'Loading staff data...');
+
+  // ── Try to detect the correct staff table name ──
+  const TABLE_CANDIDATES = ['staff', 'employees', 'users', 'cc_staff', 'agents'];
+  let staffTable = null;
+  let allStaffData = [];
+
+  for (const tbl of TABLE_CANDIDATES) {
+    try {
+      const { data, error } = await Promise.race([
+        supa.from(tbl).select('*').limit(3),
+        new Promise((_, r) => setTimeout(() => r(new Error('timeout')), 5000))
+      ]);
+      if (!error && data) {
+        staffTable = tbl;
+        console.log(`[QA App] Staff table found: "${tbl}", sample:`, data);
+        break;
+      } else {
+        console.log(`[QA App] Table "${tbl}" not usable:`, error?.message);
+      }
+    } catch(e) {
+      console.log(`[QA App] Table "${tbl}" timed out or errored`);
+    }
+  }
+
+  if (staffTable) {
+    // Detect TL column: try team_leader_id, tl_id, supervisor_id
+    const TL_COL_CANDIDATES = ['team_leader_id', 'tl_id', 'supervisor_id', 'manager_id'];
+    let { data: sample } = await supa.from(staffTable).select('*').limit(1);
+    let tlCol = null;
+    if (sample && sample[0]) {
+      tlCol = TL_COL_CANDIDATES.find(c => c in sample[0]) || null;
+      console.log('[QA App] Columns in row:', Object.keys(sample[0]));
+      console.log('[QA App] TL column detected:', tlCol);
+    }
+
+    // Load all staff - select all columns so we can map whatever is there
+    const { data: fullStaff, error: staffErr } = await supa.from(staffTable).select('*').order('name');
+    if (staffErr) {
+      console.error('[QA App] Staff load error:', staffErr);
+    } else {
+      // Normalise: map actual CC Schedule columns to standard names
+      // Columns: id, employee_id, cx, name, team, staff_role, ...
+      allStaff = (fullStaff || []).map(s => ({
+        id: s.id,
+        name: s.name || s.full_name || s.staff_name || s.agent_name || '',
+        role: (s.staff_role || s.role || s.position || s.job_role || '').toLowerCase().trim(),
+        team: s.team || '',   // for agents: TL first name; for TLs: dept name
+        cx: s.cx || '',
+        employee_id: s.employee_id || '',
+        team_leader_id: tlCol ? s[tlCol] : null,
+        _raw: s
+      }));
+      console.log(`[QA App] Loaded ${allStaff.length} staff members`);
+      console.log('[QA App] Role samples:', [...new Set(allStaff.map(s=>s.role))].slice(0,10));
+      console.log('[QA App] Team samples:', [...new Set(allStaff.map(s=>s.team))].slice(0,10));
+    }
+
+    // Find current user's staff record -- try multiple column strategies
+    let myRow = null;
+    // Try by email
+    const { data: byEmail } = await supa.from(staffTable).select('*')
+      .eq('email', user.email).limit(1);
+    if (byEmail && byEmail.length) { myRow = byEmail[0]; }
+
+    // Try by user_id / auth_id columns if email didn't match
+    if (!myRow) {
+      const { data: byUid } = await supa.from(staffTable).select('*')
+        .or(`user_id.eq.${user.id},auth_id.eq.${user.id}`).limit(1);
+      if (byUid && byUid.length) myRow = byUid[0];
+    }
+
+    if (myRow) {
+      const rawName = myRow.name || myRow.full_name || myRow.staff_name || user.email.split('@')[0];
+      // If name is short (likely just first name from email), try to find full name in allStaff
+      let fullName = rawName;
+      if (rawName && rawName.split(' ').length <= 1) {
+        const match = allStaff.find(s =>
+          s.name.toLowerCase().startsWith(rawName.toLowerCase() + ' ') ||
+          s.name.toLowerCase() === rawName.toLowerCase()
+        );
+        if (match) {
+          fullName = match.name;
+          console.log('[QA App] Expanded short name:', rawName, '->', fullName);
+        }
+      }
+      currentStaff = {
+        id: myRow.id,
+        name: fullName,
+        role: (myRow.staff_role || myRow.role || myRow.position || 'qa').toLowerCase().trim(),
+        team: myRow.team || myRow.cx || '',
+        employee_id: myRow.employee_id || '',
+        _raw: myRow
+      };
+      console.log('[QA App] Found staff record:', currentStaff.name, '| role:', currentStaff.role);
+    } else {
+      currentStaff = { id: user.id, name: user.email.split('@')[0], role: 'qa' };
+      console.warn('[QA App] Could not find staff record for', user.email, '-- using fallback');
+    }
+  } else {
+    console.error('[QA App] No staff table found! Tried:', TABLE_CANDIDATES);
+    currentStaff = { id: user.id, name: user.email.split('@')[0], role: 'qa' };
+  }
+
+  window._staffTable = staffTable; // expose for debugging
+  applyStoredOverrides(); // merge any admin-set overrides into live maps
+  console.log('[QA App] allStaff count:', allStaff.length);
+  console.log('[QA App] currentStaff before role override:', currentStaff);
+
+  // ── Apply hardcoded ROLE_MAP override (email is most reliable) ──
+  const userEmail = currentUser?.email || '';
+  const mappedRole = resolveRoleFull(currentStaff?.name, userEmail);
+  if (mappedRole) {
+    currentStaff.role = mappedRole;
+    console.log('[QA App] Role override applied:', currentStaff.name, '/', userEmail, '->', mappedRole);
+  } else {
+    // Last resort: check email directly against hardcoded maps
+    const directEmailRole = ROLE_MAP_EMAIL[userEmail.toLowerCase()]
+                         || roleOverrides[userEmail.toLowerCase()];
+    if (directEmailRole) {
+      currentStaff.role = directEmailRole;
+      console.log('[QA App] Role set from email map:', userEmail, '->', directEmailRole);
+    } else {
+      console.log('[QA App] No role override for:', currentStaff?.name, '/', userEmail, '-- DB role:', currentStaff?.role);
+    }
+  }
+
+  // Set initial viewing role
+  const baseRole = currentStaff?.role || 'qa';
+  // Admin defaults to viewing as manager
+  activeViewRole = baseRole === 'admin' ? 'manager' : baseRole;
+  console.log('[QA App] Final role:', currentStaff?.role, '| activeViewRole:', activeViewRole);
+
+  // Sync the role switcher UI after DOM ready
+  setTimeout(() => syncRoleSwitcher(), 100);
+
+  setLoading(false);
+  document.getElementById('loginWrap').style.display = 'none';
+  document.getElementById('appWrap').style.display = 'block';
+  renderUserInfo();
+  updateNavVisibility();
+  showPage('dashboard');
+}
+
+async function doLogout() {
+  await supa.auth.signOut();
+  location.reload();
+}
+
+function showForgotPw() {
+  const email = document.getElementById('loginEmail').value.trim();
+  if (!email) { alert('Enter your email address first'); return; }
+  supa.auth.resetPasswordForEmail(email, { redirectTo: location.href })
+    .then(() => alert('Password reset email sent! Check your inbox.'));
+}
+
+// Sync the role switcher buttons to current role + allowed options
+function syncRoleSwitcher() {
+  const baseRole = currentStaff?.role || 'qa';
+  const email    = (currentUser?.email || '').toLowerCase();
+  // Recheck admin via email map too
+  const isAdmin  = baseRole === 'admin'
+    || ROLE_MAP_EMAIL[email] === 'admin'
+    || roleOverrides[email]  === 'admin';
+
+  const effectiveRole = isAdmin ? 'admin' : baseRole;
+  const allowed = ROLE_SWITCHER_ACCESS[effectiveRole] || ROLE_SWITCHER_ACCESS[baseRole] || [activeViewRole];
+
+  console.log('[QA Switcher] effectiveRole:', effectiveRole, '| allowed:', allowed);
+
+  // Hide the entire role switcher section for agents (no need to switch)
+  const switcherBox = document.getElementById('roleSwitcherBtns')?.closest('div[style]');
+  if (switcherBox) switcherBox.style.display = (effectiveRole === 'agent') ? 'none' : '';
+
+  // Show/hide each button based on allowed roles
+  const allBtns = { qa:'vr-qa', tl:'vr-tl', agent:'vr-agent', manager:'vr-manager' };
+  Object.entries(allBtns).forEach(([role, id]) => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.style.display = allowed.includes(role) ? '' : 'none';
+  });
+
+  // Set active button -- default admin to manager view
+  if (isAdmin && activeViewRole === 'qa') activeViewRole = 'manager';
+  document.querySelectorAll('.vr-btn').forEach(b => b.classList.remove('vr-active'));
+  const activeBtn = document.getElementById('vr-' + activeViewRole);
+  if (activeBtn) activeBtn.classList.add('vr-active');
+  else {
+    const first = document.getElementById('vr-' + (allowed[0] || 'manager'));
+    if (first) { first.classList.add('vr-active'); activeViewRole = allowed[0] || 'manager'; }
+  }
+
+  // Always update nav after role sync
+  updateNavVisibility();
+}
+
+function updateNavVisibility() {
+  const base  = (currentStaff?.role || '').toLowerCase();
+  const email = (currentUser?.email || '').toLowerCase();
+  const isAdmin   = base === 'admin' || ROLE_MAP_EMAIL[email] === 'admin' || roleOverrides[email] === 'admin';
+  const isManager = base === 'manager' || base === 'mgr';
+  const isTL      = base === 'tl';
+  const isQA      = base === 'qa';
+  const isAgent   = base === 'agent';
+
+  console.log('[QA Nav] role:', base, '| isAdmin:', isAdmin, '| isAgent:', isAgent);
+
+  // New Evaluation: QA and Admin only
+  const navNew = document.getElementById('nav-new-eval');
+  if (navNew) navNew.style.display = (isAdmin || isQA) ? '' : 'none';
+
+  // My Team: TL, Manager, Admin only
+  const navTeam = document.getElementById('nav-my-team');
+  if (navTeam) navTeam.style.display = (isAdmin || isManager || isTL) ? '' : 'none';
+
+  // Pending TL Review: hidden for agents
+  const navPendingTL = document.getElementById('nav-pending-tl');
+  if (navPendingTL) navPendingTL.style.display = isAgent ? 'none' : '';
+
+  // Disputes: hidden for agents
+  const navDisputes = document.getElementById('nav-disputes');
+  if (navDisputes) navDisputes.style.display = isAgent ? 'none' : '';
+
+  // Admin-only items
+  ['sb-admin-label','nav-role-mgmt','sb-admin-divider'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.style.display = isAdmin ? '' : 'none';
+  });
+
+  // Role switcher: admin gets all, others get their own only
+  if (isAdmin) {
+    document.querySelectorAll('.vr-btn').forEach(b => b.style.display = '');
+  }
+}
+
+function renderUserInfo() {
+  const name = currentStaff?.name || currentUser?.email || '--';
+  const role = currentStaff?.role || 'qa';
+  const initials = name.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
+  const roleLabel = { qa:'QA Evaluator', tl:'Team Leader', agent:'Agent', manager:'Manager', mgr:'Manager', admin:'Admin' }[role] || role;
+  const roleCls   = { qa:'role-qa', tl:'role-tl', agent:'role-agent', manager:'role-mgr', mgr:'role-mgr', admin:'role-mgr' }[role] || 'role-qa';
+
+  document.getElementById('topRoleBadge').textContent = roleLabel;
+  document.getElementById('topRoleBadge').className = `role-badge ${roleCls}`;
+  document.getElementById('topUserName').textContent = name;
+  document.getElementById('topAvatar').textContent = initials;
+  document.getElementById('sbUserName').textContent = name;
+  document.getElementById('sbUserRole').textContent = roleLabel;
+  // Show staff count -- helps confirm data loaded
+  const countEl = document.getElementById('sbStaffCount');
+  if (countEl) countEl.textContent = allStaff.length
+    ? `${allStaff.length} staff loaded`
+    : 'Staff not loaded -- check console';
+}
+
+// ===============================================
+//  NAVIGATION
+// ===============================================
+function showPage(id) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.sidebar-item').forEach(i => i.classList.remove('active'));
+  document.getElementById('page-' + id)?.classList.add('active');
+  document.getElementById('nav-' + id)?.classList.add('active');
+
+  if (id === 'dashboard') loadDashboard();
+  if (id === 'evaluations') loadAllEvals();
+  if (id === 'my-team') loadMyTeam();
+  if (id === 'pending-tl') loadPendingTL();
+  if (id === 'pending-agent') loadPendingAgent();
+  if (id === 'disputes') loadDisputes();
+  if (id === 'role-mgmt') loadRoleManagement();
+  if (id === 'new-eval') resetNewEval();
+}
+
+function setLoading(show, msg='') {
+  document.getElementById('loadingOverlay').classList.toggle('hidden', !show);
+  if (msg) document.getElementById('loadingMsg').textContent = msg;
+}
+
+// ===============================================
+//  AUTOCOMPLETE STAFF  (closure-based, no inline onclick)
+// ===============================================
+
+// Called from oninput/onfocus on the agent input
+// ── Role detection based on actual CC Schedule staff_role values ──
+// Roles that mean "agent" (add yours if different)
+const AGENT_ROLE_KEYWORDS = ['agent', 'csr', 'cc agent', 'representative', 'advisor'];
+// Roles that mean "team leader / supervisor"
+const TL_ROLE_KEYWORDS    = ['tl', 'team leader', 'team_leader', 'supervisor',
+                              'manager', 'qa', 'quality', 'senior'];
+
+function isAgentRole(role) {
+  const r = (role || '').toLowerCase();
+  return AGENT_ROLE_KEYWORDS.some(k => r.includes(k));
+}
+function isTLRole(role) {
+  const r = (role || '').toLowerCase();
+  return TL_ROLE_KEYWORDS.some(k => r.includes(k));
+}
+
+function findTLForAgent(agent) {
+  // Strategy 1: direct team_leader_id FK
+  if (agent.team_leader_id) {
+    const tl = allStaff.find(x => x.id === agent.team_leader_id);
+    if (tl) return tl;
+  }
+  // Strategy 2: find a TL in the same team
+  if (agent.team) {
+    const tl = allStaff.find(x => x.team === agent.team && isTLRole(x.role));
+    if (tl) return tl;
+  }
+  return null;
+}
+
+function openDropdown(list, filtered, onSelect) {
+  list.innerHTML = '';
+  filtered.forEach(s => {
+    const div = document.createElement('div');
+    div.className = 'autocomplete-item';
+    div.innerHTML = `<span class="ai-name">${s.name}</span>`
+      + (s._meta ? `<span class="ai-meta">${s._meta}</span>` : '');
+    div.addEventListener('mousedown', e => {
+      e.preventDefault();
+      onSelect(s);
+      list.classList.remove('open');
+    });
+    list.appendChild(div);
+  });
+  list.classList.add('open');
+}
+
+function filterAgents(val) {
+  const query = val.toLowerCase();
+  const list  = document.getElementById('agentList');
+  if (!allStaff.length) { list.classList.remove('open'); return; }
+
+  // Match by role keyword first; fallback to all staff if no role set
+  let filtered = allStaff.filter(s => isAgentRole(s.role) && s.name.toLowerCase().includes(query));
+  if (!filtered.length) filtered = allStaff.filter(s => s.name.toLowerCase().includes(query));
+  filtered = filtered.slice(0, 15);
+  if (!filtered.length) { list.classList.remove('open'); return; }
+
+  const enriched = filtered.map(s => {
+    const tl = findTLForAgent(s);
+    const meta = [
+      tl ? 'TL: ' + tl.name : '',
+      s.team ? 'Team: ' + s.team : '',
+      s.employee_id ? '#' + s.employee_id : ''
+    ].filter(Boolean).join(' . ');
+    return { ...s, _meta: meta };
+  });
+
+  openDropdown(list, enriched, s => {
+    document.getElementById('fAgentName').value = s.name;
+    document.getElementById('fAgentId').value   = s.id;
+    const tl = findTLForAgent(s);
+    if (tl) {
+      document.getElementById('fTLName').value = tl.name;
+      document.getElementById('fTLId').value   = tl.id;
+    } else {
+      document.getElementById('fTLName').value = '';
+      document.getElementById('fTLId').value   = '';
+    }
+  });
+}
+
+function filterTLs(val) {
+  const query = val.toLowerCase();
+  const list  = document.getElementById('tlList');
+  if (!allStaff.length) { list.classList.remove('open'); return; }
+
+  let filtered = allStaff.filter(s => isTLRole(s.role) && s.name.toLowerCase().includes(query));
+  if (!filtered.length) filtered = allStaff.filter(s => s.name.toLowerCase().includes(query));
+  filtered = filtered.slice(0, 15).map(s => ({
+    ...s,
+    _meta: [s.staff_role || s.role, s.team ? 'Team: ' + s.team : ''].filter(Boolean).join(' . ')
+  }));
+  if (!filtered.length) { list.classList.remove('open'); return; }
+
+  openDropdown(list, filtered, s => {
+    document.getElementById('fTLName').value = s.name;
+    document.getElementById('fTLId').value   = s.id;
+  });
+}
+
+// Close any open dropdown when clicking outside
+document.addEventListener('click', e => {
+  if (!e.target.closest('.autocomplete-wrap')) {
+    document.querySelectorAll('.autocomplete-list').forEach(l => l.classList.remove('open'));
+  }
+});
+
+// ===============================================
+//  TEMPLATE SELECTION
+// ===============================================
+function selectTemplate(evalType, csat) {
+  selectedTemplate = { evalType, csat };
+  document.querySelectorAll('.template-card').forEach(c => c.classList.remove('selected'));
+  document.getElementById(`tpl-${evalType === 'historical' ? 'hist' : 'live'}-${csat === 'yes' ? 'csat' : 'no'}`).classList.add('selected');
+
+  const info = document.getElementById('tplInfoAlert');
+  const typeLabel = evalType === 'historical' ? '📂 Historical' : '🔴 Live';
+  const csatLabel = csat === 'yes' ? 'with CSAT script evaluation' : 'without CSAT';
+  info.textContent = `${typeLabel} template selected -- ${csatLabel}. Choose call category below.`;
+  document.getElementById('tplSelectedInfo').style.display = 'block';
+  document.getElementById('fCallCategory').value = '';
+  document.getElementById('evalFormContainer').innerHTML = '';
+  document.getElementById('evalSubmitSection').style.display = 'none';
+  document.getElementById('callDetailsCard').style.display = 'none';
+}
+
+function resetNewEval() {
+  selectedTemplate = null;
+  currentAnswers = {};
+  currentFatalAnswers = {};
+  document.querySelectorAll('.template-card').forEach(c => c.classList.remove('selected'));
+  document.getElementById('tplSelectedInfo').style.display = 'none';
+  document.getElementById('callDetailsCard').style.display = 'none';
+  document.getElementById('evalFormContainer').innerHTML = '';
+  document.getElementById('evalSubmitSection').style.display = 'none';
+  document.getElementById('fDate').value = new Date().toLocaleDateString('en-CA');
+  ['fAgentName','fAgentId','fTLName','fTLId','fTimestamp','fDuration','fCallingNum','fContactID','fRemarks','fCallRemarks'].forEach(id => {
+    const el = document.getElementById(id); if (el) el.value = '';
+  });
+}
+
+// ===============================================
+//  RENDER EVAL FORM
+// ===============================================
+function renderEvalForm() {
+  const cat = document.getElementById('fCallCategory').value;
+  if (!cat || !selectedTemplate) return;
+
+  document.getElementById('callDetailsCard').style.display = 'block';
+
+  const { csat } = selectedTemplate;
+  let questions = cat === 'standard' ? [...STD_QS] : [...GEN_QS];
+  const csatQ = cat === 'standard' ? STD_CSAT : GEN_CSAT;
+  if (csat === 'yes') {
+    if (cat === 'standard') questions.splice(questions.findIndex(q=>q.id==='s34'), 0, csatQ);
+    else questions.splice(questions.findIndex(q=>q.id==='g27'), 0, csatQ);
+  }
+
+  const totalWt = questions.reduce((a,q) => a + q.wt, 0);
+  const catLabel = cat === 'standard' ? 'Standard Call' : 'General Enquiries';
+  const tplLabel = selectedTemplate.evalType === 'historical' ? 'Historical' : 'Live';
+
+  let html = `<div class="card"><div class="card-header">
+    <div><div class="card-title">📝 ${tplLabel} -- ${catLabel} Evaluation ${csat==='yes'?'(with CSAT)':''}</div>
+    <div class="card-subtitle">Score each item. All Include: Yes/No . 0/1/2 scale</div></div>
+    <div class="pill">Total: ${totalWt} pts</div></div>
+    <div style="display:grid;grid-template-columns:26px 1fr 60px 150px 1fr;gap:12px;padding:6px 0;border-bottom:1px solid var(--border2)">
+      <span class="text-sm">#</span><span class="text-sm">Question</span>
+      <span class="text-sm" style="text-align:center">Wt</span>
+      <span class="text-sm" style="text-align:center">Answer</span>
+      <span class="text-sm">Comment</span>
+    </div>`;
+  html += `<div class="eval-section-hdr">📋 Call Quality Criteria</div>`;
+  questions.forEach((q, i) => { html += renderQRow(q, i+1); });
+  html += `<div class="fatal-section-hdr">⛔ Fatal Errors &nbsp;<span style="font-size:10px;font-weight:400;opacity:.8">(Y = Fatal Error triggered → Total Score = 0%)</span></div>`;
+  html += `<div style="display:grid;grid-template-columns:26px 1fr 120px 1fr;gap:12px;padding:6px 0;border-bottom:1px solid var(--border2)">
+    <span class="text-sm">#</span><span class="text-sm">Fatal Error</span>
+    <span class="text-sm" style="text-align:center">Answer</span>
+    <span class="text-sm">Comment</span></div>`;
+  FATALS.forEach((fe, i) => { html += renderFatalRow(fe, i+1); });
+  html += `</div>`;
+
+  document.getElementById('evalFormContainer').innerHTML = html;
+  document.getElementById('evalSubmitSection').style.display = 'block';
+  updateScore();
+}
+
+function renderQRow(q, idx) {
+  const isYN = q.type === 'yn';
+  return `<div class="eval-row std-row" id="row-${q.id}">
+    <span class="eval-num">${idx}</span>
+    <div class="eval-q">${q.q}</div>
+    <span class="eval-wt">${q.wt}</span>
+    <div class="answer-group">
+      ${isYN
+        ? `<button class="ans-btn" onclick="setAns('${q.id}','Y','yn',${q.wt})">Y</button>
+           <button class="ans-btn" onclick="setAns('${q.id}','N','yn',${q.wt})">N</button>`
+        : `<button class="ans-btn" onclick="setAns('${q.id}','2','012',${q.wt})">2</button>
+           <button class="ans-btn" onclick="setAns('${q.id}','1','012',${q.wt})">1</button>
+           <button class="ans-btn" onclick="setAns('${q.id}','0','012',${q.wt})">0</button>`}
+    </div>
+    <input class="cmt-input" placeholder="Comment..." oninput="setComment('${q.id}',this.value)">
+  </div>`;
+}
+
+function renderFatalRow(fe, idx) {
+  return `<div class="eval-row fat-row" id="frow-${fe.id}">
+    <span class="eval-num">${idx}</span>
+    <div class="eval-q">${fe.q}</div>
+    <div class="answer-group">
+      <button class="ans-btn fat-btn" onclick="setFatal('${fe.id}','Y')">Y</button>
+      <button class="ans-btn fat-btn" onclick="setFatal('${fe.id}','N')">N</button>
+    </div>
+    <input class="cmt-input" placeholder="Comment..." oninput="setFatalComment('${fe.id}',this.value)">
+  </div>`;
+}
+
+function setAns(id, val, type, wt) {
+  let score = type === 'yn' ? (val==='Y'?wt:0) : val==='2'?wt:val==='1'?wt*.5:0;
+  currentAnswers[id] = { val, score, comment: currentAnswers[id]?.comment||'' };
+  const row = document.getElementById('row-'+id); if (!row) return;
+  const btns = row.querySelectorAll('.ans-btn');
+  btns.forEach(b => b.className = 'ans-btn');
+  if (type === 'yn') {
+    btns[0].className = 'ans-btn'+(val==='Y'?' sel-y':'');
+    btns[1].className = 'ans-btn'+(val==='N'?' sel-n':'');
+  } else {
+    btns[0].className = 'ans-btn'+(val==='2'?' sel-2':'');
+    btns[1].className = 'ans-btn'+(val==='1'?' sel-1':'');
+    btns[2].className = 'ans-btn'+(val==='0'?' sel-0x':'');
+  }
+  updateScore();
+}
+
+function setFatal(id, val) {
+  currentFatalAnswers[id] = { val, comment: currentFatalAnswers[id]?.comment||'' };
+  const row = document.getElementById('frow-'+id); if (!row) return;
+  const btns = row.querySelectorAll('.ans-btn');
+  btns[0].className = 'ans-btn fat-btn'+(val==='Y'?' sel-y':'');
+  btns[1].className = 'ans-btn fat-btn'+(val==='N'?' sel-n':'');
+  updateScore();
+}
+
+function setComment(id, val) { if (!currentAnswers[id]) currentAnswers[id]={val:null,score:0,comment:''}; currentAnswers[id].comment=val; }
+function setFatalComment(id, val) { if (!currentFatalAnswers[id]) currentFatalAnswers[id]={val:null,comment:''}; currentFatalAnswers[id].comment=val; }
+
+function updateScore() {
+  const cat = document.getElementById('fCallCategory')?.value;
+  if (!cat || !selectedTemplate) return;
+  let questions = cat==='standard'?[...STD_QS]:[...GEN_QS];
+  if (selectedTemplate.csat==='yes') questions.push(cat==='standard'?STD_CSAT:GEN_CSAT);
+  const totalWt = questions.reduce((a,q)=>a+q.wt,0);
+  const earned = questions.reduce((a,q)=>a+(currentAnswers[q.id]?.score||0),0);
+  const hasFatal = Object.values(currentFatalAnswers).some(f=>f.val==='Y');
+  const pct = hasFatal ? 0 : totalWt>0 ? Math.round(earned/totalWt*100) : 0;
+  const big = document.getElementById('scoreBig'); if (!big) return;
+  big.textContent = pct+'%';
+  big.style.color = pct>=80?'var(--green)':pct>=60?'var(--amber)':'var(--red)';
+  document.getElementById('scoreSubtotal').textContent = `${earned.toFixed(1)} / ${totalWt}`;
+  document.getElementById('fatalIndicator').innerHTML = hasFatal
+    ? '⛔ FATAL ERROR -- Score = 0%' : '✅ No Fatal Errors';
+  document.getElementById('fatalIndicator').style.color = hasFatal?'var(--red)':'var(--green)';
+}
+
+// ===============================================
+//  SAVE TO SUPABASE
+// ===============================================
+async function saveEval(status) {
+  const agentName = document.getElementById('fAgentName').value.trim();
+  const cat = document.getElementById('fCallCategory').value;
+  if (!agentName) { alert('Please enter agent name'); return; }
+  if (!cat) { alert('Please select call category'); return; }
+  if (!selectedTemplate) { alert('Please select a template'); return; }
+
+  let questions = cat==='standard'?[...STD_QS]:[...GEN_QS];
+  if (selectedTemplate.csat==='yes') questions.push(cat==='standard'?STD_CSAT:GEN_CSAT);
+  const totalWt = questions.reduce((a,q)=>a+q.wt,0);
+  const earned = questions.reduce((a,q)=>a+(currentAnswers[q.id]?.score||0),0);
+  const hasFatal = Object.values(currentFatalAnswers).some(f=>f.val==='Y');
+  const score = hasFatal?0:totalWt>0?Math.round(earned/totalWt*100):0;
+
+  const payload = {
+    agent_id: document.getElementById('fAgentId').value || null,
+    agent_name: agentName,
+    tl_id: document.getElementById('fTLId').value || null,
+    tl_name: document.getElementById('fTLName').value || null,
+    eval_type: selectedTemplate.evalType,
+    csat: selectedTemplate.csat,
+    call_category: cat,
+    date: document.getElementById('fDate').value || null,
+    timestamp: document.getElementById('fTimestamp').value || null,
+    duration: document.getElementById('fDuration').value || null,
+    calling_num: document.getElementById('fCallingNum').value || null,
+    contact_id: document.getElementById('fContactID').value || null,
+    remarks: document.getElementById('fRemarks').value || null,
+    call_remarks: document.getElementById('fCallRemarks').value || null,
+    questions,
+    answers: currentAnswers,
+    fatal_answers: currentFatalAnswers,
+    has_fatal: hasFatal,
+    score,
+    earned_pts: earned,
+    total_wt: totalWt,
+    status,
+    workflow: [{ role:'qa', action: status==='draft'?'Saved Draft':'Submitted to TL', ts: new Date().toISOString(), note:'', by: currentStaff?.name||'' }],
+    qa_user_id: currentUser?.id || null,
+    qa_user_name: currentStaff?.name || null,
+  };
+
+  setLoading(true, status==='draft'?'Saving draft...':'Submitting evaluation...');
+  const { data, error } = await supa.from('qa_evaluations').insert(payload).select().single();
+  setLoading(false);
+
+  if (error) {
+    // Table might not exist yet -- show setup instructions
+    if (error.code === '42P01') {
+      alert('⚠️ The qa_evaluations table does not exist yet.\n\nRun the SQL setup script in your Supabase SQL editor.\n\nCheck the browser console for the full CREATE TABLE statement.');
+      console.log('%cRun this in Supabase SQL Editor:', 'color:orange;font-size:14px');
+      console.log(`CREATE TABLE qa_evaluations (
+  id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
+  ref serial,
+  agent_id uuid,
+  agent_name text,
+  tl_id uuid,
+  tl_name text,
+  eval_type text,
+  csat text,
+  call_category text,
+  date date,
+  "timestamp" time,
+  duration text,
+  calling_num text,
+  contact_id text,
+  remarks text,
+  call_remarks text,
+  questions jsonb,
+  answers jsonb,
+  fatal_answers jsonb,
+  has_fatal boolean DEFAULT false,
+  score numeric DEFAULT 0,
+  earned_pts numeric DEFAULT 0,
+  total_wt numeric DEFAULT 0,
+  status text DEFAULT 'draft',
+  workflow jsonb DEFAULT '[]',
+  qa_user_id uuid,
+  qa_user_name text,
+  created_at timestamptz DEFAULT now(),
+  updated_at timestamptz DEFAULT now()
+);
+ALTER TABLE qa_evaluations ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "all_access" ON qa_evaluations FOR ALL USING (true) WITH CHECK (true);`);
+    } else {
+      alert('Error saving: ' + error.message);
+    }
+    return;
+  }
+
+  alert(status==='draft' ? `✅ Draft saved -- Ref #${data.ref}` : `✅ Evaluation #${data.ref} submitted to TL for review.`);
+  showPage('evaluations');
+}
+
+// ===============================================
+//  LOAD DATA
+// ===============================================
+async function loadEvals(filters = {}) {
+  let q = supa.from('qa_evaluations').select('*').order('created_at', { ascending: false });
+  if (filters.status)   q = q.eq('status', filters.status);
+  if (filters.statuses) q = q.in('status', filters.statuses);
+
+  // Agent-level DB filter: push down to Supabase for efficiency
+  const base  = (currentStaff?.role || '').toLowerCase();
+  const email = (currentUser?.email || '').toLowerCase();
+  const isAdmin   = base === 'admin' || ROLE_MAP_EMAIL[email] === 'admin' || roleOverrides[email] === 'admin';
+  const isManager = base === 'manager' || base === 'mgr';
+  const isAgent   = base === 'agent';
+
+  if (isAgent && currentStaff?.name) {
+    q = q.ilike('agent_name', currentStaff.name); // case-insensitive match
+  }
+
+  const { data, error } = await q;
+  if (error) { console.error(error); return []; }
+  let rows = data || [];
+
+  // Post-fetch filter for TL (team-based, can't do in DB without join)
+  // Use resolveRoleFull to handle "Team Leader" staff_role value
+  const mappedRole = resolveRoleFull(currentStaff?.name, email) || base;
+  const isTL = mappedRole === 'tl' || base === 'tl'
+    || base === 'team leader' || base === 'team_leader';
+  if (!isAdmin && !isManager && !isAgent && isTL) {
+    rows = filterByMyTeam(rows);
+  }
+
+  return rows;
+}
+
+async function loadDashboard() {
+  const all = await loadEvals();
+  evaluations = all;
+
+  // ── Top stats ──
+  document.getElementById('st-total').textContent    = all.length;
+  document.getElementById('st-pending').textContent  = all.filter(e=>['submitted','tl-approved'].includes(e.status)).length;
+  document.getElementById('st-disputed').textContent = all.filter(e=>['tl-disputed','agent-disputed'].includes(e.status)).length;
+  document.getElementById('st-closed').textContent   = all.filter(e=>e.status==='closed').length;
+
+  // ── QA Performance ──
+  renderQAPerformance(all);
+
+  // ── Score Overview ──
+  renderScoreOverview(all);
+
+  // ── Recent evals table ──
+  const tbody = document.getElementById('dashRecentBody');
+  const recent = all.slice(0, 8); // already filtered by loadEvals
+  if (!recent.length) {
+    tbody.innerHTML = '<tr><td colspan="8"><div class="empty-state"><div class="icon">📋</div><p>No evaluations yet. Create your first one!</p></div></td></tr>';
+    renderQAPerformance([]);
+    renderScoreOverview([]);
+    return;
+  }
+  tbody.innerHTML = recent.map(e => {
+    const evalDT   = e.created_at ? new Date(e.created_at) : null;
+    const evalDate = evalDT ? evalDT.toLocaleDateString('en-MY',{day:'2-digit',month:'2-digit',year:'numeric'}) : '--';
+    return `<tr>
+    <td><span style="font-family:'JetBrains Mono',monospace;color:var(--accent)">#${e.ref}</span></td>
+    <td>${e.agent_name||'--'}</td>
+    <td style="font-size:12px;color:var(--text3)">${e.tl_name||'--'}</td>
+    <td><span class="pill">${tplLabel(e)}</span></td>
+    <td><span class="score-badge ${scoreClass(e.score)}">${e.score}%</span></td>
+    <td>${statusBadge(e.status)}</td>
+    <td style="font-size:12px;color:var(--text3)">${e.date||'--'}</td>
+    <td style="font-size:12px;color:var(--text3)">${evalDate}</td>
+    <td style="font-size:12px;color:var(--accent)">${e.qa_user_name||'--'}</td>
+    <td><button class="btn btn-ghost btn-sm" onclick="viewEval('${e.id}')">View</button></td>
+  </tr>`;}).join('');
+  updateSidebarBadges(all);
+}
+
+function renderQAPerformance(all) {
+  const el = document.getElementById('qaPerformanceList');
+  if (!el) return;
+
+  // Group by qa_user_name
+  const qaMap = {};
+  all.forEach(e => {
+    const qa = e.qa_user_name || 'Unknown';
+    if (!qaMap[qa]) qaMap[qa] = { total:0, scores:[], fatal:0, closed:0 };
+    qaMap[qa].total++;
+    if (e.score !== null && e.score !== undefined) qaMap[qa].scores.push(Number(e.score));
+    if (e.has_fatal) qaMap[qa].fatal++;
+    if (e.status === 'closed') qaMap[qa].closed++;
+  });
+
+  const entries = Object.entries(qaMap).sort((a,b) => b[1].total - a[1].total);
+
+  if (!entries.length) {
+    el.innerHTML = '<div class="text-sm" style="text-align:center;padding:20px;color:var(--text3)">No evaluations yet.</div>';
+    return;
+  }
+
+  const maxTotal = Math.max(...entries.map(([,v]) => v.total));
+
+  el.innerHTML = entries.map(([name, v]) => {
+    const avg = v.scores.length ? Math.round(v.scores.reduce((a,b)=>a+b,0) / v.scores.length) : 0;
+    const barW = maxTotal > 0 ? Math.round((v.total / maxTotal) * 100) : 0;
+    const avgColor = avg >= 80 ? 'var(--green)' : avg >= 60 ? 'var(--amber)' : 'var(--red)';
+    const initials = name.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
+    return `
+      <div style="display:flex;align-items:center;gap:12px">
+        <div style="width:34px;height:34px;border-radius:50%;background:rgba(79,142,247,.15);border:2px solid var(--accent);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:var(--accent);flex-shrink:0">${initials}</div>
+        <div style="flex:1;min-width:0">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+            <span style="font-size:13px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${name}</span>
+            <div style="display:flex;gap:8px;align-items:center;flex-shrink:0;margin-left:8px">
+              <span style="font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:700;color:${avgColor}">${avg}%</span>
+              <span style="font-size:11px;color:var(--text3)">${v.total} eval${v.total!==1?'s':''}</span>
+            </div>
+          </div>
+          <div style="height:6px;background:var(--surface3);border-radius:3px;overflow:hidden">
+            <div style="height:100%;width:${barW}%;background:var(--accent);border-radius:3px;transition:width .4s"></div>
+          </div>
+          <div style="display:flex;gap:10px;margin-top:4px">
+            <span style="font-size:10px;color:var(--text3)">✅ ${v.closed} closed</span>
+            ${v.fatal ? `<span style="font-size:10px;color:var(--red)">⛔ ${v.fatal} fatal</span>` : ''}
+          </div>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+function renderScoreOverview(all) {
+  const el = document.getElementById('scoreOverviewContent');
+  if (!el) return;
+
+  const scored = all.filter(e => e.score !== null && e.score !== undefined);
+  if (!scored.length) {
+    el.innerHTML = '<div class="text-sm" style="text-align:center;padding:20px;color:var(--text3)">No scored evaluations yet.</div>';
+    return;
+  }
+
+  const scores   = scored.map(e => Number(e.score));
+  const avg      = Math.round(scores.reduce((a,b)=>a+b,0) / scores.length);
+  const highest  = Math.max(...scores);
+  const lowest   = Math.min(...scores);
+  const above80  = scores.filter(s=>s>=80).length;
+  const below60  = scores.filter(s=>s<60).length;
+  const fatal    = all.filter(e=>e.has_fatal).length;
+  const avgColor = avg>=80?'var(--green)':avg>=60?'var(--amber)':'var(--red)';
+
+  // Score distribution bands
+  const bands = [
+    { label:'90-100%', min:90, max:100, color:'var(--green)' },
+    { label:'80-89%',  min:80, max:89,  color:'#86efac' },
+    { label:'70-79%',  min:70, max:79,  color:'var(--amber)' },
+    { label:'60-69%',  min:60, max:69,  color:'#fb923c' },
+    { label:'Below 60%',min:0, max:59,  color:'var(--red)' },
+  ];
+
+  el.innerHTML = `
+    <!-- Big average -->
+    <div style="text-align:center;padding:8px 0 16px;border-bottom:1px solid var(--border)">
+      <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:var(--text3);margin-bottom:4px">Overall Average Score</div>
+      <div style="font-size:44px;font-weight:700;font-family:'JetBrains Mono',monospace;color:${avgColor}">${avg}%</div>
+      <div style="font-size:12px;color:var(--text3);margin-top:2px">across ${scored.length} evaluation${scored.length!==1?'s':''}</div>
+    </div>
+
+    <!-- Key metrics row -->
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;text-align:center">
+      <div style="background:var(--surface2);border-radius:var(--radius);padding:10px">
+        <div style="font-size:18px;font-weight:700;font-family:'JetBrains Mono',monospace;color:var(--green)">${highest}%</div>
+        <div style="font-size:10px;color:var(--text3);margin-top:2px">Highest</div>
+      </div>
+      <div style="background:var(--surface2);border-radius:var(--radius);padding:10px">
+        <div style="font-size:18px;font-weight:700;font-family:'JetBrains Mono',monospace;color:var(--red)">${lowest}%</div>
+        <div style="font-size:10px;color:var(--text3);margin-top:2px">Lowest</div>
+      </div>
+      <div style="background:var(--surface2);border-radius:var(--radius);padding:10px">
+        <div style="font-size:18px;font-weight:700;font-family:'JetBrains Mono',monospace;color:var(--red)">${fatal}</div>
+        <div style="font-size:10px;color:var(--text3);margin-top:2px">Fatal Errors</div>
+      </div>
+    </div>
+
+    <!-- Score distribution -->
+    <div>
+      <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:var(--text3);margin-bottom:8px">Score Distribution</div>
+      ${bands.map(b => {
+        const count = scores.filter(s=>s>=b.min&&s<=b.max).length;
+        const pct   = scored.length > 0 ? Math.round((count/scored.length)*100) : 0;
+        return `<div style="display:flex;align-items:center;gap:8px;margin-bottom:5px">
+          <span style="font-size:11px;color:var(--text3);width:72px;flex-shrink:0">${b.label}</span>
+          <div style="flex:1;height:8px;background:var(--surface3);border-radius:4px;overflow:hidden">
+            <div style="height:100%;width:${pct}%;background:${b.color};border-radius:4px;transition:width .4s"></div>
+          </div>
+          <span style="font-size:11px;font-family:'JetBrains Mono',monospace;color:${b.color};width:28px;text-align:right">${count}</span>
+        </div>`;
+      }).join('')}
+    </div>`;
+}
+
+async function loadAllEvals() {
+  const all = await loadEvals();
+  evaluations = all;
+  const tbody = document.getElementById('allEvalsBody');
+  if (!all.length) { tbody.innerHTML = '<tr><td colspan="9"><div class="empty-state"><div class="icon">📋</div><p>No evaluations yet.</p></div></td></tr>'; return; }
+  tbody.innerHTML = all.map(e => {
+    const evalDT = e.created_at ? new Date(e.created_at) : null;
+    const evalDate = evalDT ? evalDT.toLocaleDateString('en-MY',{day:'2-digit',month:'2-digit',year:'numeric'}) : '--';
+    const evalTime = evalDT ? evalDT.toLocaleTimeString('en-MY',{hour:'2-digit',minute:'2-digit',hour12:true}) : '--';
+    return `<tr>
+    <td><span style="font-family:'JetBrains Mono',monospace;color:var(--accent)">#${e.ref}</span></td>
+    <td>${e.agent_name||'--'}</td>
+    <td style="font-size:12px;color:var(--text3)">${e.tl_name||'--'}</td>
+    <td><span class="pill">${tplLabel(e)}</span></td>
+    <td><span class="score-badge ${scoreClass(e.score)}">${e.score}%</span></td>
+    <td>${e.has_fatal?'<span style="color:var(--red)">⛔ Yes</span>':'<span style="color:var(--green)">✅ No</span>'}</td>
+    <td>${statusBadge(e.status)}</td>
+    <td style="font-size:12px;color:var(--text3)">${e.date||'--'}</td>
+    <td style="font-size:12px;color:var(--text3)">${evalDate}</td>
+    <td style="font-size:12px;color:var(--text3)">${evalTime}</td>
+    <td style="font-size:12px;color:var(--accent)">${e.qa_user_name||'--'}</td>
+    <td style="display:flex;gap:6px">
+      <button class="btn btn-ghost btn-sm" onclick="viewEval('${e.id}')">View</button>
+      ${e.status==='draft' ? `<button class="btn btn-primary btn-sm" onclick="quickSubmit('${e.id}')">Submit</button>` : ''}
+    </td>
+  </tr>`;}).join('');
+  updateSidebarBadges(all);
+}
+
+// Filter evals to only those belonging to current agent
+function filterByMyAgent(rows) {
+  const base = (currentStaff?.role || '').toLowerCase();
+  if (base !== 'agent') return rows; // non-agents see all (subject to other filters)
+  const myName = (currentStaff?.name || '').toLowerCase().trim();
+  if (!myName) return rows;
+  return rows.filter(e =>
+    (e.agent_name || '').toLowerCase().trim() === myName
+  );
+}
+
+// Master filter: applies both team filter (TL) and agent filter (Agent) as appropriate
+function filterByRole(rows) {
+  const base = (currentStaff?.role || '').toLowerCase();
+  const email = (currentUser?.email || '').toLowerCase();
+  const isAdmin   = base === 'admin' || ROLE_MAP_EMAIL[email] === 'admin' || roleOverrides[email] === 'admin';
+  const isManager = base === 'manager' || base === 'mgr';
+  if (isAdmin || isManager) return rows;           // full access
+  if (base === 'agent')     return filterByMyAgent(rows);
+  if (base === 'tl')        return filterByMyTeam(rows);
+  if (base === 'qa')        return rows;           // QA sees all evals
+  return rows;
+}
+
+// EMAIL -> team key map (TL email -> agent team column value)
+const TL_EMAIL_TEAM_KEY = {
+  'asriza.anwar@xox.com.my':  'Asriza',
+  'asrul.rezman@xox.com.my':  'Asrul',
+  'ardina@xox.com.my':        'Intan',
+  'saputra.hanim@xox.com.my': 'Saputra',
+  'zaid.amirul@xox.com.my':   'Zaid',
+};
+
+// NAME -> team key map (fallback)
+const TL_NAME_TEAM_KEY = {
+  'asriza bin anwar':                 'Asriza',
+  'asriza':                           'Asriza',
+  'asrul rezman bin muhamad fauzi':   'Asrul',
+  'asrul':                            'Asrul',
+  'intan ardina binti ramli':         'Intan',
+  'intan':                            'Intan',
+  'ardina':                           'Intan',
+  'saputra hanim purnama bin tarsan': 'Saputra',
+  'saputra':                          'Saputra',
+  'zaid amirul bin shaharom':         'Zaid',
+  'zaid':                             'Zaid',
+};
+
+// Get the team key for current TL
+function getMyTeamKey() {
+  const email = (currentUser?.email || '').toLowerCase().trim();
+  if (TL_EMAIL_TEAM_KEY[email]) return TL_EMAIL_TEAM_KEY[email];
+  const name = (currentStaff?.name || '').toLowerCase().trim();
+  if (TL_NAME_TEAM_KEY[name]) return TL_NAME_TEAM_KEY[name];
+  // Partial match -- check if name starts with any key
+  for (const [key, val] of Object.entries(TL_NAME_TEAM_KEY)) {
+    if (name.startsWith(key) || key.startsWith(name.split(' ')[0])) return val;
+  }
+  return currentStaff?.name?.split(' ')[0] || null;
+}
+
+// Filter evals to only show ones belonging to current TL's team agents
+function filterByMyTeam(rows) {
+  const email      = (currentUser?.email || '').toLowerCase();
+  const mappedRole = resolveRoleFull(currentStaff?.name, email) || currentStaff?.role || '';
+  const base       = mappedRole.toLowerCase();
+  const isAdmin    = base === 'admin' || ROLE_MAP_EMAIL[email] === 'admin' || roleOverrides[email] === 'admin';
+  const isManager  = base === 'manager' || base === 'mgr';
+  if (isAdmin || isManager) return rows;
+
+  const myName  = (currentStaff?.name || '').toLowerCase().trim();
+  const teamKey = getMyTeamKey(); // first word of TL full name e.g. "Intan", "Asriza"
+
+  // Agents in staff table have team = TL's first name
+  const myTeamAgents = allStaff
+    .filter(s => {
+      const agentTeam = (s._raw?.team || s.team || '').trim().toLowerCase();
+      return teamKey && agentTeam === teamKey.toLowerCase();
+    })
+    .map(s => s.name.toLowerCase().trim());
+
+  console.log('[QA Filter] TL:', currentStaff?.name, '| teamKey:', teamKey, '| myTeamAgents:', myTeamAgents);
+
+  return rows.filter(e => {
+    const agentMatch = myTeamAgents.includes((e.agent_name || '').toLowerCase().trim());
+    const tlMatch    = (e.tl_name || '').toLowerCase().trim() === myName;
+    return agentMatch || tlMatch;
+  });
+}
+
+async function loadMyTeam() {
+  const statusFilter = document.getElementById('myTeamStatusFilter')?.value;
+  const filters = statusFilter ? { status: statusFilter } : {};
+  let rows = await loadEvals(filters);
+
+  // Filter to team unless manager
+  rows = filterByMyTeam(rows);
+
+  const teamKey  = getMyTeamKey();
+  const teamLabel = teamKey ? `Team: ${teamKey}` : 'All teams';
+  const subtitle  = document.getElementById('myTeamSubtitle');
+  if (subtitle) subtitle.textContent = `${rows.length} eval(s) -- ${teamLabel}`;
+
+  // Update sidebar badge
+  const allTeamRows = await loadEvals({ status: 'submitted' });
+  const teamPending = activeViewRole !== 'manager' ? filterByMyTeam(allTeamRows) : allTeamRows;
+  document.getElementById('sbMyTeam').textContent = teamPending.length;
+
+  const tbody = document.getElementById('myTeamBody');
+  if (!rows.length) {
+    tbody.innerHTML = '<tr><td colspan="8"><div class="empty-state"><div class="icon">👥</div><p>No evaluations found for your team.</p></div></td></tr>';
+    return;
+  }
+  tbody.innerHTML = rows.map(e => {
+    const evalDT   = e.created_at ? new Date(e.created_at) : null;
+    const evalDate = evalDT ? evalDT.toLocaleDateString('en-MY',{day:'2-digit',month:'2-digit',year:'numeric'}) : '--';
+    const evalTime = evalDT ? evalDT.toLocaleTimeString('en-MY',{hour:'2-digit',minute:'2-digit',hour12:true}) : '--';
+    return `<tr>
+    <td><span style="font-family:'JetBrains Mono',monospace;color:var(--accent)">#${e.ref}</span></td>
+    <td><div style="font-weight:500">${e.agent_name||'--'}</div></td>
+    <td><span class="pill" style="font-size:10px">${tplLabel(e)}</span></td>
+    <td><span class="score-badge ${scoreClass(e.score)}">${e.score}%</span></td>
+    <td>${e.has_fatal?'<span style="color:var(--red)">⛔</span>':'<span style="color:var(--green)">✅</span>'}</td>
+    <td>${statusBadge(e.status)}</td>
+    <td style="font-size:12px;color:var(--text3)">${e.date||'--'}</td>
+    <td style="font-size:12px;color:var(--text3)">${evalDate}</td>
+    <td style="font-size:12px;color:var(--text3)">${evalTime}</td>
+    <td style="font-size:12px;color:var(--accent)">${e.qa_user_name||'--'}</td>
+    <td style="display:flex;gap:6px;flex-wrap:wrap">
+      <button class="btn btn-ghost btn-sm" onclick="viewEval('${e.id}')">View</button>
+      ${e.status==='submitted' && canActAs('tl') ? `
+        <button class="btn btn-success btn-sm" onclick="tlAction('${e.id}','approve')">✓ Approve</button>
+        <button class="btn btn-amber btn-sm" onclick="tlAction('${e.id}','dispute')">⚠ Dispute</button>` : ''}
+      ${e.status==='tl-approved' && canActAs('agent') ? `
+        <button class="btn btn-success btn-sm" onclick="agentAction('${e.id}','acknowledge')">✓ Acknowledge</button>
+        <button class="btn btn-danger btn-sm" onclick="agentAction('${e.id}','dispute')">✗ Dispute</button>` : ''}
+    </td>
+  </tr>`;}).join('');
+}
+
+async function loadPendingTL() {
+  let rows = await loadEvals({ status: 'submitted' });
+  // TLs only see their own team; managers and admins see all
+  rows = filterByMyTeam(rows);
+  const tbody = document.getElementById('pendingTLBody');
+  if (!rows.length) { tbody.innerHTML = '<tr><td colspan="7"><div class="empty-state"><div class="icon">✅</div><p>Nothing pending TL review.</p></div></td></tr>'; return; }
+  tbody.innerHTML = rows.map(e => {
+    const evalDT   = e.created_at ? new Date(e.created_at) : null;
+    const evalDate = evalDT ? evalDT.toLocaleDateString('en-MY',{day:'2-digit',month:'2-digit',year:'numeric'}) : '--';
+    const evalTime = evalDT ? evalDT.toLocaleTimeString('en-MY',{hour:'2-digit',minute:'2-digit',hour12:true}) : '--';
+    return `<tr>
+    <td><span style="font-family:'JetBrains Mono',monospace;color:var(--accent)">#${e.ref}</span></td>
+    <td>${e.agent_name||'--'}</td>
+    <td style="font-size:12px;color:var(--text3)">${e.tl_name||'--'}</td>
+    <td><span class="score-badge ${scoreClass(e.score)}">${e.score}%</span></td>
+    <td>${e.has_fatal?'<span style="color:var(--red)">⛔</span>':'<span style="color:var(--green)">✅</span>'}</td>
+    <td style="font-size:12px;color:var(--text3)">${e.date||'--'}</td>
+    <td style="font-size:12px;color:var(--text3)">${evalDate} ${evalTime}</td>
+    <td style="font-size:12px;color:var(--accent)">${e.qa_user_name||'--'}</td>
+    <td style="display:flex;gap:6px;flex-wrap:wrap">
+      <button class="btn btn-ghost btn-sm" onclick="viewEval('${e.id}')">View</button>
+      ${canActAs('tl') ? `
+        <button class="btn btn-success btn-sm" onclick="tlAction('${e.id}','approve')">✓ Approve</button>
+        <button class="btn btn-amber btn-sm" onclick="tlAction('${e.id}','dispute')">⚠ Dispute</button>` : ''}
+    </td>
+  </tr>`;}).join('');
+}
+
+async function loadPendingAgent() {
+  // loadEvals already applies agent filter via DB query
+  const rows = await loadEvals({ statuses: ['tl-approved'] });
+  const tbody = document.getElementById('pendingAgentBody');
+  if (!rows.length) { tbody.innerHTML = '<tr><td colspan="5"><div class="empty-state"><div class="icon">✅</div><p>Nothing pending agent acknowledgement.</p></div></td></tr>'; return; }
+  tbody.innerHTML = rows.map(e => `<tr>
+    <td><span style="font-family:'JetBrains Mono',monospace;color:var(--accent)">#${e.ref}</span></td>
+    <td>${e.agent_name||'--'}</td>
+    <td><span class="score-badge ${scoreClass(e.score)}">${e.score}%</span></td>
+    <td>${statusBadge('tl-approved')}</td>
+    <td style="display:flex;gap:6px">
+      <button class="btn btn-ghost btn-sm" onclick="viewEval('${e.id}')">View</button>
+      ${canActAs('agent') ? `
+        <button class="btn btn-success btn-sm" onclick="agentAction('${e.id}','acknowledge')">✓ Acknowledge</button>
+        <button class="btn btn-danger btn-sm" onclick="agentAction('${e.id}','dispute')">✗ Dispute</button>` : ''}
+    </td>
+  </tr>`).join('');
+}
+
+async function loadDisputes() {
+  const rows = await loadEvals({ statuses: ['tl-disputed','agent-disputed'] });
+  const tbody = document.getElementById('disputesBody');
+  if (!rows.length) { tbody.innerHTML = '<tr><td colspan="6"><div class="empty-state"><div class="icon">✅</div><p>No active disputes.</p></div></td></tr>'; return; }
+  const myRole = currentStaff?.role;
+  tbody.innerHTML = rows.map(e => {
+    const lastWf = (e.workflow||[]).slice(-1)[0];
+    return `<tr>
+      <td><span style="font-family:'JetBrains Mono',monospace;color:var(--accent)">#${e.ref}</span></td>
+      <td>${e.agent_name||'--'}</td>
+      <td><span class="score-badge ${scoreClass(e.score)}">${e.score}%</span></td>
+      <td>${e.status==='tl-disputed'?'<span style="color:var(--purple)">TL</span>':'<span style="color:var(--green)">Agent</span>'}</td>
+      <td style="font-size:12px;color:var(--text3);max-width:200px">${lastWf?.note||'--'}</td>
+      <td style="display:flex;gap:6px">
+        <button class="btn btn-ghost btn-sm" onclick="viewEval('${e.id}')">View</button>
+        ${canActAs('manager') ? `<button class="btn btn-primary btn-sm" onclick="resolveDispute('${e.id}')">Resolve</button>` : ''}
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+// ===============================================
+//  WORKFLOW ACTIONS
+// ===============================================
+async function quickSubmit(id) {
+  await updateEvalStatus(id, 'submitted', 'qa', 'Submitted to TL', '');
+  loadAllEvals();
+}
+
+function tlAction(id, action) {
+  const isApprove = action === 'approve';
+  const bodyHTML = isApprove ? `
+    <div class="form-group">
+      <label class="form-label">Coaching Notes for Agent <span style="color:var(--text3)">(optional)</span></label>
+      <textarea class="form-textarea" id="actionNote" rows="3"
+        placeholder="e.g. Good job on opening script. Work on hold time management..."></textarea>
+    </div>
+    <div style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:12px;margin-top:4px">
+      <div style="font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Coaching Focus Areas</div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap" id="coachingTags">
+        ${['Opening Script','Verification','Hold Time','Tone & Pace','Active Listening',
+           'Problem Solving','CSAT Script','CRM Notes','Caselog Category','Professionalism']
+          .map(t => `<button type="button" class="coach-tag" onclick="toggleCoachTag(this)">${t}</button>`).join('')}
+      </div>
+    </div>` : `
+    <div class="form-group">
+      <label class="form-label">Reason for Dispute <span style="color:var(--red);font-size:11px">(required)</span></label>
+      <textarea class="form-textarea" id="actionNote" rows="3"
+        placeholder="State the specific issue -- incorrect scoring, missed item, etc."></textarea>
+    </div>`;
+
+  openActionModal(
+    isApprove ? '✓ Approve Evaluation' : '⚠ Dispute Evaluation',
+    isApprove
+      ? `<div class="alert alert-success">Approving sends this evaluation to the agent for acknowledgement.</div>`
+      : `<div class="alert alert-warning">Disputing escalates back to QA for correction.</div>`,
+    bodyHTML,
+    async () => {
+      const note = document.getElementById('actionNote').value.trim();
+      if (!isApprove && !note) { alert('Please provide a dispute reason'); return false; }
+
+      // Collect coaching tags if approving
+      let fullNote = note;
+      if (isApprove) {
+        const tags = [...document.querySelectorAll('.coach-tag.selected')].map(t => t.textContent);
+        if (tags.length) fullNote = (note ? note + '\n\nFocus areas: ' : 'Focus areas: ') + tags.join(', ');
+      }
+
+      await updateEvalStatus(id,
+        isApprove ? 'tl-approved' : 'tl-disputed', 'tl',
+        isApprove ? 'TL Approved' : 'TL Disputed', fullNote);
+
+      // Refresh whichever page triggered this
+      const activePage = document.querySelector('.page.active')?.id?.replace('page-','');
+      if (activePage === 'my-team') loadMyTeam();
+      else loadPendingTL();
+      return true;
+    },
+    isApprove ? 'btn-success' : 'btn-amber',
+    isApprove ? '✓ Approve & Send to Agent' : '⚠ Submit Dispute'
+  );
+}
+
+function toggleCoachTag(btn) {
+  btn.classList.toggle('selected');
+}
+
+function agentAction(id, action) {
+  openActionModal(
+    action==='acknowledge'?'✓ Acknowledge Evaluation':'✗ Dispute Evaluation',
+    action==='acknowledge'
+      ? `<div class="alert alert-success">Acknowledging this evaluation will close the record.</div>`
+      : `<div class="alert alert-danger">Your dispute will be escalated to QA and management for resolution.</div>`,
+    `<div class="form-group">
+      <label class="form-label">Notes ${action==='dispute'?'(required -- state your reason)':'(optional)'}</label>
+      <textarea class="form-textarea" id="actionNote" rows="3" placeholder="${action==='dispute'?'State reason for disputing...':'Optional comments...'}"></textarea>
+    </div>`,
+    async () => {
+      const note = document.getElementById('actionNote').value;
+      if (action==='dispute'&&!note.trim()){alert('Please provide a dispute reason');return false;}
+      if (action === 'acknowledge') {
+        // Agent acknowledges -> auto close (agent is last step)
+        const wf = [
+          {role:'agent', action:'Agent Acknowledged', ts:new Date().toISOString(), note, by:currentStaff?.name||''},
+          {role:'system', action:'Closed',            ts:new Date().toISOString(), note:'Closed — acknowledged by agent', by:'System'}
+        ];
+        await appendWorkflowAndStatus(id, 'closed', wf);
+      } else {
+        const wf = [{role:'agent', action:'Agent Disputed', ts:new Date().toISOString(), note, by:currentStaff?.name||''}];
+        await appendWorkflowAndStatus(id, 'agent-disputed', wf);
+      }
+      loadPendingAgent(); return true;
+    },
+    action==='acknowledge'?'btn-success':'btn-danger',
+    action==='acknowledge'?'✓ Acknowledge':'✗ Submit Dispute'
+  );
+}
+
+function resolveDispute(id) {
+  openActionModal(
+    '🔒 Resolve Dispute',
+    `<div class="alert alert-info">Select resolution and provide notes to close this dispute.</div>`,
+    `<div class="form-group">
+      <label class="form-label">Resolution</label>
+      <select class="form-select" id="resolutionType">
+        <option value="uphold">Uphold original evaluation</option>
+        <option value="revise">Revise / amend evaluation</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Resolution Notes (required)</label>
+      <textarea class="form-textarea" id="actionNote" rows="3" placeholder="State your resolution and rationale..."></textarea>
+    </div>`,
+    async () => {
+      const note = document.getElementById('actionNote').value;
+      const res  = document.getElementById('resolutionType').value;
+      if (!note.trim()){alert('Please provide resolution notes');return false;}
+      // After dispute resolved, agent must still acknowledge to close
+      const wf = [{
+        role:'mgr',
+        action: res==='uphold' ? 'Dispute Resolved — Upheld' : 'Dispute Resolved — Revised',
+        ts: new Date().toISOString(), note, by: currentStaff?.name||''
+      }];
+      await appendWorkflowAndStatus(id, 'tl-approved', wf);
+      // tl-approved means agent still needs to acknowledge
+      loadDisputes(); return true;
+    },
+    'btn-primary','🔒 Close Dispute'
+  );
+}
+
+async function updateEvalStatus(id, status, role, action, note) {
+  // Fetch current workflow
+  const { data } = await supa.from('qa_evaluations').select('workflow').eq('id', id).single();
+  const wf = [...(data?.workflow||[]), { role, action, ts: new Date().toISOString(), note, by: currentStaff?.name||'' }];
+  await supa.from('qa_evaluations').update({ status, workflow: wf, updated_at: new Date().toISOString() }).eq('id', id);
+}
+
+async function appendWorkflowAndStatus(id, status, newSteps) {
+  const { data } = await supa.from('qa_evaluations').select('workflow').eq('id', id).single();
+  const wf = [...(data?.workflow||[]), ...newSteps];
+  await supa.from('qa_evaluations').update({ status, workflow: wf, updated_at: new Date().toISOString() }).eq('id', id);
+}
+
+// ===============================================
+//  VIEW DETAIL MODAL
+// ===============================================
+async function viewEval(id) {
+  setLoading(true, 'Loading evaluation...');
+  const { data: e } = await supa.from('qa_evaluations').select('*').eq('id', id).single();
+  setLoading(false);
+  if (!e) return;
+
+  document.getElementById('detailModalTitle').textContent = `Evaluation #${e.ref} -- ${e.agent_name}`;
+  const scoreColor = e.score>=80?'var(--green)':e.score>=60?'var(--amber)':'var(--red)';
+  const qs = e.questions || [];
+  const answers = e.answers || {};
+  const fatalAnswers = e.fatal_answers || {};
+  const myRole = currentStaff?.role;
+
+  let answersHTML = qs.map((q,i) => {
+    const a = answers[q.id]||{};
+    const scoreStr = a.score!==undefined ? `${Number(a.score).toFixed(1)}/${q.wt}` : '--';
+    const ansColor = a.val==='Y'||a.val==='2'?'var(--green)':a.val==='N'||a.val==='0'?'var(--red)':'var(--amber)';
+    return `<div style="display:grid;grid-template-columns:22px 1fr 50px 55px;gap:8px;padding:7px 0;border-bottom:1px solid var(--border);align-items:start">
+      <span style="font-size:11px;color:var(--text3)">${i+1}</span>
+      <span style="font-size:12px">${q.q}${a.comment?`<br><span style="color:var(--text3);font-size:11px;font-style:italic">${a.comment}</span>`:''}
+      </span>
+      <span style="font-family:'JetBrains Mono',monospace;font-size:12px;color:${ansColor};text-align:center">${a.val||'--'}</span>
+      <span style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--accent);text-align:right">${scoreStr}</span>
+    </div>`;
+  }).join('');
+
+  let fatalHTML = FATALS.map(fe => {
+    const fa = fatalAnswers[fe.id]||{};
+    return `<div style="display:grid;grid-template-columns:22px 1fr 50px;gap:8px;padding:7px 0;border-bottom:1px solid var(--border);align-items:start">
+      <span></span>
+      <span style="font-size:12px;color:${fa.val==='Y'?'var(--red)':'var(--text2)'}">${fe.q}${fa.comment?`<br><span style="color:var(--text3);font-size:11px;font-style:italic">${fa.comment}</span>`:''}</span>
+      <span style="font-family:'JetBrains Mono',monospace;font-size:12px;color:${fa.val==='Y'?'var(--red)':'var(--green)'};text-align:center">${fa.val||'--'}</span>
+    </div>`;
+  }).join('');
+
+  document.getElementById('detailModalBody').innerHTML = `
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px">
+      <div class="card" style="padding:12px;margin:0">
+        <div class="text-sm" style="margin-bottom:4px">Agent</div>
+        <div style="font-weight:600;font-size:15px">${e.agent_name}</div>
+        <div class="text-sm" style="margin-top:4px">TL: ${e.tl_name||'--'}</div>
+        <div class="text-sm" style="margin-top:2px">QA: ${e.qa_user_name||'--'}</div>
+      </div>
+      <div class="card" style="padding:12px;margin:0;text-align:center">
+        <div class="text-sm" style="margin-bottom:4px">Final Score</div>
+        <div style="font-size:32px;font-weight:700;font-family:'JetBrains Mono',monospace;color:${scoreColor}">${e.score}%</div>
+        <div style="font-size:11px;color:var(--text3);margin-top:2px">${Number(e.earned_pts||0).toFixed(1)} / ${e.total_wt||0} pts</div>
+        ${e.has_fatal?'<div style="font-size:11px;color:var(--red);margin-top:4px;font-weight:600">⛔ FATAL ERROR</div>':''}
+      </div>
+    </div>
+    <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px">
+      <span class="pill">📂 ${e.eval_type==='historical'?'Historical':'Live'}</span>
+      <span class="pill">${e.call_category==='standard'?'Standard Call':'General Enquiries'}</span>
+      <span class="pill">${e.csat==='yes'?'✓ CSAT':'No CSAT'}</span>
+      <span class="pill">📅 ${e.date||'--'}</span>
+      <span class="pill">⏱ ${e.timestamp||'--'}</span>
+      <span class="pill">📞 ${e.calling_num||'--'}</span>
+      <span class="pill">🗂 ${e.contact_id||'--'}</span>
+    </div>
+    ${e.call_remarks?`<div class="alert alert-info" style="margin-bottom:12px"><strong>QA Notes:</strong> ${e.call_remarks}</div>`:''}
+
+    <!-- Timestamp summary row -->
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:16px">
+      ${[
+        {label:'📝 Evaluated',    ts: wfTime(e,'submitted')},
+        {label:'✓ TL Action',     ts: wfTime(e,'tl approved') || wfTime(e,'tl disputed')},
+        {label:'✓ Resolved',      ts: wfTime(e,'resolved')},
+        {label:'👤 Agent Action', ts: wfTime(e,'agent acknowledged') || wfTime(e,'agent disputed')},
+      ].map(t => `<div style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:10px;text-align:center">
+        <div style="font-size:10px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px">${t.label}</div>
+        <div style="font-size:11px;color:${t.ts!=='--'?'var(--text)':'var(--text3)'};">${t.ts}</div>
+      </div>`).join('')}
+    </div>
+
+    <div class="tab-bar">
+      <button class="tab-btn active" id="dtab-scores" onclick="switchDTab('scores')">Scores</button>
+      <button class="tab-btn" id="dtab-fatal" onclick="switchDTab('fatal')">Fatal Errors</button>
+      <button class="tab-btn" id="dtab-workflow" onclick="switchDTab('workflow')">Workflow</button>
+    </div>
+    <div id="dtab-scores-content">
+      <div style="display:grid;grid-template-columns:22px 1fr 50px 55px;gap:8px;padding:6px 0;border-bottom:1px solid var(--border2);margin-bottom:2px">
+        <span class="text-sm">#</span><span class="text-sm">Question</span>
+        <span class="text-sm" style="text-align:center">Ans</span><span class="text-sm" style="text-align:right">Score</span>
+      </div>
+      ${answersHTML}
+    </div>
+    <div id="dtab-fatal-content" style="display:none">
+      <div class="fatal-section-hdr" style="margin-top:0">Fatal Error Assessment</div>
+      ${fatalHTML}
+    </div>
+    <div id="dtab-workflow-content" style="display:none">
+      <div style="padding-top:8px">${buildWFHTML(e)}</div>
+    </div>`;
+
+  let footer = `<button class="btn btn-ghost" onclick="closeModal('detailModal')">Close</button>`;
+  if (e.status==='submitted' && canActAs('tl'))
+    footer += `<button class="btn btn-success" onclick="closeModal('detailModal');tlAction('${e.id}','approve')">✓ Approve</button>
+               <button class="btn btn-amber" onclick="closeModal('detailModal');tlAction('${e.id}','dispute')">⚠ Dispute</button>`;
+  if (e.status==='tl-approved' && canActAs('agent'))
+    footer += `<button class="btn btn-success" onclick="closeModal('detailModal');agentAction('${e.id}','acknowledge')">✓ Acknowledge</button>
+               <button class="btn btn-danger" onclick="closeModal('detailModal');agentAction('${e.id}','dispute')">✗ Dispute</button>`;
+  if (['tl-disputed','agent-disputed'].includes(e.status) && canActAs('manager'))
+    footer += `<button class="btn btn-primary" onclick="closeModal('detailModal');resolveDispute('${e.id}')">🔒 Resolve</button>`;
+
+  document.getElementById('detailModalFooter').innerHTML = footer;
+  document.getElementById('detailModal').classList.remove('hidden');
+}
+
+function switchDTab(tab) {
+  ['scores','fatal','workflow'].forEach(t => {
+    document.getElementById(`dtab-${t}`)?.classList.toggle('active', t===tab);
+    const el = document.getElementById(`dtab-${t}-content`);
+    if (el) el.style.display = t===tab?'block':'none';
+  });
+}
+
+function buildWFHTML(e) {
+  const steps = e.workflow||[];
+  const roleColors = {qa:'var(--accent)',tl:'var(--purple)',agent:'var(--green)',system:'var(--cyan)',mgr:'var(--amber)',manager:'var(--amber)'};
+  const roleLabels = {qa:'QA Evaluator',tl:'Team Leader',agent:'Agent',system:'System',mgr:'Manager',manager:'Manager'};
+  const roleIcons = {qa:'📝',tl:'👔',agent:'👤',system:'🔒',mgr:'⭐',manager:'⭐'};
+  let html = '<div class="wf-timeline">';
+  steps.forEach((s,i) => {
+    const isLast = i===steps.length-1;
+    const color = roleColors[s.role]||'var(--text3)';
+    const ts = new Date(s.ts).toLocaleString('en-MY',{dateStyle:'short',timeStyle:'short'});
+    html += `<div class="wf-step"><div class="wf-line">
+      <div class="wf-dot done" style="border-color:${color};color:${color}">${roleIcons[s.role]||'🔵'}</div>
+      ${!isLast?'<div class="wf-connector"></div>':''}
+    </div><div class="wf-content">
+      <div class="wf-title" style="color:${color}">${s.action}</div>
+      <div class="wf-meta">${roleLabels[s.role]||s.role}${s.by?' . '+s.by:''} . ${ts}</div>
+      ${s.note?`<div class="wf-note">${s.note}</div>`:''}
+    </div></div>`;
+  });
+  const pending = {
+    'submitted':       {label:'Pending TL Review',             next:'Team Leader to approve or dispute'},
+    'tl-approved':     {label:'Pending Agent Acknowledgement', next:'Agent must acknowledge or dispute'},
+    'tl-disputed':     {label:'Dispute Under Review',          next:'QA / Manager to resolve — then back to agent'},
+    'agent-disputed':  {label:'Agent Dispute Under Review',    next:'Manager to resolve'},
+  };
+  if (pending[e.status]) {
+    html += `<div class="wf-step"><div class="wf-line"><div class="wf-dot active">⏳</div></div>
+    <div class="wf-content"><div class="wf-title" style="color:var(--amber)">${pending[e.status].label}</div>
+    <div class="wf-meta">${pending[e.status].next}</div></div></div>`;
+  }
+  return html+'</div>';
+}
+
+// ===============================================
+//  HELPERS
+// ===============================================
+// Extract a specific action timestamp from workflow array
+function wfTime(e, action) {
+  const wf = (e.workflow || []).find(w =>
+    w.action && w.action.toLowerCase().includes(action.toLowerCase())
+  );
+  if (!wf?.ts) return '--';
+  const dt = new Date(wf.ts);
+  return dt.toLocaleDateString('en-MY',{day:'2-digit',month:'2-digit',year:'numeric'})
+    + ' ' + dt.toLocaleTimeString('en-MY',{hour:'2-digit',minute:'2-digit',hour12:true});
+}
+
+function tplLabel(e) {
+  const t = e.eval_type==='historical'?'Historical':'Live';
+  const c = e.csat==='yes'?'+CSAT':'';
+  const cat = e.call_category==='standard'?'STD':'GEN';
+  return `${t} ${cat} ${c}`.trim();
+}
+function scoreClass(s) { return s>=80?'score-high':s>=60?'score-mid':'score-low'; }
+function statusBadge(status) {
+  const m = {
+    draft:['status-draft','Draft'], submitted:['status-submitted','Submitted'],
+    'tl-approved':['status-tl-approved','TL Approved'], 'tl-disputed':['status-tl-disputed','TL Disputed'],
+    'agent-acknowledged':['status-agent-acknowledged','Agent Ack.'],
+    'agent-disputed':['status-agent-disputed','Agent Disputed'],
+    'tl-dispute-resolved':['status-tl-approved','Dispute Resolved'],
+    closed:['status-closed','Closed'],
+  };
+  const [cls,label] = m[status]||['status-draft',status];
+  return `<span class="status ${cls}">${label}</span>`;
+}
+function updateSidebarBadges(all) {
+  const a = all || evaluations;
+  document.getElementById('sbEvalCount').textContent = a.length;
+  const submitted = a.filter(e=>e.status==='submitted');
+  const myTeamSubmitted = activeViewRole !== 'manager' ? filterByMyTeam(submitted) : submitted;
+  document.getElementById('sbMyTeam').textContent = myTeamSubmitted.length;
+  document.getElementById('sbPendingTL').textContent = submitted.length;
+  document.getElementById('sbPendingAgent').textContent = a.filter(e=>e.status==='tl-approved').length;
+  document.getElementById('sbDisputes').textContent = a.filter(e=>['tl-disputed','agent-disputed'].includes(e.status)).length;
+}
+function openActionModal(title, alertHTML, bodyHTML, onConfirm, btnClass, btnLabel) {
+  document.getElementById('actionModalTitle').textContent = title;
+  document.getElementById('actionModalBody').innerHTML = alertHTML + bodyHTML;
+  document.getElementById('actionModalFooter').innerHTML = `
+    <button class="btn btn-ghost" onclick="closeModal('actionModal')">Cancel</button>
+    <button class="btn ${btnClass}" id="actionConfirmBtn" onclick="runConfirm()">${btnLabel}</button>`;
+  window._confirmFn = onConfirm;
+  document.getElementById('actionModal').classList.remove('hidden');
+}
+async function runConfirm() {
+  const btn = document.getElementById('actionConfirmBtn');
+  btn.disabled = true; btn.innerHTML = '<div class="spinner"></div>';
+  const result = await window._confirmFn();
+  if (result !== false) closeModal('actionModal');
+  else { btn.disabled = false; btn.innerHTML = btn.textContent; }
+}
+function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
+
+function forceShowLogin() {
+  setLoading(false);
+  document.getElementById('loginWrap').style.display = 'flex';
+}
+
+// ===============================================
+//  ROLE MANAGEMENT (Admin)
+// ===============================================
+
+// In-memory role overrides (persisted to localStorage as backup)
+// Structure: { email: role, ... }
+let roleOverrides = JSON.parse(localStorage.getItem('qa_role_overrides') || '{}');
+
+function saveRoleOverrides() {
+  localStorage.setItem('qa_role_overrides', JSON.stringify(roleOverrides));
+}
+
+// Merge localStorage overrides INTO ROLE_MAP_EMAIL at runtime
+function applyStoredOverrides() {
+  Object.entries(roleOverrides).forEach(([email, role]) => {
+    if (role === 'none') delete ROLE_MAP_EMAIL[email.toLowerCase()];
+    else ROLE_MAP_EMAIL[email.toLowerCase()] = role;
+  });
+}
+
+// Resolve role with stored overrides taking highest priority
+function resolveRoleFull(name, email) {
+  // 1. LocalStorage override (set by admin in this session)
+  if (email && roleOverrides[email.toLowerCase()]) {
+    const r = roleOverrides[email.toLowerCase()];
+    return r === 'none' ? null : r;
+  }
+  // 2. Hardcoded email map
+  if (email && ROLE_MAP_EMAIL[email.toLowerCase()]) return ROLE_MAP_EMAIL[email.toLowerCase()];
+  // 3. Name map
+  if (name) {
+    const n = name.toLowerCase().trim();
+    if (ROLE_MAP_NAME[n]) return ROLE_MAP_NAME[n];
+    for (const [key, role] of Object.entries(ROLE_MAP_NAME)) {
+      if (n.startsWith(key) || key.startsWith(n)) return role;
+    }
+  }
+  return null;
+}
+
+async function loadRoleManagement() {
+  const tbody = document.getElementById('rmBody');
+  if (tbody) tbody.innerHTML = '<tr><td colspan="7"><div class="empty-state"><div class="icon">⏳</div><p>Loading...</p></div></td></tr>';
+
+  // Build rows from allStaff ONLY (no phantom email-only rows)
+  // For each staff member, try to find their email from:
+  // 1. staff table _raw.email
+  // 2. match their name against ROLE_MAP_NAME keys to find a mapped email
+  const rows = [];
+
+  allStaff.forEach(s => {
+    // Get email from staff table if available
+    let email = (s._raw?.email || '').toLowerCase().trim();
+
+    // If no email in staff table, try to find it by matching name to ROLE_MAP_EMAIL
+    if (!email) {
+      for (const [mapEmail, mapRole] of Object.entries(ROLE_MAP_EMAIL)) {
+        // Check if this email's role matches what the name would resolve to
+        const nameRole = ROLE_MAP_NAME[s.name.toLowerCase().trim()];
+        if (nameRole && nameRole === mapRole) {
+          // Likely match — but only assign if name keywords match email prefix
+          const nameParts = s.name.toLowerCase().split(' ');
+          const emailPrefix = mapEmail.split('@')[0].toLowerCase();
+          if (nameParts.some(p => p.length > 2 && emailPrefix.includes(p))) {
+            email = mapEmail;
+            break;
+          }
+        }
+      }
+    }
+
+    const resolvedRole = resolveRoleFull(s.name, email);
+    const isOverride   = !!(email && roleOverrides[email]);
+    const source = isOverride                              ? 'Admin Override'
+                 : email && ROLE_MAP_EMAIL[email]         ? 'Email Map'
+                 : ROLE_MAP_NAME[s.name.toLowerCase().trim()] ? 'Name Map'
+                 : 'Staff Table';
+
+    rows.push({
+      id: s.id,
+      name: s.name,
+      email,
+      role: resolvedRole || s.role || 'agent',
+      source,
+      team: s.team || '',
+      isOverride
+    });
+  });
+
+  // Sort: admins first, then managers, TLs, QA, agents
+  const roleOrder = {admin:0, manager:1, tl:2, qa:3, agent:4};
+  rows.sort((a,b) => (roleOrder[a.role]??5) - (roleOrder[b.role]??5) || a.name.localeCompare(b.name));
+
+  window._rmRows = rows;
+  updateRmStats(rows);
+  renderRoleTable();
+}
+
+function updateRmStats(rows) {
+  document.getElementById('rm-total').textContent   = rows.length;
+  document.getElementById('rm-admin').textContent   = rows.filter(r=>r.role==='admin').length;
+  document.getElementById('rm-tl').textContent      = rows.filter(r=>r.role==='tl').length;
+  document.getElementById('rm-manager').textContent = rows.filter(r=>r.role==='manager').length;
+  document.getElementById('rm-qa').textContent      = rows.filter(r=>r.role==='qa').length;
+}
+
+function renderRoleTable() {
+  const rows = window._rmRows || [];
+  const search = (document.getElementById('rmSearch')?.value || '').toLowerCase();
+  const roleF  = document.getElementById('rmRoleFilter')?.value || '';
+  const tbody  = document.getElementById('rmBody');
+  if (!tbody) return;
+
+  let filtered = rows.filter(r => {
+    const matchSearch = !search || r.name.toLowerCase().includes(search) || r.email.toLowerCase().includes(search);
+    const matchRole   = !roleF || r.role === roleF;
+    return matchSearch && matchRole;
+  });
+
+  if (!filtered.length) {
+    tbody.innerHTML = '<tr><td colspan="7"><div class="empty-state"><div class="icon">🔍</div><p>No users match.</p></div></td></tr>';
+    return;
+  }
+
+  const roleColors = {admin:'rm-admin',manager:'rm-manager',tl:'rm-tl',qa:'rm-qa',agent:'rm-agent'};
+  const roleLabels = {admin:'Admin',manager:'Manager',tl:'Team Leader',qa:'QA Evaluator',agent:'Agent'};
+  const avatarColors = {admin:'#f59e0b',manager:'#22c55e',tl:'#a855f7',qa:'#4f8ef7',agent:'#5c6480'};
+
+  tbody.innerHTML = filtered.map(r => {
+    const initials = r.name ? r.name.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase() : '?';
+    const color = avatarColors[r.role] || '#5c6480';
+    const cls   = roleColors[r.role]  || 'rm-agent';
+    const lbl   = roleLabels[r.role]  || r.role;
+    return `<tr class="${r.isOverride?'rm-override':''}">
+      <td><div style="width:32px;height:32px;border-radius:50%;background:${color}22;border:2px solid ${color};display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:${color}">${initials}</div></td>
+      <td><div style="font-weight:500">${r.name||'<span style="color:var(--text3);font-style:italic">Unknown</span>'}</div></td>
+      <td style="font-size:12px;color:var(--text3)">${r.email||'--'}</td>
+      <td><span class="rm-role-badge ${cls}">${lbl}</span>${r.isOverride?'<span style="font-size:10px;color:var(--accent);margin-left:6px">overridden</span>':''}</td>
+      <td><span style="font-size:11px;color:var(--text3)">${r.source}</span></td>
+      <td style="font-size:12px;color:var(--text3)">${r.team||'--'}</td>
+      <td style="display:flex;gap:6px">
+        <button class="btn btn-ghost btn-sm" onclick="openEditRoleModal(${JSON.stringify(r).replace(/"/g,'&quot;')})">Edit</button>
+        ${r.isOverride?`<button class="btn btn-danger btn-sm" onclick="removeRoleOverride('${r.email}')">Remove</button>`:''}
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+function openAddRoleModal() {
+  document.getElementById('rmStaffName').value = '';
+  document.getElementById('rmStaffId').value = '';
+  document.getElementById('rmStaffEmail').value = '';
+  document.getElementById('rmSelectedRole').value = '';
+  document.querySelectorAll('.role-pick-card').forEach(c => c.classList.remove('selected'));
+  document.getElementById('roleModalTitle').textContent = 'Add / Update User Role';
+  document.getElementById('roleModal').classList.remove('hidden');
+}
+
+function openEditRoleModal(r) {
+  document.getElementById('rmStaffName').value  = r.name || '';
+  document.getElementById('rmStaffId').value    = r.id   || '';
+  document.getElementById('rmStaffEmail').value = r.email|| '';
+  document.getElementById('rmSelectedRole').value = r.role || '';
+  document.querySelectorAll('.role-pick-card').forEach(c => {
+    c.classList.toggle('selected', c.dataset.role === r.role);
+  });
+  document.getElementById('roleModalTitle').textContent = 'Edit Role: ' + (r.name || r.email);
+  document.getElementById('roleModal').classList.remove('hidden');
+}
+
+function selectRolePick(card) {
+  document.querySelectorAll('.role-pick-card').forEach(c => c.classList.remove('selected'));
+  card.classList.add('selected');
+  document.getElementById('rmSelectedRole').value = card.dataset.role;
+}
+
+function saveRoleOverride() {
+  const email = document.getElementById('rmStaffEmail').value.trim().toLowerCase();
+  const name  = document.getElementById('rmStaffName').value.trim();
+  const role  = document.getElementById('rmSelectedRole').value;
+
+  if (!email && !name) { alert('Please select a staff member or enter an email.'); return; }
+  if (!role)           { alert('Please select a role.'); return; }
+
+  const key = email || name.toLowerCase();
+  if (role === 'none') {
+    delete roleOverrides[key];
+    if (email) delete ROLE_MAP_EMAIL[email];
+  } else {
+    roleOverrides[key] = role;
+    if (email) ROLE_MAP_EMAIL[email] = role;
+    if (name)  ROLE_MAP_NAME[name.toLowerCase()] = role;
+  }
+
+  saveRoleOverrides();
+  closeModal('roleModal');
+  loadRoleManagement();
+  alert('Role saved! Changes apply on next login for this user.');
+}
+
+function removeRoleOverride(email) {
+  if (!confirm('Remove role override for ' + email + '? They will revert to their staff table role.')) return;
+  delete roleOverrides[email.toLowerCase()];
+  delete ROLE_MAP_EMAIL[email.toLowerCase()];
+  saveRoleOverrides();
+  loadRoleManagement();
+}
+
+function filterRmStaff(val) {
+  const query = val.toLowerCase();
+  const list  = document.getElementById('rmStaffList');
+  if (!allStaff.length) { list.classList.remove('open'); return; }
+  const filtered = allStaff.filter(s => s.name.toLowerCase().includes(query)).slice(0, 12);
+  if (!filtered.length) { list.classList.remove('open'); return; }
+  list.innerHTML = '';
+  filtered.forEach(s => {
+    const div = document.createElement('div');
+    div.className = 'autocomplete-item';
+    const email = s._raw?.email || '';
+    const currentRole = resolveRoleFull(s.name, email) || s.role || 'agent';
+    div.innerHTML = `<span class="ai-name">${s.name}</span><span class="ai-meta">${email} -- ${currentRole}</span>`;
+    div.addEventListener('mousedown', e => {
+      e.preventDefault();
+      document.getElementById('rmStaffName').value  = s.name;
+      document.getElementById('rmStaffId').value    = s.id;
+      document.getElementById('rmStaffEmail').value = email;
+      // Pre-select current role
+      const r = currentRole;
+      document.querySelectorAll('.role-pick-card').forEach(c => c.classList.toggle('selected', c.dataset.role===r));
+      document.getElementById('rmSelectedRole').value = r;
+      list.classList.remove('open');
+    });
+    list.appendChild(div);
+  });
+  list.classList.add('open');
+}
+
+async function sendPasswordReset() {
+  const email = document.getElementById('pwResetEmail').value.trim();
+  const result = document.getElementById('pwResetResult');
+  if (!email) { alert('Enter an email address first.'); return; }
+
+  result.style.display = 'none';
+
+  const { error } = await supa.auth.resetPasswordForEmail(email, {
+    redirectTo: window.location.href
+  });
+
+  result.style.display = 'block';
+  if (error) {
+    result.innerHTML = '<span style="color:var(--red)">Error: ' + (error.message||'Unknown error') + '</span>';
+  } else {
+    result.innerHTML = '<span style="color:var(--green)">Password reset email sent to <strong>' + email + '</strong>. Ask them to check their inbox.</span>';
+    document.getElementById('pwResetEmail').value = '';
+  }
+}
+
+// ===============================================
+//  BOOT -- safe startup with timeout + CDN fallback
+// ===============================================
+
+function supabaseLoadFailed() {
+  document.getElementById('loadingMsg').textContent = 'Network error loading Supabase library. Check your connection.';
+  setTimeout(() => {
+    document.getElementById('loadingOverlay').classList.add('hidden');
+    document.getElementById('loginWrap').style.display = 'flex';
+    showLoginError('Could not load Supabase library. Check your internet connection and refresh.');
+  }, 2000);
+}
+
+// Wait for DOM + Supabase CDN to be ready before calling init
+function safeInit() {
+  if (typeof supabase === 'undefined' || typeof supabase.createClient !== 'function') {
+    document.getElementById('loadingMsg').textContent = 'Waiting for Supabase library...';
+    setTimeout(safeInit, 300);
+    return;
+  }
+  // Library ready -- boot with a hard timeout so we never hang forever
+  // Show "skip" button after 3s so user isn't stuck forever
+  const skipTimer = setTimeout(() => {
+    const skipBtn = document.getElementById('skipLoadBtn');
+    if (skipBtn) skipBtn.style.display = 'block';
+  }, 3000);
+
+  const timeout = setTimeout(() => {
+    clearTimeout(skipTimer);
+    console.warn('[QA App] init() timed out -- showing login screen');
+    forceShowLogin();
+  }, 8000);
+
+  init().finally(() => { clearTimeout(timeout); clearTimeout(skipTimer); });
+}
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', safeInit);
+} else {
+  safeInit();
+}
+</script>
+</body>
+</html>
+</body>
+</html>
