@@ -15,12 +15,38 @@
     --text:#e8eaf0; --text2:#9ba3bc; --text3:#5c6480;
     --fatal-bg:#2d0f0f; --fatal-border:#7f1d1d; --fatal-text:#fca5a5;
     --radius:8px; --radius-lg:12px;
+    --shadow:0 1px 3px rgba(0,0,0,.3);
   }
+  /* ── LIGHT MODE ── */
+  [data-theme="light"] {
+    --bg:#f0f2f7; --surface:#ffffff; --surface2:#f5f6fa; --surface3:#eceef5;
+    --border:#dde0ea; --border2:#c8ccdb;
+    --accent:#3b7de8; --accent2:#4f46e5;
+    --green:#16a34a; --red:#dc2626; --amber:#d97706; --purple:#9333ea; --cyan:#0891b2;
+    --text:#111827; --text2:#374151; --text3:#6b7280;
+    --fatal-bg:#fef2f2; --fatal-border:#fca5a5; --fatal-text:#b91c1c;
+    --shadow:0 1px 3px rgba(0,0,0,.1);
+  }
+  [data-theme="light"] body { color-scheme: light; }
+  [data-theme="light"] .topbar { box-shadow: 0 1px 3px rgba(0,0,0,.08); }
+  [data-theme="light"] .eval-table tr:hover td { background: #f0f4ff; }
+  [data-theme="light"] .modal { box-shadow: 0 8px 32px rgba(0,0,0,.15); }
+  [data-theme="light"] .ans-btn { box-shadow: 0 1px 2px rgba(0,0,0,.06); }
+  [data-theme="light"] .card { box-shadow: var(--shadow); }
+  [data-theme="light"] .sidebar { box-shadow: 1px 0 4px rgba(0,0,0,.06); }
+  [data-theme="light"] .score-badge { opacity: .9; }
+  [data-theme="light"] .loading-overlay { background: rgba(240,242,247,.9); }
+  [data-theme="light"] .loading-overlay p { color: var(--text2); }
+  [data-theme="light"] .status::before { opacity: .8; }
+  [data-theme="light"] .spinner { border-color: rgba(0,0,0,.15); border-top-color: var(--accent); }
+  [data-theme="light"] pre { border: 1px solid var(--border); }
   *{box-sizing:border-box;margin:0;padding:0}
+  html{transition:background .25s,color .25s}
+  body,input,select,textarea,button{transition:background .2s,border-color .2s,color .15s}
   body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;font-size:14px;min-height:100vh}
 
   /* ── LOGIN ── */
-  .login-wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px}
+  .login-wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px;background:var(--bg);transition:background .3s}
   .login-box{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:36px;width:100%;max-width:400px}
   .login-logo{width:48px;height:48px;background:linear-gradient(135deg,var(--accent),var(--accent2));border-radius:12px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:18px;color:#fff;margin:0 auto 20px}
   .login-title{text-align:center;font-size:20px;font-weight:700;margin-bottom:4px}
@@ -99,6 +125,7 @@
   .status-agent-acknowledged{background:rgba(34,197,94,.15);color:var(--green)}.status-agent-acknowledged::before{background:var(--green)}
   .status-agent-disputed{background:rgba(239,68,68,.15);color:var(--red)}.status-agent-disputed::before{background:var(--red)}
   .status-closed{background:rgba(6,182,212,.15);color:var(--cyan)}.status-closed::before{background:var(--cyan)}
+  .status-qa-review{background:rgba(99,102,241,.15);color:var(--accent2);border-radius:12px}.status-qa-review::before{background:var(--accent2)}
 
   /* ── SCORE ── */
   .score-badge{font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:600;padding:3px 8px;border-radius:6px}
@@ -233,6 +260,44 @@
   .rm-qa{background:rgba(79,142,247,.15);color:var(--accent)}
   .rm-agent{background:rgba(92,100,128,.15);color:var(--text2)}
   .rm-override{border-left:3px solid var(--accent)}
+  /* Dispute question picker */
+  /* Eval tags */
+  .eval-tag-btn{padding:5px 12px;border-radius:10px;font-size:11px;font-weight:600;cursor:pointer;border:2px solid transparent;transition:all .15s;background:var(--surface3);color:var(--text3);font-family:inherit}
+  .eval-tag-btn:hover{opacity:.85;transform:scale(1.03)}
+  .eval-tag-btn.selected{border-color:currentColor;background:rgba(255,255,255,.08)}
+  .eval-tag-btn.tag-daily{color:var(--green)}
+  .eval-tag-btn.tag-testing{color:var(--amber)}
+  .eval-tag-btn.tag-complaint{color:var(--red)}
+  .eval-tag-btn.tag-coaching{color:var(--purple)}
+  .eval-tag-btn.tag-calibration{color:var(--cyan)}
+  .eval-tag{display:inline-flex;align-items:center;gap:4px;padding:3px 8px;border-radius:10px;font-size:10px;font-weight:700;letter-spacing:.3px;text-transform:uppercase}
+  .tag-testing{background:rgba(245,158,11,.15);color:var(--amber);border:1px solid rgba(245,158,11,.3)}
+  .tag-daily{background:rgba(34,197,94,.15);color:var(--green);border:1px solid rgba(34,197,94,.3)}
+  .tag-complaint{background:rgba(239,68,68,.15);color:var(--red);border:1px solid rgba(239,68,68,.3)}
+  .tag-coaching{background:rgba(168,85,247,.15);color:var(--purple);border:1px solid rgba(168,85,247,.3)}
+  .tag-calibration{background:rgba(6,182,212,.15);color:var(--cyan);border:1px solid rgba(6,182,212,.3)}
+
+  /* Template manager */
+  .tpl-section-row{display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--border)}
+  .tpl-q-row{display:grid;grid-template-columns:28px 1fr 80px 100px 36px;gap:8px;align-items:center;padding:7px 0;border-bottom:1px solid var(--border)}
+  .tpl-q-num{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--text3);text-align:center}
+  .tpl-drag{cursor:grab;color:var(--text3);font-size:16px;text-align:center}
+  .tpl-card{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:14px 16px;margin-bottom:10px;cursor:pointer;transition:all .2s}
+  .tpl-card:hover{border-color:var(--accent);background:var(--surface3)}
+  .tpl-card.tpl-builtin{border-left:3px solid var(--accent)}
+  .tpl-card.tpl-custom{border-left:3px solid var(--purple)}
+  .tpl-card.tpl-complaint{border-left:3px solid var(--red)}
+  /* Complaint eval */
+  .complaint-section{background:rgba(239,68,68,.05);border:1px solid rgba(239,68,68,.2);border-radius:var(--radius-lg);padding:16px;margin-bottom:16px}
+  .complaint-section-title{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--red);margin-bottom:12px}
+  .dispute-q-row{display:grid;grid-template-columns:1fr auto 80px;gap:10px;align-items:start;padding:8px 0;border-bottom:1px solid var(--border)}
+  .dispute-q-row:last-child{border-bottom:none}
+  .dispute-q-text{font-size:12px;line-height:1.5;color:var(--text2)}
+  .dispute-q-score{font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:600;white-space:nowrap;padding-top:2px}
+  .dispute-check{width:16px;height:16px;accent-color:var(--red);cursor:pointer;margin-top:3px}
+  .dispute-comment{width:100%;background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:4px 8px;border-radius:5px;font-family:inherit;font-size:11px;margin-top:4px;display:none}
+  .dispute-comment.show{display:block}
+  .dispute-row-selected{background:rgba(239,68,68,.05);border-radius:var(--radius);margin:0 -8px;padding:4px 8px}
   .coach-tag{background:var(--surface3);border:1px solid var(--border2);color:var(--text2);border-radius:20px;padding:4px 10px;font-size:11px;font-weight:500;cursor:pointer;font-family:inherit;transition:all .15s}
   .coach-tag:hover{border-color:var(--amber);color:var(--amber)}
   .coach-tag.selected{background:rgba(245,158,11,.15);border-color:var(--amber);color:var(--amber)}
@@ -262,6 +327,12 @@
 <!-- LOGIN -->
 <div class="login-wrap" id="loginWrap" style="display:none">
   <div class="login-box">
+    <div style="display:flex;justify-content:flex-end;margin-bottom:8px">
+      <button onclick="toggleTheme()"
+        style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;
+               width:32px;height:32px;cursor:pointer;font-size:14px;display:flex;
+               align-items:center;justify-content:center" title="Toggle theme" id="loginThemeBtn">🌙</button>
+    </div>
     <div class="login-logo">QA</div>
     <div class="login-title">XOX Contact Centre</div>
     <div class="login-sub">Call Monitoring Evaluation System</div>
@@ -290,6 +361,11 @@
     </div>
     <div class="topbar-right">
       <span class="role-badge" id="topRoleBadge">—</span>
+      <button id="themeToggleBtn" onclick="toggleTheme()"
+        style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;
+               width:36px;height:36px;cursor:pointer;font-size:16px;display:flex;
+               align-items:center;justify-content:center;transition:all .2s"
+        title="Toggle dark/light mode">🌙</button>
       <div class="user-chip">
         <div class="user-avatar" id="topAvatar">?</div>
         <span id="topUserName" style="font-size:13px">—</span>
@@ -303,6 +379,7 @@
         <div class="su-name" id="sbUserName">—</div>
         <div class="su-role" id="sbUserRole">—</div>
         <button class="su-logout" onclick="doLogout()">⏻ Sign out</button>
+        <button class="su-logout" onclick="openChangePassword()" style="margin-top:4px;color:var(--accent);border-color:rgba(79,142,247,.3)">🔑 Change Password</button>
         <div id="sbStaffCount" style="font-size:10px;color:var(--text3);margin-top:6px;padding-top:6px;border-top:1px solid var(--border)">Loading staff…</div>
       </div>
 
@@ -321,10 +398,15 @@
       <div class="sidebar-item active" onclick="showPage('dashboard')" id="nav-dashboard"><span class="icon">📊</span>Dashboard</div>
       <div class="sidebar-item" onclick="showPage('new-eval')" id="nav-new-eval"><span class="icon">✏️</span>New Evaluation</div>
       <div class="sidebar-item" onclick="showPage('evaluations')" id="nav-evaluations"><span class="icon">📋</span>Evaluations<span class="badge" id="sbEvalCount">0</span></div>
+      <div class="sidebar-item" onclick="showPage('my-evals')" id="nav-my-evals"><span class="icon">📊</span>My Evaluations</div>
+      <div class="sidebar-item" onclick="showPage('pipeline')" id="nav-pipeline"><span class="icon">🔄</span>Pipeline Tracker</div>
+      <div class="sidebar-item" onclick="showPage('fail-analysis')" id="nav-fail-analysis"><span class="icon">📉</span>Failure Analysis</div>
+      <div class="sidebar-item" onclick="showPage('monthly-perf')" id="nav-monthly-perf"><span class="icon">📅</span>Monthly Performance</div>
 
       <div class="sidebar-divider"></div>
       <div class="sidebar-label" id="sb-admin-label" style="display:none">Admin</div>
       <div class="sidebar-item" onclick="showPage('role-mgmt')" id="nav-role-mgmt" style="display:none"><span class="icon">🔐</span>Role Management</div>
+      <div class="sidebar-item" onclick="showPage('tpl-mgmt')" id="nav-tpl-mgmt" style="display:none"><span class="icon">📝</span>Template Manager</div>
       <div class="sidebar-divider" id="sb-admin-divider" style="display:none"></div>
       <div class="sidebar-label">Workflow</div>
       <div class="sidebar-item" onclick="showPage('my-team')" id="nav-my-team"><span class="icon">👥</span>My Team<span class="badge" id="sbMyTeam">0</span></div>
@@ -340,7 +422,13 @@
         <div class="page-header">
           <div class="page-header-row">
             <div><h1>Dashboard</h1><p>Call monitoring evaluation overview</p></div>
-            <button class="btn btn-primary" onclick="showPage('new-eval')">+ New Evaluation</button>
+            <div style="display:flex;gap:8px;align-items:center">
+              <select class="form-select" id="dashMonthFilter" onchange="loadDashboard()" style="width:170px;padding:7px 10px" title="Filter by month">
+                <option value="">All Time</option>
+              </select>
+              <button class="btn btn-ghost btn-sm" onclick="document.getElementById('dashMonthFilter').value='';loadDashboard()" title="Clear filter">✕</button>
+              <button class="btn btn-primary" onclick="showPage('new-eval')" id="dashNewBtn">+ New Evaluation</button>
+            </div>
           </div>
         </div>
         <div class="stats-row">
@@ -386,7 +474,7 @@
 
         <div class="card">
           <div class="card-header"><div class="card-title">📋 Evaluation Template</div></div>
-          <div class="template-grid">
+          <div class="template-grid" style="grid-template-columns:1fr 1fr">
             <div class="template-card" id="tpl-hist-no" onclick="selectTemplate('historical','no')">
               <div class="tc-icon">📁</div>
               <div class="tc-title">Historical — No CSAT</div>
@@ -423,6 +511,15 @@
                 <span class="tc-badge csat">✓ CSAT</span>
               </div>
             </div>
+            <div class="template-card" id="tpl-complaint" onclick="selectTemplate('complaint','no')" style="grid-column:span 2;border-color:rgba(239,68,68,.3);background:rgba(239,68,68,.04)">
+              <div class="tc-icon">⚠️</div>
+              <div class="tc-title" style="color:var(--red)">Complaint Evaluation</div>
+              <div class="tc-desc">For evaluating calls related to a customer complaint — includes chronology, complaint details, and standard call quality scoring</div>
+              <div style="display:flex;gap:6px;margin-top:8px">
+                <span class="tc-badge" style="background:rgba(239,68,68,.15);color:var(--red)">⚠️ Complaint</span>
+                <span class="tc-badge" style="background:rgba(245,158,11,.15);color:var(--amber)">📋 Chronology Required</span>
+              </div>
+            </div>
           </div>
           <div id="tplSelectedInfo" style="display:none;margin-top:12px">
             <div class="alert alert-info" id="tplInfoAlert"></div>
@@ -441,16 +538,16 @@
           <div class="card-header"><div class="card-title">📞 Call Details</div></div>
           <div class="form-row">
             <div class="form-group">
-              <label class="form-label">Agent Name *</label>
+              <label class="form-label">Agent Name <span style="color:var(--red)">*</span></label>
               <div class="autocomplete-wrap">
                 <input class="form-input" id="fAgentName" placeholder="Type to search agent…" autocomplete="off"
-                  oninput="filterAgents(this.value)" onfocus="filterAgents(this.value)">
+                  oninput="filterAgents(this.value);clearFieldError(this)" onfocus="filterAgents(this.value)">
                 <input type="hidden" id="fAgentId">
                 <div class="autocomplete-list" id="agentList"></div>
               </div>
             </div>
             <div class="form-group">
-              <label class="form-label">Team Leader</label>
+              <label class="form-label">Team Leader <span style="color:var(--red)">*</span></label>
               <div class="autocomplete-wrap">
                 <input class="form-input" id="fTLName" placeholder="Auto-filled or type to search…" autocomplete="off"
                   oninput="filterTLs(this.value)" onfocus="filterTLs(this.value)">
@@ -462,29 +559,40 @@
           <div class="form-row-3">
             <div class="form-group">
               <label class="form-label">Date *</label>
-              <input class="form-input" type="date" id="fDate">
+              <input class="form-input" type="date" id="fDate" onchange="clearFieldError(this)">
             </div>
             <div class="form-group">
               <label class="form-label">Timestamp</label>
-              <input class="form-input" type="time" id="fTimestamp">
+              <input class="form-input" type="time" id="fTimestamp" onchange="clearFieldError(this)">
             </div>
             <div class="form-group">
               <label class="form-label">Duration</label>
-              <input class="form-input" id="fDuration" placeholder="e.g. 5:23">
+              <input class="form-input" id="fDuration" placeholder="e.g. 5:23" oninput="clearFieldError(this)">
             </div>
           </div>
           <div class="form-row">
             <div class="form-group">
               <label class="form-label">Calling Number</label>
-              <input class="form-input" id="fCallingNum" placeholder="601x-xxxxxxxx">
+              <input class="form-input" id="fCallingNum" placeholder="601x-xxxxxxxx" oninput="clearFieldError(this)">
             </div>
             <div class="form-group">
               <label class="form-label">Contact ID / Case ID</label>
-              <input class="form-input" id="fContactID" placeholder="e.g. CX-12345">
+              <input class="form-input" id="fContactID" placeholder="e.g. CX-12345" oninput="clearFieldError(this)">
             </div>
           </div>
           <div class="form-group">
-            <label class="form-label">Remarks</label>
+            <label class="form-label">Evaluation Tag <span style="color:var(--text3);font-size:11px">(optional)</span></label>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:4px" id="evalTagPicker">
+              <button type="button" class="eval-tag-btn tag-daily"       data-tag="daily"       onclick="selectEvalTag(this)">&#128197; Daily</button>
+              <button type="button" class="eval-tag-btn tag-testing"     data-tag="testing"     onclick="selectEvalTag(this)">&#129514; Testing</button>
+              <button type="button" class="eval-tag-btn tag-complaint"   data-tag="complaint"   onclick="selectEvalTag(this)">&#9888; Complaint</button>
+              <button type="button" class="eval-tag-btn tag-coaching"    data-tag="coaching"    onclick="selectEvalTag(this)">&#127919; Coaching</button>
+              <button type="button" class="eval-tag-btn tag-calibration" data-tag="calibration" onclick="selectEvalTag(this)">&#9878; Calibration</button>
+            </div>
+            <input type="hidden" id="fEvalTag" value="">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Remarks <span style="color:var(--text3);font-size:11px">(optional)</span></label>
             <textarea class="form-textarea" id="fRemarks" rows="2" placeholder="General remarks about this evaluation…"></textarea>
           </div>
         </div>
@@ -494,7 +602,10 @@
         <div id="evalSubmitSection" style="display:none">
           <div class="score-summary">
             <div><div class="text-sm">Total Score</div><div class="score-big" id="scoreBig">0%</div></div>
-            <div id="fatalIndicator" style="font-size:13px;font-weight:600;color:var(--green)">✅ No Fatal Errors</div>
+            <div>
+            <div id="fatalIndicator" style="font-size:13px;font-weight:600;color:var(--green)">&#10003; No Fatal Errors</div>
+            <div style="font-size:11px;color:var(--text3);margin-top:4px">Passing mark: <span id="passingMarkDisplay" style="font-weight:600;color:var(--accent)">90%</span></div>
+          </div>
             <div style="text-align:right">
               <div class="text-sm">Sub-total</div>
               <div style="font-family:'JetBrains Mono',monospace;font-size:20px;font-weight:600;color:var(--accent)" id="scoreSubtotal">0 / 0</div>
@@ -516,12 +627,61 @@
         <div class="page-header">
           <div class="page-header-row">
             <div><h1>All Evaluations</h1><p>Full evaluation history</p></div>
-            <button class="btn btn-primary" onclick="showPage('new-eval')">+ New</button>
+            <button class="btn btn-primary" onclick="showPage('new-eval')" id="evalsNewBtn">+ New</button>
           </div>
         </div>
-        <div class="card">
-          <table class="eval-table"><thead><tr><th>Ref</th><th>Agent</th><th>TL</th><th>Template</th><th>Score</th><th>Fatal</th><th>Status</th><th>Call Date</th><th>Eval Date</th><th>Eval Time</th><th>QA</th><th>Actions</th></tr></thead>
-          <tbody id="allEvalsBody"><tr><td colspan="9"><div class="empty-state"><div class="icon">⏳</div><p>Loading…</p></div></td></tr></tbody></table>
+
+        <!-- Filter bar -->
+        <div class="card" style="padding:14px 16px;margin-bottom:12px">
+          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+            <select class="form-select" id="evFilter_dateType" onchange="loadAllEvals()" style="width:130px;padding:6px 10px">
+              <option value="call">Call Date</option>
+              <option value="eval">Eval Date</option>
+            </select>
+            <input class="form-input" type="date" id="evFilter_dateFrom" onchange="loadAllEvals()" style="padding:6px 10px;width:140px">
+            <span style="font-size:12px;color:var(--text3)">to</span>
+            <input class="form-input" type="date" id="evFilter_dateTo" onchange="loadAllEvals()" style="padding:6px 10px;width:140px">
+            <select class="form-select" id="evFilter_month" onchange="applyMonthFilter()" style="width:150px;padding:6px 10px">
+              <option value="">Month</option>
+            </select>
+            <select class="form-select" id="evFilter_status" onchange="loadAllEvals()" style="width:160px;padding:6px 10px">
+              <option value="">All Statuses</option>
+              <option value="draft">Draft</option>
+              <option value="submitted">Submitted</option>
+              <option value="tl-approved">TL Approved</option>
+              <option value="tl-disputed">TL Disputed</option>
+              <option value="agent-disputed">Agent Disputed</option>
+              <option value="qa-review">QA Review</option>
+              <option value="closed">Closed</option>
+            </select>
+            <select class="form-select" id="evFilter_fatal" onchange="loadAllEvals()" style="width:130px;padding:6px 10px">
+              <option value="">Fatal — All</option>
+              <option value="yes">Fatal Only</option>
+              <option value="no">No Fatal</option>
+            </select>
+            <select class="form-select" id="evFilter_tl" onchange="loadAllEvals()" style="width:160px;padding:6px 10px">
+              <option value="">All TLs</option>
+            </select>
+            <select class="form-select" id="evFilter_qa" onchange="loadAllEvals()" style="width:140px;padding:6px 10px">
+              <option value="">All QA</option>
+            </select>
+            <select class="form-select" id="evFilter_tag" onchange="loadAllEvals()" style="width:140px;padding:6px 10px">
+              <option value="">All Tags</option>
+              <option value="daily">📅 Daily</option>
+              <option value="testing">🧪 Testing</option>
+              <option value="complaint">⚠️ Complaint</option>
+              <option value="coaching">🎯 Coaching</option>
+              <option value="calibration">⚖️ Calibration</option>
+              <option value="">No Tag</option>
+            </select>
+            <input class="form-input" id="evFilter_search" placeholder="Search agent..." oninput="loadAllEvals()" style="width:140px;padding:6px 10px">
+            <button class="btn btn-ghost btn-sm" onclick="clearEvFilters()">✕ Clear</button>
+          </div>
+        </div>
+
+        <div class="card" style="overflow-x:auto">
+          <table class="eval-table"><thead><tr><th>Ref</th><th>Agent</th><th>TL</th><th>Template</th><th>Tag</th><th>Score</th><th>Fatal</th><th>Status</th><th>Call Date</th><th>Eval Date/Time</th><th>QA</th><th>TL Approved</th><th>Disputed</th><th>Closed</th><th>Actions</th></tr></thead>
+          <tbody id="allEvalsBody"><tr><td colspan="14"><div class="empty-state"><div class="icon">⏳</div><p>Loading…</p></div></td></tr></tbody></table>
         </div>
       </div>
 
@@ -538,7 +698,7 @@
       <div class="page" id="page-pending-agent">
         <div class="page-header"><h1>👤 Pending Agent Acknowledgement</h1><p>Awaiting your acknowledgement or dispute — you are the final step before closing</p></div>
         <div class="card">
-          <table class="eval-table"><thead><tr><th>Ref</th><th>Agent</th><th>Score</th><th>TL Decision</th><th>Actions</th></tr></thead>
+          <table class="eval-table"><thead><tr><th>Ref</th><th>Agent</th><th>TL</th><th>Score</th><th>Status</th><th>TL Action Date/Time</th><th>Actions</th></tr></thead>
           <tbody id="pendingAgentBody"><tr><td colspan="5"><div class="empty-state"><div class="icon">✅</div><p>Nothing pending.</p></div></td></tr></tbody></table>
         </div>
       </div>
@@ -549,6 +709,305 @@
         <div class="card">
           <table class="eval-table"><thead><tr><th>Ref</th><th>Agent</th><th>Score</th><th>Disputed By</th><th>Reason</th><th>Actions</th></tr></thead>
           <tbody id="disputesBody"><tr><td colspan="6"><div class="empty-state"><div class="icon">✅</div><p>No active disputes.</p></div></td></tr></tbody></table>
+        </div>
+      </div>
+
+      <!-- MY EVALUATIONS PAGE (QA) -->
+      <div class="page" id="page-my-evals">
+        <div class="page-header">
+          <div class="page-header-row">
+            <div><h1>📊 My Evaluations</h1><p id="myEvalsSubtitle">Calls you have evaluated per agent</p></div>
+            <div style="display:flex;gap:8px;align-items:center">
+              <select class="form-select" id="myEvalsMonth" onchange="loadMyEvals()" style="width:170px;padding:7px 10px">
+                <option value="">All Time</option>
+              </select>
+              <button class="btn btn-ghost btn-sm" onclick="document.getElementById('myEvalsMonth').value='';loadMyEvals()">✕ Clear</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Summary stats -->
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px">
+          <div class="stat-card blue"><div class="stat-num" id="me-total" style="font-size:22px">--</div><div class="stat-label">Total Evals</div></div>
+          <div class="stat-card green"><div class="stat-num" id="me-agents" style="font-size:22px">--</div><div class="stat-label">Agents Evaluated</div></div>
+          <div class="stat-card green"><div class="stat-num" id="me-avg" style="font-size:22px">--</div><div class="stat-label">Avg Score Given</div></div>
+          <div class="stat-card amber"><div class="stat-num" id="me-pending" style="font-size:22px">--</div><div class="stat-label">Pending Review</div></div>
+        </div>
+
+        <!-- Per-agent breakdown -->
+        <div class="card" style="margin-bottom:16px">
+          <div class="card-header" style="margin-bottom:16px">
+            <div><div class="card-title">👤 Evaluations per Agent</div><div class="card-subtitle">How many calls you evaluated for each agent</div></div>
+            <input class="form-input" id="meAgentSearch" placeholder="Search agent..." oninput="renderMyEvalsAgents()" style="width:180px;padding:7px 12px">
+          </div>
+          <div id="meAgentGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:10px">
+            <div class="text-sm" style="text-align:center;padding:30px;grid-column:1/-1">Loading...</div>
+          </div>
+        </div>
+
+        <!-- Detailed evaluation list -->
+        <div class="card">
+          <div class="card-header" style="margin-bottom:12px">
+            <div><div class="card-title">📋 Evaluation History</div><div class="card-subtitle" id="meListSubtitle">All your submitted evaluations</div></div>
+            <select class="form-select" id="meAgentFilter" onchange="renderMyEvalsList()" style="width:200px;padding:7px 10px">
+              <option value="">All Agents</option>
+            </select>
+          </div>
+          <table class="eval-table">
+            <thead>
+              <tr><th>Ref</th><th>Agent</th><th>TL</th><th>Template</th><th>Score</th><th>Fatal</th><th>Status</th><th>Call Date</th><th>Eval Date</th><th>Actions</th></tr>
+            </thead>
+            <tbody id="meListBody">
+              <tr><td colspan="10"><div class="empty-state"><div class="icon">📋</div><p>Loading...</p></div></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- TEMPLATE MANAGER PAGE -->
+      <div class="page" id="page-tpl-mgmt">
+        <div class="page-header">
+          <div class="page-header-row">
+            <div><h1>📝 Template Manager</h1><p>Create and edit evaluation templates</p></div>
+            <button class="btn btn-primary" onclick="openNewTemplateModal()">+ New Template</button>
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:20px">
+          <div>
+            <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:var(--text3);margin-bottom:10px">Built-in Templates</div>
+            <div id="builtinTplList"></div>
+          </div>
+          <div>
+            <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:var(--text3);margin-bottom:10px">Custom Templates</div>
+            <div id="customTplList"><div class="text-sm" style="padding:20px;text-align:center;color:var(--text3)">No custom templates yet. Click "+ New Template" to create one.</div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- MONTHLY PERFORMANCE PAGE -->
+      <div class="page" id="page-monthly-perf">
+        <div class="page-header">
+          <div class="page-header-row">
+            <div><h1>📅 Monthly Performance</h1><p>Average scores by Team Leader and Agent on a monthly basis</p></div>
+            <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+              <select class="form-select" id="mpMonth" onchange="loadMonthlyPerf()" style="width:160px;padding:7px 10px">
+              </select>
+              <select class="form-select" id="mpTL" onchange="loadMonthlyPerf()" style="width:200px;padding:7px 10px">
+                <option value="">All Team Leaders</option>
+              </select>
+              <select class="form-select" id="mpView" onchange="loadMonthlyPerf()" style="width:160px;padding:7px 10px">
+                <option value="team">By Team Leader</option>
+                <option value="agent">By Agent</option>
+                <option value="both">Both</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <!-- Month summary stats -->
+        <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:20px">
+          <div class="stat-card blue"><div class="stat-num" id="mp-st-evals" style="font-size:22px">--</div><div class="stat-label">Evaluations</div></div>
+          <div class="stat-card green"><div class="stat-num" id="mp-st-avg" style="font-size:22px">--</div><div class="stat-label">Overall Avg</div></div>
+          <div class="stat-card green"><div class="stat-num" id="mp-st-above80" style="font-size:22px">--</div><div class="stat-label">Above 80%</div></div>
+          <div class="stat-card red"><div class="stat-num" id="mp-st-below60" style="font-size:22px">--</div><div class="stat-label">Below 60%</div></div>
+          <div class="stat-card red"><div class="stat-num" id="mp-st-fatal" style="font-size:22px">--</div><div class="stat-label">Fatal Errors</div></div>
+        </div>
+
+        <!-- Team Leader performance -->
+        <div id="mp-tl-section">
+          <div class="card" style="margin-bottom:16px">
+            <div class="card-header" style="margin-bottom:16px">
+              <div><div class="card-title">👔 Team Leader Performance</div><div class="card-subtitle">Average score across their team's agents</div></div>
+            </div>
+            <div id="mp-tl-content"><div class="text-sm" style="text-align:center;padding:30px">Loading...</div></div>
+          </div>
+        </div>
+
+        <!-- Agent performance -->
+        <div id="mp-agent-section">
+          <div class="card">
+            <div class="card-header" style="margin-bottom:16px">
+              <div><div class="card-title">👤 Agent Performance</div><div class="card-subtitle">Individual agent scores for the selected month</div></div>
+              <div style="display:flex;gap:8px">
+                <input class="form-input" id="mpAgentSearch" placeholder="Search agent..." oninput="renderAgentTable()" style="width:180px;padding:7px 12px">
+                <select class="form-select" id="mpAgentSort" onchange="renderAgentTable()" style="width:160px;padding:7px 10px">
+                  <option value="score-desc">Score — High to Low</option>
+                  <option value="score-asc">Score — Low to High</option>
+                  <option value="name">Name A-Z</option>
+                  <option value="evals">Most Evals</option>
+                </select>
+              </div>
+            </div>
+            <table class="eval-table">
+              <thead>
+                <tr>
+                  <th style="width:32px">#</th>
+                  <th>Agent</th>
+                  <th>Team (TL)</th>
+                  <th>Evals</th>
+                  <th>Avg Score</th>
+                  <th>Highest</th>
+                  <th>Lowest</th>
+                  <th>Fatal</th>
+                  <th>Trend</th>
+                </tr>
+              </thead>
+              <tbody id="mp-agent-tbody">
+                <tr><td colspan="9"><div class="empty-state"><div class="icon">📊</div><p>Loading...</p></div></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- FAILURE ANALYSIS PAGE -->
+      <div class="page" id="page-fail-analysis">
+        <div class="page-header">
+          <div class="page-header-row">
+            <div><h1>📉 Failure Analysis</h1><p>Questions agents most commonly fail or score low on</p></div>
+            <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+              <select class="form-select" id="faMonth" onchange="loadFailAnalysis()" style="width:160px;padding:7px 10px">
+                <option value="">All Months</option>
+              </select>
+              <select class="form-select" id="faTemplate" onchange="loadFailAnalysis()" style="width:180px;padding:7px 10px">
+                <option value="">All Templates</option>
+                <option value="standard">Standard Call</option>
+                <option value="general">General Enquiries</option>
+              </select>
+              <select class="form-select" id="faCsat" onchange="loadFailAnalysis()" style="width:140px;padding:7px 10px">
+                <option value="">CSAT — All</option>
+                <option value="yes">With CSAT</option>
+                <option value="no">Without CSAT</option>
+              </select>
+              <select class="form-select" id="faTL" onchange="loadFailAnalysis()" style="width:155px;padding:7px 10px">
+                <option value="">All TLs</option>
+              </select>
+              <select class="form-select" id="faAgent" onchange="loadFailAnalysis()" style="width:180px;padding:7px 10px">
+                <option value="">All Agents</option>
+              </select>
+              <select class="form-select" id="faQA" onchange="loadFailAnalysis()" style="width:160px;padding:7px 10px">
+                <option value="">All QA</option>
+              </select>
+              <select class="form-select" id="faTop" onchange="loadFailAnalysis()" style="width:140px;padding:7px 10px">
+                <option value="10">Top 10 failures</option>
+                <option value="20">Top 20 failures</option>
+                <option value="0">All questions</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <!-- Summary stats -->
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px">
+          <div class="stat-card red"><div class="stat-num" id="fa-st-evals" style="font-size:22px">--</div><div class="stat-label">Evals Analysed</div></div>
+          <div class="stat-card red"><div class="stat-num" id="fa-st-fails" style="font-size:22px">--</div><div class="stat-label">Avg Fail Rate</div></div>
+          <div class="stat-card amber"><div class="stat-num" id="fa-st-worst" style="font-size:14px;line-height:1.3" id="fa-st-worst">--</div><div class="stat-label">Most Failed Question</div></div>
+          <div class="stat-card green"><div class="stat-num" id="fa-st-best" style="font-size:14px;line-height:1.3">--</div><div class="stat-label">Best Performing</div></div>
+        </div>
+
+        <!-- Failure chart -->
+        <div class="card" style="margin-bottom:16px">
+          <div class="card-header" style="margin-bottom:16px">
+            <div>
+              <div class="card-title">Question Failure Rate</div>
+              <div class="card-subtitle">% of evaluations where agent scored 0 or below average on each question</div>
+            </div>
+            <div style="display:flex;gap:12px;font-size:11px;align-items:center">
+              <span style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;background:var(--red);border-radius:2px;display:inline-block"></span>High Fail (>50%)</span>
+              <span style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;background:var(--amber);border-radius:2px;display:inline-block"></span>Medium (25-50%)</span>
+              <span style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;background:var(--green);border-radius:2px;display:inline-block"></span>Low (<25%)</span>
+            </div>
+          </div>
+          <div id="faChartContainer" style="display:flex;flex-direction:column;gap:6px">
+            <div class="text-sm" style="text-align:center;padding:40px">Select filters and load analysis</div>
+          </div>
+        </div>
+
+        <!-- Drill-down panel -->
+        <div class="card" id="faDrillPanel" style="display:none;margin-bottom:16px;border-color:var(--accent)">
+          <div class="card-header" style="margin-bottom:12px">
+            <div>
+              <div class="card-title" id="faDrillTitle">Question Details</div>
+              <div class="card-subtitle" id="faDrillSubtitle">Agents who failed this question</div>
+            </div>
+            <button class="btn btn-ghost btn-sm" onclick="closeDrillDown()">✕ Close</button>
+          </div>
+          <!-- Tabs -->
+          <div class="tab-bar" style="margin-bottom:12px">
+            <button class="tab-btn active" id="drill-tab-failed" onclick="switchDrillTab('failed')">Failed (0)</button>
+            <button class="tab-btn" id="drill-tab-partial" onclick="switchDrillTab('partial')">Partial (0)</button>
+            <button class="tab-btn" id="drill-tab-passed" onclick="switchDrillTab('passed')">Passed (0)</button>
+          </div>
+          <div id="faDrillContent">
+            <table class="eval-table">
+              <thead><tr><th>Ref</th><th>Agent</th><th>TL</th><th>QA</th><th>Score on Q</th><th>Overall</th><th>Call Date</th><th>Status</th><th></th></tr></thead>
+              <tbody id="faDrillBody"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Fatal errors breakdown -->
+        <div class="card">
+          <div class="card-header" style="margin-bottom:12px">
+            <div><div class="card-title">⛔ Fatal Error Breakdown</div><div class="card-subtitle">How often each fatal error occurs</div></div>
+          </div>
+          <div id="faFatalContainer">
+            <div class="text-sm" style="text-align:center;padding:20px">Loading...</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- PIPELINE TRACKER PAGE -->
+      <div class="page" id="page-pipeline">
+        <div class="page-header">
+          <div class="page-header-row">
+            <div><h1>🔄 Pipeline Tracker</h1><p>Full visibility of all evaluations and where they are in the workflow</p></div>
+            <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+              <select class="form-select" id="pipelineMonthFilter" onchange="renderPipeline()" style="width:160px;padding:7px 10px">
+                <option value="">All Months</option>
+              </select>
+              <select class="form-select" id="pipelineTLFilter" onchange="renderPipeline()" style="width:160px;padding:7px 10px">
+                <option value="">All TLs</option>
+              </select>
+              <input class="form-input" id="pipelineSearch" placeholder="Search agent, TL, QA..." oninput="renderPipeline()" style="width:200px;padding:7px 12px">
+            </div>
+          </div>
+        </div>
+
+        <!-- Pipeline stage columns -->
+        <div style="display:grid;grid-template-columns:repeat(6,1fr);gap:12px;margin-bottom:20px" id="pipelineStages">
+          <!-- Rendered by JS -->
+        </div>
+
+        <!-- Full pipeline table -->
+        <div class="card">
+          <div class="card-header" style="margin-bottom:12px">
+            <div><div class="card-title">All Evaluations — Pipeline View</div>
+            <div class="card-subtitle">Click any row to view details or take action</div></div>
+            <div style="display:flex;gap:6px">
+              <select class="form-select" id="pipelineStatusFilter" onchange="renderPipeline()" style="width:180px;padding:7px 10px">
+                <option value="">All Stages</option>
+                <option value="submitted">Pending TL Review</option>
+                <option value="tl-approved">Pending Agent Ack</option>
+                <option value="tl-disputed">TL Disputed</option>
+                <option value="agent-disputed">Agent Disputed</option>
+                <option value="qa-review">QA Review Required</option>
+                <option value="closed">Closed</option>
+              </select>
+            </div>
+          </div>
+          <table class="eval-table" id="pipelineTable">
+            <thead>
+              <tr>
+                <th>Ref</th><th>Agent</th><th>TL</th><th>QA</th>
+                <th>Score</th><th>Stage</th><th>Waiting On</th>
+                <th>Since</th><th>Days</th><th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="pipelineBody">
+              <tr><td colspan="10"><div class="empty-state"><div class="icon">⏳</div><p>Loading...</p></div></td></tr>
+            </tbody>
+          </table>
         </div>
       </div>
 
@@ -587,6 +1046,34 @@
           <div class="page-header-row">
             <div><h1>🔐 Role Management</h1><p>Manage staff roles and system access</p></div>
             <button class="btn btn-primary" onclick="openAddRoleModal()">+ Add / Update User</button>
+          </div>
+        </div>
+
+        <!-- Passing Mark Setting -->
+        <div class="card" style="margin-bottom:16px;border-color:var(--accent)">
+          <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px">
+            <div>
+              <div class="card-title">&#127919; Passing Mark</div>
+              <div class="card-subtitle">Minimum score required to pass an evaluation</div>
+            </div>
+            <div style="display:flex;align-items:center;gap:10px">
+              <div style="font-family:'JetBrains Mono',monospace;font-size:32px;font-weight:700;color:var(--accent)" id="rmPassingMarkDisplay">90%</div>
+              <div style="display:flex;flex-direction:column;gap:6px">
+                <div style="display:flex;gap:6px;align-items:center">
+                  <input class="form-input" type="number" id="rmPassingMarkInput" min="1" max="100" step="0.5"
+                    style="width:80px;padding:6px 10px;font-size:14px;text-align:center"
+                    placeholder="90">
+                  <span style="font-size:14px;color:var(--text2)">%</span>
+                  <button class="btn btn-primary btn-sm" onclick="adminUpdatePassingMark()">Update</button>
+                </div>
+                <div style="display:flex;gap:6px">
+                  <button class="btn btn-ghost btn-sm" onclick="adminSetPassingMark(80)">80%</button>
+                  <button class="btn btn-ghost btn-sm" onclick="adminSetPassingMark(85)">85%</button>
+                  <button class="btn btn-ghost btn-sm" onclick="adminSetPassingMark(90)">90%</button>
+                  <button class="btn btn-ghost btn-sm" onclick="adminSetPassingMark(95)">95%</button>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -635,20 +1122,49 @@
         </div>
 
         <!-- Password Reset section -->
-        <div class="card" style="margin-top:16px">
-          <div class="card-header" style="margin-bottom:12px">
-            <div><div class="card-title">🔑 Password Reset</div><div class="card-subtitle">Send a password reset email to any user</div></div>
-          </div>
-          <div style="display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap">
-            <div class="form-group" style="flex:1;min-width:220px;margin-bottom:0">
-              <label class="form-label">User Email</label>
-              <input class="form-input" id="pwResetEmail" placeholder="email@xox.com.my" type="email">
+          <div class="card" style="margin-top:16px">
+            <div class="card-header" style="margin-bottom:12px">
+              <div><div class="card-title">&#128273; Password Management</div><div class="card-subtitle">Set or reset passwords for any user</div></div>
             </div>
-            <button class="btn btn-amber" onclick="sendPasswordReset()" style="height:38px">Send Reset Email</button>
+            <div class="tab-bar" style="margin-bottom:16px">
+              <button class="tab-btn active" id="pwTab-direct" onclick="switchPwTab('direct')">Set Directly</button>
+              <button class="tab-btn" id="pwTab-email" onclick="switchPwTab('email')">Send Reset Email</button>
+            </div>
+            <div id="pwSection-direct">
+              <div class="alert alert-info" style="margin-bottom:12px">Set a new password directly. No email required.</div>
+              <div style="display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:10px;align-items:flex-end;margin-bottom:12px">
+                <div class="form-group" style="margin-bottom:0">
+                  <label class="form-label">User Email</label>
+                  <input class="form-input" id="pwDirectEmail" placeholder="email@xox.com.my" type="email">
+                </div>
+                <div class="form-group" style="margin-bottom:0">
+                  <label class="form-label">New Password</label>
+                  <input class="form-input" id="pwDirectPw" placeholder="Min 8 characters" type="password">
+                </div>
+                <div class="form-group" style="margin-bottom:0">
+                  <label class="form-label">Confirm Password</label>
+                  <input class="form-input" id="pwDirectConfirm" placeholder="Re-enter" type="password">
+                </div>
+                <button class="btn btn-primary" onclick="adminSetPassword()" style="height:38px;white-space:nowrap">Set Password</button>
+              </div>
+              <div id="pwDirectResult" style="font-size:13px;display:none"></div>
+              <div style="margin-top:12px;padding:12px;background:var(--surface2);border-radius:var(--radius);border:1px solid var(--border)">
+                <div style="font-size:11px;font-weight:600;color:var(--text3);margin-bottom:6px">BULK RESET — Run in Supabase SQL Editor</div>
+                <pre style="padding:10px;background:var(--surface3);border-radius:6px;font-size:11px;color:var(--accent);overflow-x:auto;white-space:pre-wrap;margin:0">UPDATE auth.users SET encrypted_password = crypt('Xox@2026', gen_salt('bf')), updated_at = NOW() WHERE email != 'suffian@xox.com.my';</pre>
+              </div>
+            </div>
+            <div id="pwSection-email" style="display:none">
+              <div class="alert alert-warning" style="margin-bottom:12px">Sends a reset link via email. Requires SMTP in Supabase.</div>
+              <div style="display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap">
+                <div class="form-group" style="flex:1;min-width:220px;margin-bottom:0">
+                  <label class="form-label">User Email</label>
+                  <input class="form-input" id="pwResetEmail" placeholder="email@xox.com.my" type="email">
+                </div>
+                <button class="btn btn-amber" onclick="sendPasswordReset()" style="height:38px">Send Reset Email</button>
+              </div>
+              <div id="pwResetResult" style="margin-top:10px;font-size:13px;display:none"></div>
+            </div>
           </div>
-          <div id="pwResetResult" style="margin-top:10px;font-size:13px;display:none"></div>
-        </div>
-      </div>
 
     </main>
   </div>
@@ -718,6 +1234,51 @@
     <div class="modal-footer">
       <button class="btn btn-ghost" onclick="closeModal('roleModal')">Cancel</button>
       <button class="btn btn-primary" onclick="saveRoleOverride()">Save Role</button>
+    </div>
+  </div>
+</div>
+
+<!-- CHANGE PASSWORD MODAL -->
+<div class="modal-overlay hidden" id="changePwModal">
+  <div class="modal" style="max-width:420px">
+    <div class="modal-header">
+      <div class="modal-title">🔑 Change Password</div>
+      <button class="modal-close" onclick="closeModal('changePwModal')">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="alert alert-info" style="margin-bottom:16px">
+        Your new password must be at least 8 characters.
+      </div>
+      <div id="changePwError" style="display:none" class="alert alert-danger"></div>
+      <div id="changePwSuccess" style="display:none" class="alert alert-success"></div>
+      <div class="form-group">
+        <label class="form-label">New Password <span style="color:var(--red)">*</span></label>
+        <div style="position:relative">
+          <input class="form-input" type="password" id="cpNewPw" placeholder="Enter new password"
+            oninput="checkPwStrength(this.value)" style="padding-right:40px">
+          <button onclick="togglePwVis('cpNewPw',this)" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--text3);cursor:pointer;font-size:14px">👁</button>
+        </div>
+        <!-- Strength indicator -->
+        <div style="margin-top:6px">
+          <div style="height:4px;background:var(--surface3);border-radius:2px;overflow:hidden">
+            <div id="pwStrengthBar" style="height:100%;width:0%;border-radius:2px;transition:all .3s"></div>
+          </div>
+          <div id="pwStrengthLabel" style="font-size:11px;color:var(--text3);margin-top:3px"></div>
+        </div>
+      </div>
+      <div class="form-group" style="margin-bottom:0">
+        <label class="form-label">Confirm New Password <span style="color:var(--red)">*</span></label>
+        <div style="position:relative">
+          <input class="form-input" type="password" id="cpConfirmPw" placeholder="Re-enter new password"
+            oninput="checkPwMatch()" style="padding-right:40px">
+          <button onclick="togglePwVis('cpConfirmPw',this)" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--text3);cursor:pointer;font-size:14px">👁</button>
+        </div>
+        <div id="pwMatchLabel" style="font-size:11px;margin-top:3px"></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('changePwModal')">Cancel</button>
+      <button class="btn btn-primary" id="changePwBtn" onclick="doChangePassword()">Update Password</button>
     </div>
   </div>
 </div>
@@ -874,17 +1435,25 @@ let selectedTemplate = null; // {evalType:'historical'|'live', csat:'yes'|'no'}
 let activeViewRole = 'qa'; // updated after login
 
 function canActAs(requiredRole) {
-  const r    = activeViewRole.toLowerCase();
-  const base = (currentStaff?.role || '').toLowerCase();
+  const r     = activeViewRole.toLowerCase();
+  const base  = (currentStaff?.role || '').toLowerCase();
   const email = (currentUser?.email || '').toLowerCase();
   const isAdmin = base === 'admin' || ROLE_MAP_EMAIL[email] === 'admin' || roleOverrides[email] === 'admin';
+  const isQA    = base === 'qa';
 
-  if (isAdmin) return true; // admin can always do everything
+  if (isAdmin) return true;
 
-  if (requiredRole === 'tl')      return ['tl','team leader','team_leader','manager','mgr'].includes(r);
-  if (requiredRole === 'agent')   return ['agent','manager','mgr'].includes(r);
+  // QA can resolve disputes but CANNOT approve (TL role) or acknowledge (agent role)
+  if (requiredRole === 'tl') {
+    if (isQA) return false;
+    return ['tl','team leader','team_leader','manager','mgr'].includes(r);
+  }
+  if (requiredRole === 'agent') {
+    if (isQA) return false;
+    return ['agent','manager','mgr'].includes(r);
+  }
   if (requiredRole === 'manager') return ['manager','mgr','qa'].includes(r);
-  if (requiredRole === 'qa')      return ['qa','manager','mgr'].includes(r);
+  if (requiredRole === 'qa')      return ['qa','manager','mgr','admin'].includes(r);
   return false;
 }
 
@@ -1147,7 +1716,7 @@ function resolveRole(name, email) {
 const ROLE_SWITCHER_ACCESS = {
   admin:   ['qa', 'tl', 'agent', 'manager'],
   manager: ['manager', 'tl', 'agent'],
-  qa:      ['qa'],
+  qa:      ['qa', 'manager'], // QA can view as manager to see all evals but not act as TL/agent
   tl:      ['tl'],
   agent:   ['agent'],
 };
@@ -1296,6 +1865,60 @@ async function onLoggedIn(user) {
   renderUserInfo();
   updateNavVisibility();
   showPage('dashboard');
+
+  // Check if this user has ever set their own password
+  // We track this in localStorage keyed by user email
+  const userEmailForPw = (currentUser?.email||'').toLowerCase();
+  const pwKeyFinal = 'qa_pw_changed_' + userEmailForPw.replace(/[^a-z0-9]/g,'_');
+  const hasChangedPw = localStorage.getItem(pwKeyFinal);
+  console.log('[QA] PW check | changed:', !!hasChangedPw);
+  if (!hasChangedPw) {
+    setTimeout(() => showForcedPasswordChange(), 800);
+  }
+}
+
+function showForcedPasswordChange() {
+  // Override the normal change password modal with a forced version
+  openChangePassword();
+
+  // Update modal title and add warning
+  document.getElementById('changePwModal').querySelector('.modal-title').textContent = '🔐 Set Your Personal Password';
+
+  const body = document.getElementById('changePwModal').querySelector('.modal-body');
+  const banner = document.createElement('div');
+  banner.className = 'alert alert-warning';
+  banner.style.marginBottom = '16px';
+  banner.innerHTML = '<strong>Security Notice</strong><br>You are using a shared default password. '
+    + 'Please set your own personal password now to secure your account.';
+  body.insertBefore(banner, body.firstChild);
+
+  // Hide the close button so they MUST change it
+  document.getElementById('changePwModal').querySelector('.modal-close').style.display = 'none';
+
+  // Replace cancel with "remind me later"
+  const footer = document.getElementById('changePwModal').querySelector('.modal-footer');
+  footer.innerHTML = '';
+  const laterBtn = document.createElement('button');
+  laterBtn.className = 'btn btn-ghost';
+  laterBtn.textContent = 'Remind me later';
+  laterBtn.style.cssText = 'font-size:11px;color:var(--text3)';
+  laterBtn.addEventListener('click', () => {
+    closeModal('changePwModal');
+    // Show reminder in sidebar
+    const sb = document.getElementById('sbStaffCount');
+    if (sb) {
+      sb.innerHTML = '<span style="color:var(--amber)">⚠️ Please change your password</span>';
+      sb.style.cursor = 'pointer';
+      sb.onclick = () => openChangePassword();
+    }
+  });
+  const saveBtn = document.createElement('button');
+  saveBtn.className = 'btn btn-primary';
+  saveBtn.id = 'changePwBtn';
+  saveBtn.textContent = 'Set My Password';
+  saveBtn.addEventListener('click', doChangePassword);
+  footer.appendChild(laterBtn);
+  footer.appendChild(saveBtn);
 }
 
 async function doLogout() {
@@ -1304,10 +1927,13 @@ async function doLogout() {
 }
 
 function showForgotPw() {
-  const email = document.getElementById('loginEmail').value.trim();
-  if (!email) { alert('Enter your email address first'); return; }
-  supa.auth.resetPasswordForEmail(email, { redirectTo: location.href })
-    .then(() => alert('Password reset email sent! Check your inbox.'));
+  const errEl = document.getElementById('loginErr');
+  errEl.style.display = 'block';
+  errEl.style.background = 'rgba(79,142,247,.1)';
+  errEl.style.borderColor = 'rgba(79,142,247,.3)';
+  errEl.style.color = '#93b4f8';
+  errEl.innerHTML = 'Please contact your system administrator to reset your password.<br>'
+    + '<span style="font-size:11px;opacity:.8">Admin: Suffian bin Arifen (suffian@xox.com.my)</span>';
 }
 
 // Sync the role switcher buttons to current role + allowed options
@@ -1361,9 +1987,44 @@ function updateNavVisibility() {
 
   console.log('[QA Nav] role:', base, '| isAdmin:', isAdmin, '| isAgent:', isAgent);
 
+  // My Evaluations: QA and Admin
+  const navMyEvals = document.getElementById('nav-my-evals');
+  if (navMyEvals) navMyEvals.style.display = (isAdmin || isQA) ? '' : 'none';
+
   // New Evaluation: QA and Admin only
   const navNew = document.getElementById('nav-new-eval');
   if (navNew) navNew.style.display = (isAdmin || isQA) ? '' : 'none';
+  const canCreate = isAdmin || isQA;
+  ['dashNewBtn','evalsNewBtn'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.style.display = canCreate ? '' : 'none';
+  });
+
+  // QA sees pipeline, failure analysis, monthly perf, disputes — same as manager
+  // but NOT role management
+  const qaCanSee = isAdmin || isManager || isQA;
+  ['nav-pipeline','nav-fail-analysis','nav-monthly-perf'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.style.display = qaCanSee ? '' : 'none';
+  });
+  const navDisputesEl = document.getElementById('nav-disputes');
+  if (navDisputesEl) navDisputesEl.style.display = (isAgent) ? 'none' : '';
+
+  // Dashboard month filter: QA and Admin only
+  const dashFilter = document.getElementById('dashMonthFilter')?.closest('select')?.parentElement;
+  // (filter is always visible — it's useful for all roles)
+
+  // Pipeline Tracker: QA, Manager, Admin only
+  const navPipeline = document.getElementById('nav-pipeline');
+  if (navPipeline) navPipeline.style.display = (isAdmin || isManager || isQA) ? '' : 'none';
+
+  // Failure Analysis: QA, Manager, Admin only
+  const navFail = document.getElementById('nav-fail-analysis');
+  if (navFail) navFail.style.display = (isAdmin || isManager || isQA) ? '' : 'none';
+
+  // Monthly Performance: QA, Manager, Admin, TL
+  const navMonthly = document.getElementById('nav-monthly-perf');
+  if (navMonthly) navMonthly.style.display = (isAdmin || isManager || isQA || isTL) ? '' : 'none';
 
   // My Team: TL, Manager, Admin only
   const navTeam = document.getElementById('nav-my-team');
@@ -1378,7 +2039,7 @@ function updateNavVisibility() {
   if (navDisputes) navDisputes.style.display = isAgent ? 'none' : '';
 
   // Admin-only items
-  ['sb-admin-label','nav-role-mgmt','sb-admin-divider'].forEach(id => {
+  ['sb-admin-label','nav-role-mgmt','nav-tpl-mgmt','sb-admin-divider'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.style.display = isAdmin ? '' : 'none';
   });
@@ -1425,6 +2086,11 @@ function showPage(id) {
   if (id === 'pending-agent') loadPendingAgent();
   if (id === 'disputes') loadDisputes();
   if (id === 'role-mgmt') loadRoleManagement();
+  if (id === 'tpl-mgmt') loadTplMgmt();
+  if (id === 'my-evals') loadMyEvals();
+  if (id === 'pipeline') loadPipeline();
+  if (id === 'fail-analysis') loadFailAnalysis();
+  if (id === 'monthly-perf') initMonthlyPerf();
   if (id === 'new-eval') resetNewEval();
 }
 
@@ -1509,10 +2175,12 @@ function filterAgents(val) {
   openDropdown(list, enriched, s => {
     document.getElementById('fAgentName').value = s.name;
     document.getElementById('fAgentId').value   = s.id;
+    clearFieldError(document.getElementById('fAgentName'));
     const tl = findTLForAgent(s);
     if (tl) {
       document.getElementById('fTLName').value = tl.name;
       document.getElementById('fTLId').value   = tl.id;
+      clearFieldError(document.getElementById('fTLName'));
     } else {
       document.getElementById('fTLName').value = '';
       document.getElementById('fTLId').value   = '';
@@ -1552,17 +2220,35 @@ document.addEventListener('click', e => {
 function selectTemplate(evalType, csat) {
   selectedTemplate = { evalType, csat };
   document.querySelectorAll('.template-card').forEach(c => c.classList.remove('selected'));
-  document.getElementById(`tpl-${evalType === 'historical' ? 'hist' : 'live'}-${csat === 'yes' ? 'csat' : 'no'}`).classList.add('selected');
+
+  if (evalType === 'complaint') {
+    document.getElementById('tpl-complaint')?.classList.add('selected');
+  } else {
+    const id = 'tpl-' + (evalType === 'historical' ? 'hist' : 'live') + '-' + (csat === 'yes' ? 'csat' : 'no');
+    document.getElementById(id)?.classList.add('selected');
+  }
 
   const info = document.getElementById('tplInfoAlert');
-  const typeLabel = evalType === 'historical' ? '📂 Historical' : '🔴 Live';
-  const csatLabel = csat === 'yes' ? 'with CSAT script evaluation' : 'without CSAT';
-  info.textContent = `${typeLabel} template selected -- ${csatLabel}. Choose call category below.`;
-  document.getElementById('tplSelectedInfo').style.display = 'block';
-  document.getElementById('fCallCategory').value = '';
-  document.getElementById('evalFormContainer').innerHTML = '';
-  document.getElementById('evalSubmitSection').style.display = 'none';
-  document.getElementById('callDetailsCard').style.display = 'none';
+  const catGroup = document.getElementById('fCallCategory')?.closest('.form-group');
+
+  if (evalType === 'complaint') {
+    info.innerHTML = '<strong>Complaint Evaluation</strong> — Fill in complaint details and chronology, then score the call quality.';
+    document.getElementById('tplSelectedInfo').style.display = 'block';
+    document.getElementById('fCallCategory').value = 'standard';
+    if (catGroup) catGroup.style.display = 'none';
+    document.getElementById('callDetailsCard').style.display = 'block';
+    renderComplaintForm();
+  } else {
+    const typeLabel = evalType === 'historical' ? 'Historical' : 'Live';
+    const csatLabel = csat === 'yes' ? 'with CSAT' : 'without CSAT';
+    info.textContent = typeLabel + ' template selected -- ' + csatLabel + '. Choose call category below.';
+    if (catGroup) catGroup.style.display = '';
+    document.getElementById('tplSelectedInfo').style.display = 'block';
+    document.getElementById('fCallCategory').value = '';
+    document.getElementById('evalFormContainer').innerHTML = '';
+    document.getElementById('evalSubmitSection').style.display = 'none';
+    document.getElementById('callDetailsCard').style.display = 'none';
+  }
 }
 
 function resetNewEval() {
@@ -1575,6 +2261,8 @@ function resetNewEval() {
   document.getElementById('evalFormContainer').innerHTML = '';
   document.getElementById('evalSubmitSection').style.display = 'none';
   document.getElementById('fDate').value = new Date().toLocaleDateString('en-CA');
+  document.querySelectorAll('.eval-tag-btn').forEach(b=>b.classList.remove('selected'));
+  const tagHidden = document.getElementById('fEvalTag'); if(tagHidden) tagHidden.value='';
   ['fAgentName','fAgentId','fTLName','fTLId','fTimestamp','fDuration','fCallingNum','fContactID','fRemarks','fCallRemarks'].forEach(id => {
     const el = document.getElementById(id); if (el) el.value = '';
   });
@@ -1656,6 +2344,36 @@ function renderFatalRow(fe, idx) {
   </div>`;
 }
 
+function selectEvalTag(btn) {
+  // Toggle — clicking same tag deselects
+  const alreadySelected = btn.classList.contains('selected');
+  document.querySelectorAll('.eval-tag-btn').forEach(b => b.classList.remove('selected'));
+  if (!alreadySelected) {
+    btn.classList.add('selected');
+    document.getElementById('fEvalTag').value = btn.dataset.tag;
+  } else {
+    document.getElementById('fEvalTag').value = '';
+  }
+}
+
+function tagBadge(tag) {
+  if (!tag) return '';
+  const map = {
+    daily:       { cls:'tag-daily',       icon:'📅', label:'Daily' },
+    testing:     { cls:'tag-testing',     icon:'🧪', label:'Testing' },
+    complaint:   { cls:'tag-complaint',   icon:'⚠️', label:'Complaint' },
+    coaching:    { cls:'tag-coaching',    icon:'🎯', label:'Coaching' },
+    calibration: { cls:'tag-calibration', icon:'⚖️', label:'Calibration' },
+  };
+  const t = map[tag];
+  if (!t) return `<span class="eval-tag" style="background:var(--surface3);color:var(--text3)">${tag}</span>`;
+  return `<span class="eval-tag ${t.cls}">${t.icon} ${t.label}</span>`;
+}
+
+function clearFieldError(el) {
+  if (el) { el.style.borderColor = ''; el.style.boxShadow = ''; }
+}
+
 function setAns(id, val, type, wt) {
   let score = type === 'yn' ? (val==='Y'?wt:0) : val==='2'?wt:val==='1'?wt*.5:0;
   currentAnswers[id] = { val, score, comment: currentAnswers[id]?.comment||'' };
@@ -1693,11 +2411,12 @@ function updateScore() {
   const totalWt = questions.reduce((a,q)=>a+q.wt,0);
   const earned = questions.reduce((a,q)=>a+(currentAnswers[q.id]?.score||0),0);
   const hasFatal = Object.values(currentFatalAnswers).some(f=>f.val==='Y');
-  const pct = hasFatal ? 0 : totalWt>0 ? Math.round(earned/totalWt*100) : 0;
+  const pct = hasFatal ? 0 : totalWt>0 ? Math.round(earned/totalWt*10000)/100 : 0;
   const big = document.getElementById('scoreBig'); if (!big) return;
-  big.textContent = pct+'%';
-  big.style.color = pct>=80?'var(--green)':pct>=60?'var(--amber)':'var(--red)';
-  document.getElementById('scoreSubtotal').textContent = `${earned.toFixed(1)} / ${totalWt}`;
+  big.textContent = pct.toFixed(2)+'%';
+  const pm = getPassingMark();
+  big.style.color = pct>=pm?'var(--green)':pct>=(pm*0.75)?'var(--amber)':'var(--red)';
+  document.getElementById('scoreSubtotal').textContent = earned.toFixed(2) + ' / ' + totalWt;
   document.getElementById('fatalIndicator').innerHTML = hasFatal
     ? '⛔ FATAL ERROR -- Score = 0%' : '✅ No Fatal Errors';
   document.getElementById('fatalIndicator').style.color = hasFatal?'var(--red)':'var(--green)';
@@ -1707,18 +2426,70 @@ function updateScore() {
 //  SAVE TO SUPABASE
 // ===============================================
 async function saveEval(status) {
-  const agentName = document.getElementById('fAgentName').value.trim();
-  const cat = document.getElementById('fCallCategory').value;
-  if (!agentName) { alert('Please enter agent name'); return; }
-  if (!cat) { alert('Please select call category'); return; }
-  if (!selectedTemplate) { alert('Please select a template'); return; }
+  const agentName  = document.getElementById('fAgentName').value.trim();
+  const tlName     = document.getElementById('fTLName').value.trim();
+  const cat        = document.getElementById('fCallCategory').value;
+  const date       = document.getElementById('fDate').value;
+  const timestamp  = document.getElementById('fTimestamp').value;
+  const duration   = document.getElementById('fDuration').value.trim();
+  const callingNum = document.getElementById('fCallingNum').value.trim();
+  const contactID  = document.getElementById('fContactID').value.trim();
+
+  if (!selectedTemplate) { alert('Please select an evaluation template'); return; }
+  if (!cat && selectedTemplate.evalType !== 'complaint') { alert('Please select a call category'); return; }
+
+  // Validate all mandatory fields
+  const missing = [];
+  if (!agentName)  missing.push('Agent Name');
+  if (!tlName)     missing.push('Team Leader');
+  if (!date)       missing.push('Date');
+  if (!timestamp)  missing.push('Timestamp');
+  if (!duration)   missing.push('Duration');
+  if (!callingNum) missing.push('Calling Number');
+  if (!contactID)  missing.push('Contact ID / Case ID');
+
+  if (missing.length) {
+    // Highlight missing fields
+    const fieldMap = {
+      'Agent Name':           'fAgentName',
+      'Team Leader':          'fTLName',
+      'Date':                 'fDate',
+      'Timestamp':            'fTimestamp',
+      'Duration':             'fDuration',
+      'Calling Number':       'fCallingNum',
+      'Contact ID / Case ID': 'fContactID',
+    };
+    // Reset all borders first
+    Object.values(fieldMap).forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.style.borderColor = '';
+    });
+    // Highlight missing
+    missing.forEach(f => {
+      const el = document.getElementById(fieldMap[f]);
+      if (el) {
+        el.style.borderColor = 'var(--red)';
+        el.style.boxShadow = '0 0 0 2px rgba(239,68,68,.2)';
+      }
+    });
+    alert('Please fill in all required fields:\n\n• ' + missing.join('\n• '));
+    // Scroll to call details
+    document.getElementById('callDetailsCard')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    return;
+  }
+
+  // Clear any error styles
+  ['fAgentName','fTLName','fDate','fTimestamp','fDuration','fCallingNum','fContactID'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) { el.style.borderColor = ''; el.style.boxShadow = ''; }
+  });
 
   let questions = cat==='standard'?[...STD_QS]:[...GEN_QS];
   if (selectedTemplate.csat==='yes') questions.push(cat==='standard'?STD_CSAT:GEN_CSAT);
   const totalWt = questions.reduce((a,q)=>a+q.wt,0);
   const earned = questions.reduce((a,q)=>a+(currentAnswers[q.id]?.score||0),0);
   const hasFatal = Object.values(currentFatalAnswers).some(f=>f.val==='Y');
-  const score = hasFatal?0:totalWt>0?Math.round(earned/totalWt*100):0;
+  const score = hasFatal?0:totalWt>0?Math.round(earned/totalWt*10000)/100:0;
 
   const payload = {
     agent_id: document.getElementById('fAgentId').value || null,
@@ -1735,6 +2506,8 @@ async function saveEval(status) {
     contact_id: document.getElementById('fContactID').value || null,
     remarks: document.getElementById('fRemarks').value || null,
     call_remarks: document.getElementById('fCallRemarks').value || null,
+    eval_tag: document.getElementById('fEvalTag')?.value || null,
+    complaint: selectedTemplate?.evalType === 'complaint' ? buildComplaintPayload() : null,
     questions,
     answers: currentAnswers,
     fatal_answers: currentFatalAnswers,
@@ -1815,8 +2588,12 @@ async function loadEvals(filters = {}) {
   const isManager = base === 'manager' || base === 'mgr';
   const isAgent   = base === 'agent';
 
-  if (isAgent && currentStaff?.name) {
-    q = q.ilike('agent_name', currentStaff.name); // case-insensitive match
+  if (isAgent && currentStaff?.name && currentStaff.name.split(' ').length > 1) {
+    // Full name available — filter at DB level with wildcard
+    q = q.ilike('agent_name', '%' + currentStaff.name.split(' ')[0] + '%');
+    console.log('[QA loadEvals] Agent DB filter by first name:', currentStaff.name.split(' ')[0]);
+  } else if (isAgent) {
+    console.log('[QA loadEvals] Agent short name, will filter client-side:', currentStaff?.name);
   }
 
   const { data, error } = await q;
@@ -1832,6 +2609,17 @@ async function loadEvals(filters = {}) {
     rows = filterByMyTeam(rows);
   }
 
+  // Client-side agent filter for agents with short/mismatched names
+  if (isAgent && currentStaff?.name && !currentStaff.name.includes(' ')) {
+    const shortName = currentStaff.name.toLowerCase();
+    const emailPrefix = (currentUser?.email||'').split('@')[0].toLowerCase();
+    rows = rows.filter(e => {
+      const an = (e.agent_name||'').toLowerCase();
+      return an.includes(shortName) || an.includes(emailPrefix.split('.')[0]);
+    });
+    console.log('[QA loadEvals] Client-side agent filter applied, rows:', rows.length);
+  }
+  console.log('[QA loadEvals] base:', base, '| mappedRole:', mappedRole, '| isAgent:', isAgent, '| rows after filter:', rows.length, '| currentStaff.name:', currentStaff?.name);
   return rows;
 }
 
@@ -1839,27 +2627,58 @@ async function loadDashboard() {
   const all = await loadEvals();
   evaluations = all;
 
-  // ── Top stats ──
-  document.getElementById('st-total').textContent    = all.length;
-  document.getElementById('st-pending').textContent  = all.filter(e=>['submitted','tl-approved'].includes(e.status)).length;
-  document.getElementById('st-disputed').textContent = all.filter(e=>['tl-disputed','agent-disputed'].includes(e.status)).length;
-  document.getElementById('st-closed').textContent   = all.filter(e=>e.status==='closed').length;
+  // Populate month filter
+  const months = new Set();
+  all.forEach(e => {
+    const d = e.date || (e.created_at ? e.created_at.slice(0,10) : '');
+    if (d) { const dt = new Date(d); if (!isNaN(dt)) months.add(`${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,'0')}`); }
+  });
+  const dashMonthSel = document.getElementById('dashMonthFilter');
+  if (dashMonthSel) {
+    const cur = dashMonthSel.value;
+    dashMonthSel.innerHTML = '<option value="">All Time</option>'
+      + [...months].sort().reverse().map(m => {
+          const [yr,mo] = m.split('-');
+          const lbl = new Date(yr,mo-1,1).toLocaleDateString('en-MY',{month:'long',year:'numeric'});
+          return `<option value="${m}">${lbl}</option>`;
+        }).join('');
+    if (cur && dashMonthSel.querySelector(`option[value="${cur}"]`)) dashMonthSel.value = cur;
+  }
 
-  // ── QA Performance ──
-  renderQAPerformance(all);
+  // Apply month filter
+  const selMonth = dashMonthSel?.value || '';
+  const filtered = selMonth ? all.filter(e => {
+    const d = e.date || (e.created_at ? e.created_at.slice(0,10) : '');
+    if (!d) return false;
+    const dt = new Date(d); if (isNaN(dt)) return false;
+    return `${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,'0')}` === selMonth;
+  }) : all;
 
-  // ── Score Overview ──
-  renderScoreOverview(all);
+  const label = selMonth ? (() => {
+    const [yr,mo] = selMonth.split('-');
+    return new Date(yr,mo-1,1).toLocaleDateString('en-MY',{month:'long',year:'numeric'});
+  })() : 'All Time';
 
-  // ── Recent evals table ──
+  const subtitle = document.querySelector('#page-dashboard .page-header p');
+  if (subtitle) subtitle.textContent = selMonth ? `Showing evaluations for ${label}` : 'Call monitoring evaluation overview';
+
+  // Stats (filtered)
+  document.getElementById('st-total').textContent    = filtered.length;
+  document.getElementById('st-pending').textContent  = filtered.filter(e=>['submitted','tl-approved','qa-review'].includes(e.status)).length;
+  document.getElementById('st-disputed').textContent = filtered.filter(e=>['tl-disputed','agent-disputed'].includes(e.status)).length;
+  document.getElementById('st-closed').textContent   = filtered.filter(e=>e.status==='closed').length;
+
+  renderQAPerformance(filtered);
+  renderScoreOverview(filtered);
+
+  // Recent evals table
   const tbody = document.getElementById('dashRecentBody');
-  const recent = all.slice(0, 8); // already filtered by loadEvals
+  const recent = filtered.slice(0, 8);
   if (!recent.length) {
-    tbody.innerHTML = '<tr><td colspan="8"><div class="empty-state"><div class="icon">📋</div><p>No evaluations yet. Create your first one!</p></div></td></tr>';
-    renderQAPerformance([]);
-    renderScoreOverview([]);
+    tbody.innerHTML = `<tr><td colspan="10"><div class="empty-state"><div class="icon">📋</div><p>No evaluations for ${label}.</p></div></td></tr>`;
     return;
   }
+  // recent already derived from filtered above
   tbody.innerHTML = recent.map(e => {
     const evalDT   = e.created_at ? new Date(e.created_at) : null;
     const evalDate = evalDT ? evalDT.toLocaleDateString('en-MY',{day:'2-digit',month:'2-digit',year:'numeric'}) : '--';
@@ -1867,15 +2686,15 @@ async function loadDashboard() {
     <td><span style="font-family:'JetBrains Mono',monospace;color:var(--accent)">#${e.ref}</span></td>
     <td>${e.agent_name||'--'}</td>
     <td style="font-size:12px;color:var(--text3)">${e.tl_name||'--'}</td>
-    <td><span class="pill">${tplLabel(e)}</span></td>
-    <td><span class="score-badge ${scoreClass(e.score)}">${e.score}%</span></td>
+    <td><span class="pill">${tplLabel(e)}</span> ${tagBadge(e.eval_tag)}</td>
+    <td><span class="score-badge ${scoreClass(e.score)}">${fmtScore(e.score)}</span></td>
     <td>${statusBadge(e.status)}</td>
     <td style="font-size:12px;color:var(--text3)">${e.date||'--'}</td>
     <td style="font-size:12px;color:var(--text3)">${evalDate}</td>
     <td style="font-size:12px;color:var(--accent)">${e.qa_user_name||'--'}</td>
     <td><button class="btn btn-ghost btn-sm" onclick="viewEval('${e.id}')">View</button></td>
   </tr>`;}).join('');
-  updateSidebarBadges(all);
+  updateSidebarBadges(all); // badges always show all, not filtered
 }
 
 function renderQAPerformance(all) {
@@ -1903,7 +2722,7 @@ function renderQAPerformance(all) {
   const maxTotal = Math.max(...entries.map(([,v]) => v.total));
 
   el.innerHTML = entries.map(([name, v]) => {
-    const avg = v.scores.length ? Math.round(v.scores.reduce((a,b)=>a+b,0) / v.scores.length) : 0;
+    const avg = v.scores.length ? Math.round(v.scores.reduce((a,b)=>a+b,0) / v.scores.length * 100) / 100 : 0;
     const barW = maxTotal > 0 ? Math.round((v.total / maxTotal) * 100) : 0;
     const avgColor = avg >= 80 ? 'var(--green)' : avg >= 60 ? 'var(--amber)' : 'var(--red)';
     const initials = name.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
@@ -1914,7 +2733,7 @@ function renderQAPerformance(all) {
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
             <span style="font-size:13px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${name}</span>
             <div style="display:flex;gap:8px;align-items:center;flex-shrink:0;margin-left:8px">
-              <span style="font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:700;color:${avgColor}">${avg}%</span>
+              <span style="font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:700;color:${avgColor}">${avg.toFixed(2)}%</span>
               <span style="font-size:11px;color:var(--text3)">${v.total} eval${v.total!==1?'s':''}</span>
             </div>
           </div>
@@ -1941,9 +2760,11 @@ function renderScoreOverview(all) {
   }
 
   const scores   = scored.map(e => Number(e.score));
-  const avg      = Math.round(scores.reduce((a,b)=>a+b,0) / scores.length);
+  const avg      = Math.round(scores.reduce((a,b)=>a+b,0) / scores.length * 100) / 100;
   const highest  = Math.max(...scores);
   const lowest   = Math.min(...scores);
+  const fmtH = highest%1===0?highest+'%':highest.toFixed(2)+'%';
+  const fmtL = lowest%1===0?lowest+'%':lowest.toFixed(2)+'%';
   const above80  = scores.filter(s=>s>=80).length;
   const below60  = scores.filter(s=>s<60).length;
   const fatal    = all.filter(e=>e.has_fatal).length;
@@ -1962,18 +2783,18 @@ function renderScoreOverview(all) {
     <!-- Big average -->
     <div style="text-align:center;padding:8px 0 16px;border-bottom:1px solid var(--border)">
       <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:var(--text3);margin-bottom:4px">Overall Average Score</div>
-      <div style="font-size:44px;font-weight:700;font-family:'JetBrains Mono',monospace;color:${avgColor}">${avg}%</div>
+      <div style="font-size:44px;font-weight:700;font-family:'JetBrains Mono',monospace;color:${avgColor}">${avg.toFixed(2)}%</div>
       <div style="font-size:12px;color:var(--text3);margin-top:2px">across ${scored.length} evaluation${scored.length!==1?'s':''}</div>
     </div>
 
     <!-- Key metrics row -->
     <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;text-align:center">
       <div style="background:var(--surface2);border-radius:var(--radius);padding:10px">
-        <div style="font-size:18px;font-weight:700;font-family:'JetBrains Mono',monospace;color:var(--green)">${highest}%</div>
+        <div style="font-size:18px;font-weight:700;font-family:'JetBrains Mono',monospace;color:var(--green)">${fmtH}</div>
         <div style="font-size:10px;color:var(--text3);margin-top:2px">Highest</div>
       </div>
       <div style="background:var(--surface2);border-radius:var(--radius);padding:10px">
-        <div style="font-size:18px;font-weight:700;font-family:'JetBrains Mono',monospace;color:var(--red)">${lowest}%</div>
+        <div style="font-size:18px;font-weight:700;font-family:'JetBrains Mono',monospace;color:var(--red)">${fmtL}</div>
         <div style="font-size:10px;color:var(--text3);margin-top:2px">Lowest</div>
       </div>
       <div style="background:var(--surface2);border-radius:var(--radius);padding:10px">
@@ -1999,27 +2820,131 @@ function renderScoreOverview(all) {
     </div>`;
 }
 
+function applyMonthFilter() {
+  const mo = document.getElementById('evFilter_month')?.value || '';
+  if (!mo) {
+    document.getElementById('evFilter_dateFrom').value = '';
+    document.getElementById('evFilter_dateTo').value   = '';
+  } else {
+    const [yr, m] = mo.split('-').map(Number);
+    const last = new Date(yr, m, 0).getDate();
+    document.getElementById('evFilter_dateFrom').value = `${yr}-${String(m).padStart(2,'0')}-01`;
+    document.getElementById('evFilter_dateTo').value   = `${yr}-${String(m).padStart(2,'0')}-${last}`;
+  }
+  loadAllEvals();
+}
+
+function getEvalDateStr(e, dateType) {
+  if (dateType === 'eval') {
+    // Use created_at (eval submission date)
+    return e.created_at ? e.created_at.slice(0,10) : '';
+  }
+  // Default: call date
+  return e.date || '';
+}
+
+function clearEvFilters() {
+  ['evFilter_dateType','evFilter_dateFrom','evFilter_dateTo','evFilter_status','evFilter_fatal','evFilter_tl','evFilter_qa','evFilter_tag','evFilter_search'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = '';
+  });
+  const mo = document.getElementById('evFilter_month');
+  if (mo) mo.value = '';
+  loadAllEvals();
+}
+
 async function loadAllEvals() {
   const all = await loadEvals();
   evaluations = all;
+
+  // Populate month dropdown from both call date and eval date
+  const months = new Set();
+  all.forEach(e => {
+    if (e.date) {
+      const d = new Date(e.date);
+      if (!isNaN(d)) months.add(`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`);
+    }
+    if (e.created_at) {
+      const d = new Date(e.created_at);
+      if (!isNaN(d)) months.add(`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`);
+    }
+  });
+  const moSel = document.getElementById('evFilter_month');
+  if (moSel && moSel.options.length <= 1) {
+    [...months].sort().reverse().forEach(m => {
+      const [yr,mo] = m.split('-');
+      const lbl = new Date(yr, mo-1, 1).toLocaleDateString('en-MY',{month:'long',year:'numeric'});
+      const o = document.createElement('option'); o.value=m; o.textContent=lbl; moSel.appendChild(o);
+    });
+  }
+
+  // Populate TL dropdown
+  const tls = [...new Set(all.map(e=>e.tl_name).filter(Boolean))].sort();
+  const tlSel = document.getElementById('evFilter_tl');
+  if (tlSel && tlSel.options.length <= 1) {
+    tls.forEach(t => { const o=document.createElement('option'); o.value=t; o.textContent=t; tlSel.appendChild(o); });
+  }
+
+  // Populate QA dropdown
+  const qas = [...new Set(all.map(e=>e.qa_user_name).filter(Boolean))].sort();
+  const qaSel = document.getElementById('evFilter_qa');
+  if (qaSel && qaSel.options.length <= 1) {
+    qas.forEach(q => { const o=document.createElement('option'); o.value=q; o.textContent=q; qaSel.appendChild(o); });
+  }
+
+  // Apply filters
+  const dateType = document.getElementById('evFilter_dateType')?.value || 'call';
+  const dateFrom = document.getElementById('evFilter_dateFrom')?.value || '';
+  const dateTo   = document.getElementById('evFilter_dateTo')?.value   || '';
+  const status   = document.getElementById('evFilter_status')?.value   || '';
+  const fatal    = document.getElementById('evFilter_fatal')?.value    || '';
+  const tl       = document.getElementById('evFilter_tl')?.value       || '';
+  const qa       = document.getElementById('evFilter_qa')?.value       || '';
+  const tagF     = document.getElementById('evFilter_tag')?.value     || '';
+  const search   = (document.getElementById('evFilter_search')?.value || '').toLowerCase();
+
+  const filtered = all.filter(e => {
+    if (status  && e.status !== status) return false;
+    if (fatal === 'yes' && !e.has_fatal) return false;
+    if (fatal === 'no'  &&  e.has_fatal) return false;
+    if (tl     && e.tl_name !== tl) return false;
+    if (qa     && e.qa_user_name !== qa) return false;
+    if (tagF   && e.eval_tag !== tagF) return false;
+    if (search && !(e.agent_name||'').toLowerCase().includes(search)) return false;
+    if (dateFrom || dateTo) {
+      const dateStr = getEvalDateStr(e, dateType);
+      const d = dateStr ? new Date(dateStr) : null;
+      if (!d || isNaN(d)) return false;
+      if (dateFrom && d < new Date(dateFrom)) return false;
+      if (dateTo   && d > new Date(dateTo + 'T23:59:59')) return false;
+    }
+    return true;
+  });
+
   const tbody = document.getElementById('allEvalsBody');
-  if (!all.length) { tbody.innerHTML = '<tr><td colspan="9"><div class="empty-state"><div class="icon">📋</div><p>No evaluations yet.</p></div></td></tr>'; return; }
-  tbody.innerHTML = all.map(e => {
-    const evalDT = e.created_at ? new Date(e.created_at) : null;
-    const evalDate = evalDT ? evalDT.toLocaleDateString('en-MY',{day:'2-digit',month:'2-digit',year:'numeric'}) : '--';
-    const evalTime = evalDT ? evalDT.toLocaleTimeString('en-MY',{hour:'2-digit',minute:'2-digit',hour12:true}) : '--';
+  if (!filtered.length) { tbody.innerHTML = '<tr><td colspan="12"><div class="empty-state"><div class="icon">🔍</div><p>No evaluations match the selected filters.</p></div></td></tr>'; return; }
+  tbody.innerHTML = filtered.map(e => {
+    const evalDT   = e.created_at ? new Date(e.created_at) : null;
+    const evalDate = evalDT ? evalDT.toLocaleDateString('en-MY',{day:'2-digit',month:'2-digit',year:'numeric'})
+                            + ' ' + evalDT.toLocaleTimeString('en-MY',{hour:'2-digit',minute:'2-digit',hour12:true}) : '--';
+    const approvedTs  = wfTimeShort(e, 'tl approved');
+    const disputedTs  = wfTimeShort(e, 'disputed');
+    const closedTs    = wfTimeShort(e, 'closed');
     return `<tr>
     <td><span style="font-family:'JetBrains Mono',monospace;color:var(--accent)">#${e.ref}</span></td>
-    <td>${e.agent_name||'--'}</td>
+    <td style="font-weight:500">${e.agent_name||'--'}</td>
     <td style="font-size:12px;color:var(--text3)">${e.tl_name||'--'}</td>
-    <td><span class="pill">${tplLabel(e)}</span></td>
-    <td><span class="score-badge ${scoreClass(e.score)}">${e.score}%</span></td>
-    <td>${e.has_fatal?'<span style="color:var(--red)">⛔ Yes</span>':'<span style="color:var(--green)">✅ No</span>'}</td>
+    <td><span class="pill" style="font-size:10px">${tplLabel(e)}</span></td>
+    <td>${tagBadge(e.eval_tag)}</td>
+    <td><span class="score-badge ${scoreClass(e.score)}">${fmtScore(e.score)}</span></td>
+    <td>${e.has_fatal?'<span style="color:var(--red)">⛔</span>':'<span style="color:var(--green)">✅</span>'}</td>
     <td>${statusBadge(e.status)}</td>
-    <td style="font-size:12px;color:var(--text3)">${e.date||'--'}</td>
-    <td style="font-size:12px;color:var(--text3)">${evalDate}</td>
-    <td style="font-size:12px;color:var(--text3)">${evalTime}</td>
-    <td style="font-size:12px;color:var(--accent)">${e.qa_user_name||'--'}</td>
+    <td style="font-size:11px;color:var(--text3);white-space:nowrap">${e.date||'--'}</td>
+    <td style="font-size:11px;color:var(--text3);white-space:nowrap">${evalDate}</td>
+    <td style="font-size:11px;color:var(--accent)">${e.qa_user_name||'--'}</td>
+    <td style="font-size:11px;color:var(--purple);white-space:nowrap">${approvedTs}</td>
+    <td style="font-size:11px;color:var(--amber);white-space:nowrap">${disputedTs}</td>
+    <td style="font-size:11px;color:var(--green);white-space:nowrap">${closedTs}</td>
     <td style="display:flex;gap:6px">
       <button class="btn btn-ghost btn-sm" onclick="viewEval('${e.id}')">View</button>
       ${e.status==='draft' ? `<button class="btn btn-primary btn-sm" onclick="quickSubmit('${e.id}')">Submit</button>` : ''}
@@ -2149,7 +3074,7 @@ async function loadMyTeam() {
     <td><span style="font-family:'JetBrains Mono',monospace;color:var(--accent)">#${e.ref}</span></td>
     <td><div style="font-weight:500">${e.agent_name||'--'}</div></td>
     <td><span class="pill" style="font-size:10px">${tplLabel(e)}</span></td>
-    <td><span class="score-badge ${scoreClass(e.score)}">${e.score}%</span></td>
+    <td><span class="score-badge ${scoreClass(e.score)}">${fmtScore(e.score)}</span></td>
     <td>${e.has_fatal?'<span style="color:var(--red)">⛔</span>':'<span style="color:var(--green)">✅</span>'}</td>
     <td>${statusBadge(e.status)}</td>
     <td style="font-size:12px;color:var(--text3)">${e.date||'--'}</td>
@@ -2169,7 +3094,12 @@ async function loadMyTeam() {
 }
 
 async function loadPendingTL() {
-  let rows = await loadEvals({ status: 'submitted' });
+  // Load both submitted (needs TL) and qa-review (needs QA to rework after agent dispute)
+  const [submitted, qaReview] = await Promise.all([
+    loadEvals({ status: 'submitted' }),
+    loadEvals({ status: 'qa-review' })
+  ]);
+  let rows = [...submitted, ...qaReview].sort((a,b) => new Date(b.created_at)-new Date(a.created_at));
   // TLs only see their own team; managers and admins see all
   rows = filterByMyTeam(rows);
   const tbody = document.getElementById('pendingTLBody');
@@ -2182,14 +3112,17 @@ async function loadPendingTL() {
     <td><span style="font-family:'JetBrains Mono',monospace;color:var(--accent)">#${e.ref}</span></td>
     <td>${e.agent_name||'--'}</td>
     <td style="font-size:12px;color:var(--text3)">${e.tl_name||'--'}</td>
-    <td><span class="score-badge ${scoreClass(e.score)}">${e.score}%</span></td>
+    <td><span class="score-badge ${scoreClass(e.score)}">${fmtScore(e.score)}</span></td>
     <td>${e.has_fatal?'<span style="color:var(--red)">⛔</span>':'<span style="color:var(--green)">✅</span>'}</td>
     <td style="font-size:12px;color:var(--text3)">${e.date||'--'}</td>
     <td style="font-size:12px;color:var(--text3)">${evalDate} ${evalTime}</td>
     <td style="font-size:12px;color:var(--accent)">${e.qa_user_name||'--'}</td>
     <td style="display:flex;gap:6px;flex-wrap:wrap">
       <button class="btn btn-ghost btn-sm" onclick="viewEval('${e.id}')">View</button>
-      ${canActAs('tl') ? `
+      ${e.status==='qa-review' && canActAs('qa') ? `
+        <span style="font-size:11px;color:var(--accent2);font-weight:600">⟳ Agent Disputed — QA Review Required</span>
+        <button class="btn btn-primary btn-sm" onclick="qaResubmit('${e.id}')">Re-evaluate</button>` :
+      canActAs('tl') ? `
         <button class="btn btn-success btn-sm" onclick="tlAction('${e.id}','approve')">✓ Approve</button>
         <button class="btn btn-amber btn-sm" onclick="tlAction('${e.id}','dispute')">⚠ Dispute</button>` : ''}
     </td>
@@ -2197,26 +3130,53 @@ async function loadPendingTL() {
 }
 
 async function loadPendingAgent() {
-  // loadEvals already applies agent filter via DB query
   const rows = await loadEvals({ statuses: ['tl-approved'] });
   const tbody = document.getElementById('pendingAgentBody');
-  if (!rows.length) { tbody.innerHTML = '<tr><td colspan="5"><div class="empty-state"><div class="icon">✅</div><p>Nothing pending agent acknowledgement.</p></div></td></tr>'; return; }
-  tbody.innerHTML = rows.map(e => `<tr>
+  if (!rows.length) {
+    tbody.innerHTML = '<tr><td colspan="7"><div class="empty-state"><div class="icon">✅</div><p>Nothing pending agent acknowledgement.</p></div></td></tr>';
+    return;
+  }
+  const base  = (currentStaff?.role || '').toLowerCase();
+  const email = (currentUser?.email || '').toLowerCase();
+  const isAdmin   = base === 'admin' || ROLE_MAP_EMAIL[email] === 'admin' || roleOverrides[email] === 'admin';
+  const isManager = base === 'manager' || base === 'mgr';
+  const isAgent   = base === 'agent';
+  const isTL      = base === 'tl';
+
+  tbody.innerHTML = rows.map(e => {
+    const evalDT   = e.created_at ? new Date(e.created_at) : null;
+    const evalDate = evalDT ? evalDT.toLocaleDateString('en-MY',{day:'2-digit',month:'2-digit',year:'numeric'}) : '--';
+    const tlActionTime = wfTime(e, 'tl approved') || wfTime(e, 'resolved');
+    // Agent can act if: they are the agent on this eval, or admin/manager testing
+    // Match agent by: exact name, OR partial name match, OR email prefix match
+    const agentNameInEval  = (e.agent_name||'').toLowerCase().trim();
+    const myStaffName      = (currentStaff?.name||'').toLowerCase().trim();
+    const myEmailPrefix    = (currentUser?.email||'').split('@')[0].toLowerCase().replace(/\./g,' ');
+    const isThisAgent = isAgent && (
+      agentNameInEval === myStaffName ||
+      agentNameInEval.includes(myStaffName) ||
+      myStaffName.includes(agentNameInEval.split(' ')[0]) ||
+      agentNameInEval.includes(myEmailPrefix.split(' ')[0])
+    );
+    const showActions = isAdmin || isManager || isThisAgent || (isTL && activeViewRole === 'agent');
+    return `<tr>
     <td><span style="font-family:'JetBrains Mono',monospace;color:var(--accent)">#${e.ref}</span></td>
-    <td>${e.agent_name||'--'}</td>
-    <td><span class="score-badge ${scoreClass(e.score)}">${e.score}%</span></td>
-    <td>${statusBadge('tl-approved')}</td>
-    <td style="display:flex;gap:6px">
+    <td><div style="font-weight:500">${e.agent_name||'--'}</div></td>
+    <td style="font-size:12px;color:var(--text3)">${e.tl_name||'--'}</td>
+    <td><span class="score-badge ${scoreClass(e.score)}">${fmtScore(e.score)}</span></td>
+    <td>${statusBadge(e.status)}</td>
+    <td style="font-size:12px;color:var(--text3)">${tlActionTime}</td>
+    <td style="display:flex;gap:6px;flex-wrap:wrap">
       <button class="btn btn-ghost btn-sm" onclick="viewEval('${e.id}')">View</button>
-      ${canActAs('agent') ? `
+      ${showActions ? `
         <button class="btn btn-success btn-sm" onclick="agentAction('${e.id}','acknowledge')">✓ Acknowledge</button>
-        <button class="btn btn-danger btn-sm" onclick="agentAction('${e.id}','dispute')">✗ Dispute</button>` : ''}
+        <button class="btn btn-danger btn-sm" onclick="agentAction('${e.id}','dispute')">✗ Dispute</button>` : '<span style="font-size:11px;color:var(--text3);padding:4px">Agent action required</span>'}
     </td>
-  </tr>`).join('');
+  </tr>`;}).join('');
 }
 
 async function loadDisputes() {
-  const rows = await loadEvals({ statuses: ['tl-disputed','agent-disputed'] });
+  const rows = await loadEvals({ statuses: ['tl-disputed','agent-disputed','qa-review'] });
   const tbody = document.getElementById('disputesBody');
   if (!rows.length) { tbody.innerHTML = '<tr><td colspan="6"><div class="empty-state"><div class="icon">✅</div><p>No active disputes.</p></div></td></tr>'; return; }
   const myRole = currentStaff?.role;
@@ -2225,7 +3185,7 @@ async function loadDisputes() {
     return `<tr>
       <td><span style="font-family:'JetBrains Mono',monospace;color:var(--accent)">#${e.ref}</span></td>
       <td>${e.agent_name||'--'}</td>
-      <td><span class="score-badge ${scoreClass(e.score)}">${e.score}%</span></td>
+      <td><span class="score-badge ${scoreClass(e.score)}">${fmtScore(e.score)}</span></td>
       <td>${e.status==='tl-disputed'?'<span style="color:var(--purple)">TL</span>':'<span style="color:var(--green)">Agent</span>'}</td>
       <td style="font-size:12px;color:var(--text3);max-width:200px">${lastWf?.note||'--'}</td>
       <td style="display:flex;gap:6px">
@@ -2239,6 +3199,14 @@ async function loadDisputes() {
 // ===============================================
 //  WORKFLOW ACTIONS
 // ===============================================
+// QA re-evaluate after agent dispute — opens view modal with note
+async function qaResubmit(id) {
+  const { data: e } = await supa.from('qa_evaluations').select('*').eq('id',id).single();
+  if (!e) return;
+  // Show the disputed questions highlighted in the detail view
+  viewEval(id);
+}
+
 async function quickSubmit(id) {
   await updateEvalStatus(id, 'submitted', 'qa', 'Submitted to TL', '');
   loadAllEvals();
@@ -2246,7 +3214,12 @@ async function quickSubmit(id) {
 
 function tlAction(id, action) {
   const isApprove = action === 'approve';
-  const bodyHTML = isApprove ? `
+  if (!isApprove) {
+    // Load eval then show question-picker dispute modal
+    openDisputeModal(id, 'tl');
+    return;
+  }
+  const bodyHTML = `
     <div class="form-group">
       <label class="form-label">Coaching Notes for Agent <span style="color:var(--text3)">(optional)</span></label>
       <textarea class="form-textarea" id="actionNote" rows="3"
@@ -2259,11 +3232,6 @@ function tlAction(id, action) {
            'Problem Solving','CSAT Script','CRM Notes','Caselog Category','Professionalism']
           .map(t => `<button type="button" class="coach-tag" onclick="toggleCoachTag(this)">${t}</button>`).join('')}
       </div>
-    </div>` : `
-    <div class="form-group">
-      <label class="form-label">Reason for Dispute <span style="color:var(--red);font-size:11px">(required)</span></label>
-      <textarea class="form-textarea" id="actionNote" rows="3"
-        placeholder="State the specific issue -- incorrect scoring, missed item, etc."></textarea>
     </div>`;
 
   openActionModal(
@@ -2298,19 +3266,140 @@ function tlAction(id, action) {
   );
 }
 
+// ── Question-level dispute modal ──
+async function openDisputeModal(id, disputerRole) {
+  setLoading(true, 'Loading evaluation...');
+  const { data: e } = await supa.from('qa_evaluations').select('*').eq('id', id).single();
+  setLoading(false);
+  if (!e) return;
+
+  const qs      = e.questions || [];
+  const answers = e.answers   || {};
+  const roleLabel = disputerRole === 'tl' ? 'Team Leader' : 'Agent';
+
+  const qRows = qs.map((q, i) => {
+    const a     = answers[q.id] || {};
+    const score = a.score !== undefined ? Number(a.score).toFixed(1) : '--';
+    const val   = a.val   || '--';
+    const valColor = val==='Y'||val==='2' ? 'var(--green)' : val==='N'||val==='0' ? 'var(--red)' : 'var(--amber)';
+    return `<div class="dispute-q-row" id="dqrow-${q.id}">
+      <div>
+        <div style="display:flex;align-items:flex-start;gap:8px">
+          <input type="checkbox" class="dispute-check" id="dchk-${q.id}"
+            onchange="toggleDisputeRow('${q.id}')">
+          <label for="dchk-${q.id}" class="dispute-q-text" style="cursor:pointer">
+            <span style="font-size:10px;color:var(--text3);margin-right:4px">${q.num}</span>${q.q}
+          </label>
+        </div>
+        <input class="dispute-comment" id="dcmt-${q.id}"
+          placeholder="State your reason for disputing this question..." maxlength="300">
+      </div>
+      <div style="text-align:center;padding-top:2px">
+        <span style="font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:700;color:${valColor}">${val}</span>
+        <div style="font-size:10px;color:var(--text3)">${score}/${q.wt}pts</div>
+      </div>
+    </div>`;
+  }).join('');
+
+  document.getElementById('actionModalTitle').textContent = `⚠ Dispute Evaluation #${e.ref}`;
+  document.getElementById('actionModalBody').innerHTML = `
+    <div class="alert alert-warning" style="margin-bottom:12px">
+      Select the question(s) you disagree with and provide your reason. At least one question must be selected.
+    </div>
+    <div style="max-height:340px;overflow-y:auto;border:1px solid var(--border);border-radius:var(--radius);padding:8px 12px;margin-bottom:14px">
+      <div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:var(--text3);margin-bottom:8px;display:grid;grid-template-columns:1fr auto;gap:10px">
+        <span>Question</span><span style="text-align:center">Score</span>
+      </div>
+      ${qRows}
+    </div>
+    <div class="form-group" style="margin-bottom:0">
+      <label class="form-label">Overall Dispute Notes <span style="color:var(--text3);font-size:11px">(optional — adds to selected questions)</span></label>
+      <textarea class="form-textarea" id="actionNote" rows="2"
+        placeholder="Any additional context for your dispute..."></textarea>
+    </div>`;
+
+  document.getElementById('actionModalFooter').innerHTML = `
+    <button class="btn btn-ghost" onclick="closeModal('actionModal')">Cancel</button>
+    <button class="btn btn-danger" onclick="submitDisputeWithQuestions('${id}','${disputerRole}')">⚠ Submit Dispute</button>`;
+
+  document.getElementById('actionModal').classList.remove('hidden');
+}
+
+function toggleDisputeRow(qid) {
+  const chk = document.getElementById('dchk-' + qid);
+  const row = document.getElementById('dqrow-' + qid);
+  const cmt = document.getElementById('dcmt-' + qid);
+  if (chk.checked) {
+    row.classList.add('dispute-row-selected');
+    cmt.classList.add('show');
+    cmt.focus();
+  } else {
+    row.classList.remove('dispute-row-selected');
+    cmt.classList.remove('show');
+    cmt.value = '';
+  }
+}
+
+async function submitDisputeWithQuestions(id, disputerRole) {
+  // Collect selected questions
+  const disputed = [];
+  document.querySelectorAll('.dispute-check:checked').forEach(chk => {
+    const qid = chk.id.replace('dchk-', '');
+    const cmt = document.getElementById('dcmt-' + qid)?.value?.trim() || '';
+    const label = chk.closest('.dispute-q-row')?.querySelector('.dispute-q-text')?.textContent?.trim() || qid;
+    disputed.push({ qid, label: label.substring(0, 80), comment: cmt });
+  });
+
+  if (!disputed.length) {
+    alert('Please select at least one question to dispute.');
+    return;
+  }
+
+  const overallNote = document.getElementById('actionNote')?.value?.trim() || '';
+
+  // Build dispute summary
+  const disputeLines = disputed.map(d =>
+    `• ${d.label}${d.comment ? ': ' + d.comment : ''}`
+  ).join('\n');
+  const fullNote = (overallNote ? overallNote + '\n\nDisputed questions:\n' : 'Disputed questions:\n') + disputeLines;
+
+  const newStatus = disputerRole === 'tl' ? 'tl-disputed' : 'agent-disputed';
+  const action    = disputerRole === 'tl' ? 'TL Disputed' : 'Agent Disputed';
+
+  const { data: ev } = await supa.from('qa_evaluations').select('workflow').eq('id', id).single();
+  const wf = [...(ev?.workflow||[]), {
+    role: disputerRole, action, ts: new Date().toISOString(),
+    note: fullNote, by: currentStaff?.name || '',
+    disputed_questions: disputed
+  }];
+  await supa.from('qa_evaluations').update({
+    status: newStatus, workflow: wf, updated_at: new Date().toISOString()
+  }).eq('id', id);
+
+  closeModal('actionModal');
+  const activePage = document.querySelector('.page.active')?.id?.replace('page-','');
+  if (activePage === 'my-team') loadMyTeam();
+  else if (activePage === 'pending-agent') loadPendingAgent();
+  else if (activePage === 'pending-tl') loadPendingTL();
+  else loadAllEvals();
+  alert(`Dispute submitted for ${disputed.length} question(s).`);
+}
+
 function toggleCoachTag(btn) {
   btn.classList.toggle('selected');
 }
 
 function agentAction(id, action) {
+  if (action === 'dispute') {
+    openDisputeModal(id, 'agent');
+    return;
+  }
   openActionModal(
-    action==='acknowledge'?'✓ Acknowledge Evaluation':'✗ Dispute Evaluation',
-    action==='acknowledge'
-      ? `<div class="alert alert-success">Acknowledging this evaluation will close the record.</div>`
-      : `<div class="alert alert-danger">Your dispute will be escalated to QA and management for resolution.</div>`,
+    '✓ Acknowledge Evaluation',
+    `<div class="alert alert-success">You are acknowledging this evaluation. This will close the record.</div>`,
     `<div class="form-group">
-      <label class="form-label">Notes ${action==='dispute'?'(required -- state your reason)':'(optional)'}</label>
-      <textarea class="form-textarea" id="actionNote" rows="3" placeholder="${action==='dispute'?'State reason for disputing...':'Optional comments...'}"></textarea>
+      <label class="form-label">Comments (optional)</label>
+      <textarea class="form-textarea" id="actionNote" rows="3" placeholder="Any comments for the record..."></textarea>
     </div>`,
     async () => {
       const note = document.getElementById('actionNote').value;
@@ -2333,36 +3422,49 @@ function agentAction(id, action) {
   );
 }
 
-function resolveDispute(id) {
+async function resolveDispute(id) {
+  // Fetch eval to know if TL or Agent disputed
+  const { data: e } = await supa.from('qa_evaluations').select('status,agent_name,workflow').eq('id',id).single();
+  if (!e) return;
+  const isTLDispute    = e.status === 'tl-disputed';
+  const isAgentDispute = e.status === 'agent-disputed';
+
   openActionModal(
     '🔒 Resolve Dispute',
-    `<div class="alert alert-info">Select resolution and provide notes to close this dispute.</div>`,
+    isTLDispute
+      ? `<div class="alert alert-warning">TL disputed this evaluation. Resolve and send back to TL for approval.</div>`
+      : `<div class="alert alert-danger">Agent disputed this evaluation. Resolve and send back to QA to review and resubmit.</div>`,
     `<div class="form-group">
       <label class="form-label">Resolution</label>
       <select class="form-select" id="resolutionType">
-        <option value="uphold">Uphold original evaluation</option>
-        <option value="revise">Revise / amend evaluation</option>
+        <option value="uphold">Uphold original evaluation — no changes</option>
+        <option value="revise">Revise evaluation — scores will be updated</option>
       </select>
     </div>
     <div class="form-group">
       <label class="form-label">Resolution Notes (required)</label>
-      <textarea class="form-textarea" id="actionNote" rows="3" placeholder="State your resolution and rationale..."></textarea>
+      <textarea class="form-textarea" id="actionNote" rows="3"
+        placeholder="State your resolution and rationale..."></textarea>
     </div>`,
     async () => {
-      const note = document.getElementById('actionNote').value;
+      const note = document.getElementById('actionNote').value.trim();
       const res  = document.getElementById('resolutionType').value;
-      if (!note.trim()){alert('Please provide resolution notes');return false;}
-      // After dispute resolved, agent must still acknowledge to close
-      const wf = [{
-        role:'mgr',
-        action: res==='uphold' ? 'Dispute Resolved — Upheld' : 'Dispute Resolved — Revised',
-        ts: new Date().toISOString(), note, by: currentStaff?.name||''
-      }];
-      await appendWorkflowAndStatus(id, 'tl-approved', wf);
-      // tl-approved means agent still needs to acknowledge
+      if (!note) { alert('Please provide resolution notes'); return false; }
+
+      const action = res==='uphold' ? 'Dispute Resolved — Upheld' : 'Dispute Resolved — Revised';
+
+      if (isTLDispute) {
+        // TL disputed → QA resolved → back to TL for approval
+        const wf = [{ role:'qa', action, ts:new Date().toISOString(), note, by:currentStaff?.name||'' }];
+        await appendWorkflowAndStatus(id, 'submitted', wf);
+      } else {
+        // Agent disputed → QA/Manager resolved → back to QA to review & resubmit
+        const wf = [{ role:'mgr', action, ts:new Date().toISOString(), note, by:currentStaff?.name||'' }];
+        await appendWorkflowAndStatus(id, 'qa-review', wf);
+      }
       loadDisputes(); return true;
     },
-    'btn-primary','🔒 Close Dispute'
+    'btn-primary', '🔒 Resolve & Forward'
   );
 }
 
@@ -2427,9 +3529,12 @@ async function viewEval(id) {
       </div>
       <div class="card" style="padding:12px;margin:0;text-align:center">
         <div class="text-sm" style="margin-bottom:4px">Final Score</div>
-        <div style="font-size:32px;font-weight:700;font-family:'JetBrains Mono',monospace;color:${scoreColor}">${e.score}%</div>
+        <div style="font-size:32px;font-weight:700;font-family:'JetBrains Mono',monospace;color:${scoreColor}">${fmtScore(e.score)}</div>
         <div style="font-size:11px;color:var(--text3);margin-top:2px">${Number(e.earned_pts||0).toFixed(1)} / ${e.total_wt||0} pts</div>
-        ${e.has_fatal?'<div style="font-size:11px;color:var(--red);margin-top:4px;font-weight:600">⛔ FATAL ERROR</div>':''}
+        ${e.has_fatal?'<div style="font-size:11px;color:var(--red);margin-top:4px;font-weight:600">FATAL ERROR</div>':''}
+        <div style="margin-top:4px;font-size:12px;font-weight:700;color:${Number(e.score)>=getPassingMark()?'var(--green)':'var(--red)'}">
+          ${Number(e.score)>=getPassingMark()?'PASS':'FAIL'} (min ${getPassingMark()}%)
+        </div>
       </div>
     </div>
     <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px">
@@ -2437,6 +3542,7 @@ async function viewEval(id) {
       <span class="pill">${e.call_category==='standard'?'Standard Call':'General Enquiries'}</span>
       <span class="pill">${e.csat==='yes'?'✓ CSAT':'No CSAT'}</span>
       <span class="pill">📅 ${e.date||'--'}</span>
+      ${e.eval_tag ? tagBadge(e.eval_tag) : ''}
       <span class="pill">⏱ ${e.timestamp||'--'}</span>
       <span class="pill">📞 ${e.calling_num||'--'}</span>
       <span class="pill">🗂 ${e.contact_id||'--'}</span>
@@ -2476,11 +3582,21 @@ async function viewEval(id) {
       <div style="padding-top:8px">${buildWFHTML(e)}</div>
     </div>`;
 
+  const isQARole  = (currentStaff?.role||'').toLowerCase() === 'qa';
+  const isThisQA  = isQARole && (e.qa_user_id === currentUser?.id || e.qa_user_name === currentStaff?.name);
   let footer = `<button class="btn btn-ghost" onclick="closeModal('detailModal')">Close</button>`;
-  if (e.status==='submitted' && canActAs('tl'))
+  if (isQARole && isThisQA && ['submitted','tl-approved'].includes(e.status)) {
+    footer = `<div style="font-size:12px;color:var(--text3);padding:4px 8px;flex:1">
+      ℹ️ You submitted this evaluation — TL and Agent actions are handled by them.</div>` + footer;
+  }
+  if (e.status==='submitted' && canActAs('tl') && !isQARole)
     footer += `<button class="btn btn-success" onclick="closeModal('detailModal');tlAction('${e.id}','approve')">✓ Approve</button>
                <button class="btn btn-amber" onclick="closeModal('detailModal');tlAction('${e.id}','dispute')">⚠ Dispute</button>`;
-  if (e.status==='tl-approved' && canActAs('agent'))
+  const isThisAgentInModal = (currentStaff?.role||'').toLowerCase()==='agent'
+    && (e.agent_name||'').toLowerCase().trim()===(currentStaff?.name||'').toLowerCase().trim();
+  // isQARole already declared above
+  const canAgentAct = !isQARole && (canActAs('agent') || isThisAgentInModal);
+  if (e.status==='tl-approved' && canAgentAct)
     footer += `<button class="btn btn-success" onclick="closeModal('detailModal');agentAction('${e.id}','acknowledge')">✓ Acknowledge</button>
                <button class="btn btn-danger" onclick="closeModal('detailModal');agentAction('${e.id}','dispute')">✗ Dispute</button>`;
   if (['tl-disputed','agent-disputed'].includes(e.status) && canActAs('manager'))
@@ -2520,7 +3636,8 @@ function buildWFHTML(e) {
   const pending = {
     'submitted':       {label:'Pending TL Review',             next:'Team Leader to approve or dispute'},
     'tl-approved':     {label:'Pending Agent Acknowledgement', next:'Agent must acknowledge or dispute'},
-    'tl-disputed':     {label:'Dispute Under Review',          next:'QA / Manager to resolve — then back to agent'},
+    'tl-disputed':     {label:'TL Dispute — Under Review',      next:'QA to resolve and resubmit to TL'},
+    'qa-review':       {label:'QA Review Required',              next:'QA to review agent dispute and resubmit'},
     'agent-disputed':  {label:'Agent Dispute Under Review',    next:'Manager to resolve'},
   };
   if (pending[e.status]) {
@@ -2534,6 +3651,19 @@ function buildWFHTML(e) {
 // ===============================================
 //  HELPERS
 // ===============================================
+// Short date format for table cells
+function wfTimeShort(e, action) {
+  const wf = (e.workflow || []).find(w =>
+    w.action && w.action.toLowerCase().includes(action.toLowerCase())
+  );
+  if (!wf?.ts) return '--';
+  const dt = new Date(wf.ts);
+  return dt.toLocaleDateString('en-MY',{day:'2-digit',month:'2-digit',year:'numeric'})
+    + '<br><span style="color:var(--text3)">'
+    + dt.toLocaleTimeString('en-MY',{hour:'2-digit',minute:'2-digit',hour12:true})
+    + '</span>';
+}
+
 // Extract a specific action timestamp from workflow array
 function wfTime(e, action) {
   const wf = (e.workflow || []).find(w =>
@@ -2551,7 +3681,12 @@ function tplLabel(e) {
   const cat = e.call_category==='standard'?'STD':'GEN';
   return `${t} ${cat} ${c}`.trim();
 }
-function scoreClass(s) { return s>=80?'score-high':s>=60?'score-mid':'score-low'; }
+function scoreClass(s) {
+  const n  = Number(s);
+  const pm = getPassingMark();
+  return n >= pm ? 'score-high' : n >= pm * 0.75 ? 'score-mid' : 'score-low';
+}
+function fmtScore(s) { const n=Number(s); return isNaN(n)?'--':n.toFixed(2)+'%'; }
 function statusBadge(status) {
   const m = {
     draft:['status-draft','Draft'], submitted:['status-submitted','Submitted'],
@@ -2559,7 +3694,8 @@ function statusBadge(status) {
     'agent-acknowledged':['status-agent-acknowledged','Agent Ack.'],
     'agent-disputed':['status-agent-disputed','Agent Disputed'],
     'tl-dispute-resolved':['status-tl-approved','Dispute Resolved'],
-    closed:['status-closed','Closed'],
+    'qa-review':           ['status-submitted','QA Review'],
+    closed:                ['status-closed','Closed'],
   };
   const [cls,label] = m[status]||['status-draft',status];
   return `<span class="status ${cls}">${label}</span>`;
@@ -2570,8 +3706,16 @@ function updateSidebarBadges(all) {
   const submitted = a.filter(e=>e.status==='submitted');
   const myTeamSubmitted = activeViewRole !== 'manager' ? filterByMyTeam(submitted) : submitted;
   document.getElementById('sbMyTeam').textContent = myTeamSubmitted.length;
-  document.getElementById('sbPendingTL').textContent = submitted.length;
-  document.getElementById('sbPendingAgent').textContent = a.filter(e=>e.status==='tl-approved').length;
+  const qaReview = a.filter(e=>e.status==='qa-review');
+  document.getElementById('sbPendingTL').textContent = submitted.length + qaReview.length;
+  // For agents: only count their own; for others: count all
+  const pendingAgentRows = a.filter(e=>e.status==='tl-approved');
+  const myName = (currentStaff?.name||'').toLowerCase().trim();
+  const base2  = (currentStaff?.role||'').toLowerCase();
+  const agentPendingCount = base2==='agent'
+    ? pendingAgentRows.filter(e=>(e.agent_name||'').toLowerCase().trim()===myName).length
+    : pendingAgentRows.length;
+  document.getElementById('sbPendingAgent').textContent = agentPendingCount;
   document.getElementById('sbDisputes').textContent = a.filter(e=>['tl-disputed','agent-disputed'].includes(e.status)).length;
 }
 function openActionModal(title, alertHTML, bodyHTML, onConfirm, btnClass, btnLabel) {
@@ -2592,9 +3736,1432 @@ async function runConfirm() {
 }
 function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
 
+function openChangePassword() {
+  // Reset form
+  document.getElementById('cpNewPw').value = '';
+  document.getElementById('cpConfirmPw').value = '';
+  document.getElementById('pwStrengthBar').style.width = '0%';
+  document.getElementById('pwStrengthLabel').textContent = '';
+  document.getElementById('pwMatchLabel').textContent = '';
+  document.getElementById('changePwError').style.display = 'none';
+  document.getElementById('changePwSuccess').style.display = 'none';
+  document.getElementById('changePwBtn').disabled = false;
+  document.getElementById('changePwBtn').textContent = 'Update Password';
+  document.getElementById('changePwModal').classList.remove('hidden');
+  setTimeout(() => document.getElementById('cpNewPw').focus(), 100);
+}
+
+function togglePwVis(inputId, btn) {
+  const inp = document.getElementById(inputId);
+  if (inp.type === 'password') { inp.type = 'text'; btn.textContent = '🙈'; }
+  else { inp.type = 'password'; btn.textContent = '👁'; }
+}
+
+function checkPwStrength(pw) {
+  const bar   = document.getElementById('pwStrengthBar');
+  const label = document.getElementById('pwStrengthLabel');
+  if (!pw) { bar.style.width = '0%'; label.textContent = ''; return; }
+
+  let score = 0;
+  if (pw.length >= 8)  score++;
+  if (pw.length >= 12) score++;
+  if (/[A-Z]/.test(pw)) score++;
+  if (/[0-9]/.test(pw)) score++;
+  if (/[^A-Za-z0-9]/.test(pw)) score++;
+
+  const levels = [
+    { pct:'20%', color:'var(--red)',    text:'Very Weak' },
+    { pct:'40%', color:'var(--red)',    text:'Weak' },
+    { pct:'60%', color:'var(--amber)',  text:'Fair' },
+    { pct:'80%', color:'var(--accent)', text:'Strong' },
+    { pct:'100%',color:'var(--green)',  text:'Very Strong' },
+  ];
+  const lvl = levels[Math.min(score, 4)];
+  bar.style.width   = lvl.pct;
+  bar.style.background = lvl.color;
+  label.textContent = lvl.text;
+  label.style.color = lvl.color;
+  checkPwMatch();
+}
+
+function checkPwMatch() {
+  const pw1    = document.getElementById('cpNewPw').value;
+  const pw2    = document.getElementById('cpConfirmPw').value;
+  const label  = document.getElementById('pwMatchLabel');
+  if (!pw2) { label.textContent = ''; return; }
+  if (pw1 === pw2) {
+    label.textContent = '✓ Passwords match';
+    label.style.color = 'var(--green)';
+  } else {
+    label.textContent = '✗ Passwords do not match';
+    label.style.color = 'var(--red)';
+  }
+}
+
+async function doChangePassword() {
+  const pw1 = document.getElementById('cpNewPw').value;
+  const pw2 = document.getElementById('cpConfirmPw').value;
+  const errEl = document.getElementById('changePwError');
+  const sucEl = document.getElementById('changePwSuccess');
+  const btn   = document.getElementById('changePwBtn');
+
+  errEl.style.display = 'none';
+  sucEl.style.display = 'none';
+
+  // Validate
+  if (!pw1) { errEl.textContent = 'Please enter a new password.'; errEl.style.display = 'block'; return; }
+  if (pw1.length < 8) { errEl.textContent = 'Password must be at least 8 characters.'; errEl.style.display = 'block'; return; }
+  if (pw1 !== pw2) { errEl.textContent = 'Passwords do not match.'; errEl.style.display = 'block'; return; }
+
+  btn.disabled = true;
+  btn.innerHTML = '<div class="spinner"></div> Updating...';
+
+  const { error } = await supa.auth.updateUser({ password: pw1 });
+
+  if (error) {
+    errEl.textContent = 'Error: ' + (error.message || 'Could not update password.');
+    errEl.style.display = 'block';
+    btn.disabled = false;
+    btn.textContent = 'Update Password';
+  } else {
+    sucEl.textContent = '✅ Password updated successfully! Your account is now secure.';
+    sucEl.style.display = 'block';
+    btn.textContent = 'Done';
+    // Mark as changed in localStorage — do this FIRST before anything else
+    const userEmail2 = (currentUser?.email || '').toLowerCase();
+    const pwKeyMark = 'qa_pw_changed_' + userEmail2.replace(/[^a-z0-9]/g,'_');
+    localStorage.setItem(pwKeyMark, new Date().toISOString());
+    console.log('[QA] Password change marked for:', userEmail2);
+    // Restore close button if it was hidden
+    const closeBtn = document.getElementById('changePwModal').querySelector('.modal-close');
+    if (closeBtn) closeBtn.style.display = '';
+    // Clear fields
+    document.getElementById('cpNewPw').value = '';
+    document.getElementById('cpConfirmPw').value = '';
+    document.getElementById('pwStrengthBar').style.width = '0%';
+    document.getElementById('pwStrengthLabel').textContent = '';
+    document.getElementById('pwMatchLabel').textContent = '';
+    // Update sidebar count back to normal
+    updateNavVisibility();
+    // Auto-close after 2 seconds
+    setTimeout(() => closeModal('changePwModal'), 2000);
+  }
+}
+
 function forceShowLogin() {
   setLoading(false);
   document.getElementById('loginWrap').style.display = 'flex';
+}
+
+// ===============================================
+//  PASSING MARK CONFIG
+// ===============================================
+
+const DEFAULT_PASSING_MARK = 90;
+
+function getPassingMark() {
+  const stored = localStorage.getItem('qa_passing_mark');
+  return stored ? parseFloat(stored) : DEFAULT_PASSING_MARK;
+}
+
+function setPassingMark(val) {
+  const n = parseFloat(val);
+  if (isNaN(n) || n < 1 || n > 100) { alert('Please enter a valid passing mark between 1 and 100.'); return false; }
+  localStorage.setItem('qa_passing_mark', n);
+  alert('Passing mark updated to ' + n + '%. This applies immediately to all displays.');
+  return true;
+}
+
+// ===============================================
+//  THEME MANAGEMENT
+// ===============================================
+
+function initTheme() {
+  // Load saved theme or detect system preference
+  const saved = localStorage.getItem('qa_theme');
+  const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+  const theme = saved || (prefersDark ? 'dark' : 'light');
+  applyTheme(theme);
+}
+
+function applyTheme(theme) {
+  document.documentElement.setAttribute('data-theme', theme);
+  localStorage.setItem('qa_theme', theme);
+  const btn = document.getElementById('themeToggleBtn');
+  if (btn) btn.textContent = theme === 'dark' ? '🌙' : '☀️';
+  const loginBtn = document.getElementById('loginThemeBtn');
+  if (loginBtn) loginBtn.textContent = theme === 'dark' ? '🌙' : '☀️';
+}
+
+function toggleTheme() {
+  const current = document.documentElement.getAttribute('data-theme') || 'dark';
+  applyTheme(current === 'dark' ? 'light' : 'dark');
+}
+
+// Listen for system theme changes
+window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
+  if (!localStorage.getItem('qa_theme')) {
+    applyTheme(e.matches ? 'dark' : 'light');
+  }
+});
+
+// ===============================================
+//  COMPLAINT EVALUATION
+// ===============================================
+
+function renderComplaintForm() {
+  const container = document.getElementById('evalFormContainer');
+  const stdQRows = STD_QS.map((q,i) => renderQRow(q, i+1)).join('');
+  const fatalRows = FATALS.map((fe,i) => renderFatalRow(fe, i+1)).join('');
+  container.innerHTML = '<div class="complaint-section">'
+    + '<div class="complaint-section-title">Complaint Details</div>'
+    + '<div class="form-row">'
+    + '<div class="form-group"><label class="form-label">Complaint Ref No.</label>'
+    + '<input class="form-input" id="cmp_ref" placeholder="CMP-2026-001"></div>'
+    + '<div class="form-group"><label class="form-label">Channel</label>'
+    + '<select class="form-select" id="cmp_channel"><option value="">-- Select --</option>'
+    + '<option>Phone Call</option><option>Email</option><option>Walk-in</option>'
+    + '<option>Social Media</option><option>Regulatory Body (MCMC)</option><option>Other</option>'
+    + '</select></div></div>'
+    + '<div class="form-row">'
+    + '<div class="form-group"><label class="form-label">Complaint Category</label>'
+    + '<select class="form-select" id="cmp_category"><option value="">-- Select --</option>'
+    + '<option>Billing Dispute</option><option>Service Interruption</option>'
+    + '<option>Staff Misconduct</option><option>Wrong Information Provided</option>'
+    + '<option>Unresolved Issue</option><option>Long Wait Time</option>'
+    + '<option>Network Quality</option><option>Other</option>'
+    + '</select></div>'
+    + '<div class="form-group"><label class="form-label">Date Complaint Received</label>'
+    + '<input class="form-input" type="date" id="cmp_date_received"></div></div>'
+    + '<div class="form-group"><label class="form-label">Customer Complaint Summary *</label>'
+    + '<textarea class="form-textarea" id="cmp_summary" rows="3" placeholder="Summarize the complaint..."></textarea></div>'
+    + '</div>'
+    + '<div class="complaint-section" style="border-color:rgba(245,158,11,.3);background:rgba(245,158,11,.03)">'
+    + '<div class="complaint-section-title" style="color:var(--amber)">Chronology of Events</div>'
+    + '<div style="font-size:12px;color:var(--text3);margin-bottom:12px">Document the sequence of events.</div>'
+    + '<div id="chronologyList" style="display:flex;flex-direction:column;gap:8px;margin-bottom:12px"></div>'
+    + '<button class="btn btn-ghost btn-sm" onclick="addChronologyRow()">+ Add Event</button>'
+    + '</div>'
+    + '<div class="complaint-section" style="border-color:rgba(99,102,241,.3);background:rgba(99,102,241,.03)">'
+    + '<div class="complaint-section-title" style="color:var(--accent2)">Root Cause & Action Taken</div>'
+    + '<div class="form-group"><label class="form-label">Root Cause Identified</label>'
+    + '<textarea class="form-textarea" id="cmp_root_cause" rows="2" placeholder="Root cause..."></textarea></div>'
+    + '<div class="form-row">'
+    + '<div class="form-group"><label class="form-label">Action Taken</label>'
+    + '<textarea class="form-textarea" id="cmp_action" rows="2" placeholder="Action taken..."></textarea></div>'
+    + '<div class="form-group"><label class="form-label">Resolution Status</label>'
+    + '<select class="form-select" id="cmp_resolution"><option value="">-- Select --</option>'
+    + '<option>Resolved</option><option>Pending Resolution</option>'
+    + '<option>Escalated to Management</option><option>Escalated to MCMC</option>'
+    + '<option>No Further Action Required</option>'
+    + '</select></div></div></div>'
+    + '<div class="card"><div class="card-header">'
+    + '<div><div class="card-title">Call Quality Score</div>'
+    + '<div class="card-subtitle">Score the agent using Standard Call criteria</div></div>'
+    + '<div class="pill">Standard Call</div></div>'
+    + '<div style="display:grid;grid-template-columns:26px 1fr 60px 150px 1fr;gap:12px;padding:6px 0;border-bottom:1px solid var(--border2)">'
+    + '<span class="text-sm">#</span><span class="text-sm">Question</span>'
+    + '<span class="text-sm" style="text-align:center">Wt</span>'
+    + '<span class="text-sm" style="text-align:center">Answer</span>'
+    + '<span class="text-sm">Comment</span></div>'
+    + '<div class="eval-section-hdr">Call Quality Criteria</div>'
+    + stdQRows
+    + '<div class="fatal-section-hdr">Fatal Errors</div>'
+    + fatalRows + '</div>';
+
+  addChronologyRow();
+  addChronologyRow();
+  document.getElementById('evalSubmitSection').style.display = 'block';
+  updateScore();
+}
+
+let chronoCount = 0;
+function addChronologyRow() {
+  chronoCount++;
+  const rowId = 'chrono_' + chronoCount;
+  const div = document.createElement('div');
+  div.id = rowId;
+  div.style.cssText = 'display:grid;grid-template-columns:160px 1fr 30px;gap:8px;align-items:center;margin-bottom:4px';
+  const inp1 = document.createElement('input');
+  inp1.type = 'datetime-local';
+  inp1.className = 'form-input';
+  inp1.style.cssText = 'padding:6px 10px;font-size:12px';
+  const inp2 = document.createElement('input');
+  inp2.className = 'form-input';
+  inp2.placeholder = 'Describe what happened...';
+  inp2.style.cssText = 'padding:6px 10px;font-size:12px';
+  const btn = document.createElement('button');
+  btn.textContent = 'x';
+  btn.style.cssText = 'background:none;border:none;color:var(--text3);cursor:pointer;font-size:16px';
+  btn.addEventListener('click', function() { div.remove(); });
+  div.appendChild(inp1);
+  div.appendChild(inp2);
+  div.appendChild(btn);
+  document.getElementById('chronologyList').appendChild(div);
+}
+
+function buildComplaintPayload() {
+  const rows = [...document.querySelectorAll('#chronologyList > div')];
+  const chronology = rows.map(row => {
+    const inputs = row.querySelectorAll('input');
+    return { datetime: inputs[0]?.value||'', event: inputs[1]?.value||'' };
+  }).filter(r => r.event.trim());
+  return {
+    ref:           document.getElementById('cmp_ref')?.value||'',
+    channel:       document.getElementById('cmp_channel')?.value||'',
+    category:      document.getElementById('cmp_category')?.value||'',
+    date_received: document.getElementById('cmp_date_received')?.value||'',
+    summary:       document.getElementById('cmp_summary')?.value||'',
+    root_cause:    document.getElementById('cmp_root_cause')?.value||'',
+    action:        document.getElementById('cmp_action')?.value||'',
+    resolution:    document.getElementById('cmp_resolution')?.value||'',
+    chronology
+  };
+}
+
+// ===============================================
+//  TEMPLATE MANAGER
+// ===============================================
+
+let customTemplates = [];
+
+const BUILTIN_TEMPLATES = [
+  { id:'hist-no',   name:'Historical - No CSAT',  type:'historical', csat:'no',  description:'Standard & General without CSAT', builtin:true },
+  { id:'hist-csat', name:'Historical - With CSAT', type:'historical', csat:'yes', description:'Standard & General with CSAT', builtin:true },
+  { id:'live-no',   name:'Live - No CSAT',         type:'live',       csat:'no',  description:'Live monitoring without CSAT', builtin:true },
+  { id:'live-csat', name:'Live - With CSAT',        type:'live',       csat:'yes', description:'Live monitoring with CSAT', builtin:true },
+  { id:'complaint', name:'Complaint Evaluation',   type:'complaint',  csat:'no',  description:'Complaint-based evaluation with chronology', builtin:true },
+];
+
+async function loadTplMgmt() {
+  const builtinEl = document.getElementById('builtinTplList');
+  if (builtinEl) {
+    builtinEl.innerHTML = BUILTIN_TEMPLATES.map(t =>
+      '<div class="tpl-card tpl-builtin">'
+      + '<div style="display:flex;justify-content:space-between;align-items:start">'
+      + '<div><div style="font-weight:600;font-size:13px;margin-bottom:3px">' + t.name + '</div>'
+      + '<div style="font-size:11px;color:var(--text3)">' + t.description + '</div></div>'
+      + '<span class="pill" style="font-size:10px;flex-shrink:0;margin-left:8px">' + t.type + '</span>'
+      + '</div><div style="margin-top:6px;font-size:11px;color:var(--text3)">Built-in - read only</div>'
+      + '</div>'
+    ).join('');
+  }
+  try {
+    const { data, error } = await supa.from('qa_templates').select('*').order('created_at',{ascending:false});
+    if (!error && data) { customTemplates = data; renderCustomTemplates(); }
+  } catch(e) {
+    document.getElementById('customTplList').innerHTML =
+      '<div class="alert alert-info">Run the SQL setup in Supabase to enable custom templates.</div>';
+  }
+}
+
+function renderCustomTemplates() {
+  const el = document.getElementById('customTplList');
+  if (!el) return;
+  if (!customTemplates.length) {
+    el.innerHTML = '<div class="text-sm" style="padding:20px;text-align:center;color:var(--text3)">No custom templates yet.</div>';
+    return;
+  }
+  el.innerHTML = '';
+  customTemplates.forEach(t => {
+    const div = document.createElement('div');
+    div.className = 'tpl-card tpl-custom';
+    div.innerHTML = '<div style="display:flex;justify-content:space-between;align-items:start">'
+      + '<div><div style="font-weight:600;font-size:13px;margin-bottom:3px">' + t.name + '</div>'
+      + '<div style="font-size:11px;color:var(--text3)">' + (t.description||'') + '</div></div>'
+      + '<div style="display:flex;gap:6px;flex-shrink:0;margin-left:8px">'
+      + '<button class="btn btn-ghost btn-sm" data-tpl-edit="' + t.id + '">Edit</button>'
+      + '<button class="btn btn-danger btn-sm" data-tpl-del="' + t.id + '">Delete</button>'
+      + '</div></div>'
+      + '<div style="margin-top:8px;font-size:11px;color:var(--text3)">'
+      + (t.questions||[]).length + ' questions · By ' + (t.created_by||'--')
+      + ' · ' + new Date(t.created_at).toLocaleDateString('en-MY') + '</div>';
+    div.querySelector('[data-tpl-edit]').addEventListener('click', () => editTemplate(t.id));
+    div.querySelector('[data-tpl-del]').addEventListener('click',  () => deleteTemplate(t.id));
+    el.appendChild(div);
+  });
+}
+
+function openNewTemplateModal() {
+  document.getElementById('actionModalTitle').textContent = '+ New Evaluation Template';
+  const body = document.getElementById('actionModalBody');
+  body.innerHTML = '';
+
+  const addField = (labelText, inputId, type='text', placeholder='') => {
+    const g = document.createElement('div'); g.className = 'form-group';
+    const lbl = document.createElement('label'); lbl.className = 'form-label'; lbl.textContent = labelText;
+    const inp = document.createElement(type==='select'?'select':'input');
+    inp.className = 'form-input'; inp.id = inputId;
+    if (type !== 'select') { inp.type = type; inp.placeholder = placeholder; }
+    g.appendChild(lbl); g.appendChild(inp); body.appendChild(g);
+    return inp;
+  };
+
+  addField('Template Name *', 'tplName', 'text', 'e.g. Outbound Call Quality');
+  addField('Description', 'tplDesc', 'text', 'Brief description');
+
+  const baseGroup = document.createElement('div'); baseGroup.className = 'form-group';
+  const baseLbl = document.createElement('label'); baseLbl.className = 'form-label'; baseLbl.textContent = 'Base Questions On';
+  const baseSel = document.createElement('select'); baseSel.className = 'form-select'; baseSel.id = 'tplBase';
+  [['standard','Standard Call'],['general','General Enquiries'],['blank','Start from scratch']].forEach(([v,t]) => {
+    const o = document.createElement('option'); o.value=v; o.textContent=t; baseSel.appendChild(o);
+  });
+  baseSel.addEventListener('change', loadBaseQuestions);
+  baseGroup.appendChild(baseLbl); baseGroup.appendChild(baseSel); body.appendChild(baseGroup);
+
+  const qSection = document.createElement('div'); qSection.style.marginBottom = '10px';
+  const qLabel = document.createElement('div');
+  qLabel.style.cssText = 'font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:var(--text3);margin-bottom:8px';
+  qLabel.textContent = 'Questions';
+  const qList = document.createElement('div'); qList.id = 'tplQList';
+  qList.style.cssText = 'max-height:280px;overflow-y:auto;border:1px solid var(--border);border-radius:var(--radius);padding:8px';
+  const addQBtn = document.createElement('button'); addQBtn.className = 'btn btn-ghost btn-sm'; addQBtn.style.marginTop = '8px';
+  addQBtn.textContent = '+ Add Question'; addQBtn.addEventListener('click', addTplQuestion);
+  qSection.appendChild(qLabel); qSection.appendChild(qList); qSection.appendChild(addQBtn);
+  body.appendChild(qSection);
+
+  const footer = document.getElementById('actionModalFooter');
+  footer.innerHTML = '';
+  const cancelBtn = document.createElement('button'); cancelBtn.className = 'btn btn-ghost'; cancelBtn.textContent = 'Cancel';
+  cancelBtn.addEventListener('click', () => closeModal('actionModal'));
+  const saveBtn = document.createElement('button'); saveBtn.className = 'btn btn-primary'; saveBtn.textContent = 'Save Template';
+  saveBtn.addEventListener('click', saveCustomTemplate);
+  footer.appendChild(cancelBtn); footer.appendChild(saveBtn);
+
+  document.getElementById('actionModal').classList.remove('hidden');
+  loadBaseQuestions();
+}
+
+function loadBaseQuestions() {
+  const base = document.getElementById('tplBase')?.value;
+  const qs = base==='standard' ? STD_QS : base==='general' ? GEN_QS : [];
+  renderTplQuestions(qs);
+}
+
+function renderTplQuestions(qs) {
+  const el = document.getElementById('tplQList');
+  if (!el) return;
+  el.innerHTML = '';
+  qs.forEach((q, i) => {
+    const row = document.createElement('div');
+    row.className = 'tpl-q-row'; row.id = 'tplq-' + i;
+    const num = document.createElement('span'); num.className = 'tpl-q-num'; num.textContent = i+1;
+    const qInput = document.createElement('input'); qInput.className = 'form-input';
+    qInput.value = q.q||''; qInput.placeholder = 'Question text';
+    qInput.style.cssText = 'padding:5px 8px;font-size:12px';
+    const wtInput = document.createElement('input'); wtInput.className = 'form-input';
+    wtInput.type = 'number'; wtInput.value = q.wt||3; wtInput.min = 1; wtInput.max = 10;
+    wtInput.style.cssText = 'padding:5px 8px;font-size:12px;text-align:center';
+    const typeSel = document.createElement('select'); typeSel.className = 'form-select';
+    typeSel.style.cssText = 'padding:5px 8px;font-size:12px';
+    [['yn','Yes/No'],['012','0/1/2']].forEach(([v,t]) => {
+      const o = document.createElement('option'); o.value=v; o.textContent=t;
+      if (q.type===v) o.selected=true; typeSel.appendChild(o);
+    });
+    const delBtn = document.createElement('button');
+    delBtn.textContent = 'x'; delBtn.style.cssText = 'background:none;border:none;color:var(--red);cursor:pointer;font-size:16px';
+    delBtn.addEventListener('click', () => row.remove());
+    row.appendChild(num); row.appendChild(qInput); row.appendChild(wtInput); row.appendChild(typeSel); row.appendChild(delBtn);
+    el.appendChild(row);
+  });
+}
+
+function addTplQuestion() {
+  const el = document.getElementById('tplQList');
+  const i = el.children.length;
+  const row = document.createElement('div');
+  row.className = 'tpl-q-row'; row.id = 'tplq-' + i;
+  const num = document.createElement('span'); num.className = 'tpl-q-num'; num.textContent = i+1;
+  const qInput = document.createElement('input'); qInput.className = 'form-input';
+  qInput.placeholder = 'Enter question...'; qInput.style.cssText = 'padding:5px 8px;font-size:12px';
+  const wtInput = document.createElement('input'); wtInput.className = 'form-input';
+  wtInput.type = 'number'; wtInput.value = 3; wtInput.min = 1; wtInput.max = 10;
+  wtInput.style.cssText = 'padding:5px 8px;font-size:12px;text-align:center';
+  const typeSel = document.createElement('select'); typeSel.className = 'form-select';
+  typeSel.style.cssText = 'padding:5px 8px;font-size:12px';
+  [['yn','Yes/No'],['012','0/1/2']].forEach(([v,t]) => {
+    const o = document.createElement('option'); o.value=v; o.textContent=t; typeSel.appendChild(o);
+  });
+  const delBtn = document.createElement('button');
+  delBtn.textContent = 'x'; delBtn.style.cssText = 'background:none;border:none;color:var(--red);cursor:pointer;font-size:16px';
+  delBtn.addEventListener('click', () => row.remove());
+  row.appendChild(num); row.appendChild(qInput); row.appendChild(wtInput); row.appendChild(typeSel); row.appendChild(delBtn);
+  el.appendChild(row);
+}
+
+function collectTplQuestions() {
+  return [...document.querySelectorAll('#tplQList .tpl-q-row')].map((row,i) => {
+    const inputs = row.querySelectorAll('input');
+    const selects = row.querySelectorAll('select');
+    return { id:'cq_'+i, num:(i+1)+'.0', q:inputs[0]?.value?.trim()||'', wt:parseInt(inputs[1]?.value||'3'), type:selects[0]?.value||'yn' };
+  }).filter(q=>q.q);
+}
+
+async function saveCustomTemplate() {
+  const name = document.getElementById('tplName')?.value.trim();
+  const desc = document.getElementById('tplDesc')?.value.trim();
+  if (!name) { alert('Please enter a template name'); return; }
+  const questions = collectTplQuestions();
+  if (!questions.length) { alert('Please add at least one question'); return; }
+  const payload = { name, description:desc, questions, type:'custom', csat:'no',
+    created_by: currentStaff?.name||currentUser?.email, created_at:new Date().toISOString() };
+  try {
+    const { data, error } = await supa.from('qa_templates').insert(payload).select().single();
+    if (error) throw error;
+    customTemplates.unshift(data);
+    renderCustomTemplates();
+    closeModal('actionModal');
+    alert('Template saved!');
+  } catch(e) {
+    alert('Could not save template. Run this SQL in Supabase:\n\nCREATE TABLE qa_templates (id uuid DEFAULT gen_random_uuid() PRIMARY KEY, name text NOT NULL, description text, type text DEFAULT \'custom\', csat text DEFAULT \'no\', questions jsonb DEFAULT \'[]\', created_by text, created_at timestamptz DEFAULT now(), updated_at timestamptz DEFAULT now()); ALTER TABLE qa_templates ENABLE ROW LEVEL SECURITY; CREATE POLICY "all_access" ON qa_templates FOR ALL USING (true) WITH CHECK (true);');
+  }
+}
+
+async function deleteTemplate(id) {
+  if (!confirm('Delete this template?')) return;
+  const { error } = await supa.from('qa_templates').delete().eq('id', id);
+  if (!error) { customTemplates = customTemplates.filter(t=>t.id!==id); renderCustomTemplates(); }
+}
+
+async function editTemplate(id) {
+  const t = customTemplates.find(x=>x.id===id);
+  if (!t) return;
+  openNewTemplateModal();
+  setTimeout(() => {
+    document.getElementById('tplName').value = t.name;
+    document.getElementById('tplDesc').value = t.description||'';
+    document.getElementById('tplBase').value = 'blank';
+    renderTplQuestions(t.questions||[]);
+    const footer = document.getElementById('actionModalFooter');
+    footer.innerHTML = '';
+    const cancelBtn = document.createElement('button'); cancelBtn.className = 'btn btn-ghost'; cancelBtn.textContent = 'Cancel';
+    cancelBtn.addEventListener('click', () => closeModal('actionModal'));
+    const updBtn = document.createElement('button'); updBtn.className = 'btn btn-primary'; updBtn.textContent = 'Update Template';
+    updBtn.addEventListener('click', () => updateCustomTemplate(id));
+    footer.appendChild(cancelBtn); footer.appendChild(updBtn);
+  }, 50);
+}
+
+async function updateCustomTemplate(id) {
+  const name = document.getElementById('tplName')?.value.trim();
+  const desc = document.getElementById('tplDesc')?.value.trim();
+  if (!name) { alert('Please enter a template name'); return; }
+  const questions = collectTplQuestions();
+  const { error } = await supa.from('qa_templates')
+    .update({ name, description:desc, questions, updated_at:new Date().toISOString() })
+    .eq('id', id);
+  if (!error) {
+    const idx = customTemplates.findIndex(t=>t.id===id);
+    if (idx>=0) customTemplates[idx] = { ...customTemplates[idx], name, description:desc, questions };
+    renderCustomTemplates();
+    closeModal('actionModal');
+    alert('Template updated!');
+  } else {
+    alert('Error updating: ' + error.message);
+  }
+}
+
+// ===============================================
+//  MONTHLY PERFORMANCE
+// ===============================================
+
+let mpAllEvals = [];
+let mpAgentData = [];
+
+async function initMonthlyPerf() {
+  // Reuse already-loaded evaluations if available, else fetch
+  if (evaluations && evaluations.length > 0) {
+    mpAllEvals = evaluations;
+  } else {
+    setLoading(true, 'Loading performance data...');
+    mpAllEvals = await loadEvals();
+    setLoading(false);
+  }
+
+  // Build month list from call dates
+  const months = new Set();
+  mpAllEvals.forEach(e => {
+    const dateStr = e.date || '';
+    if (dateStr) {
+      const d = new Date(dateStr);
+      if (!isNaN(d)) months.add(`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`);
+    }
+  });
+  // Fallback to created_at if no call dates
+  if (!months.size) {
+    mpAllEvals.forEach(e => {
+      if (e.created_at) {
+        const d = new Date(e.created_at);
+        months.add(`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`);
+      }
+    });
+  }
+
+  const sortedMonths = [...months].sort().reverse();
+  const mpMonth = document.getElementById('mpMonth');
+  if (mpMonth) {
+    mpMonth.innerHTML = '<option value="">-- Select Month --</option>'
+      + sortedMonths.map(m => {
+          const [yr, mo] = m.split('-');
+          const label = new Date(yr, mo-1, 1).toLocaleDateString('en-MY',{month:'long',year:'numeric'});
+          return `<option value="${m}">${label}</option>`;
+        }).join('');
+    // Auto-select current month if available
+    const now = new Date();
+    const curMonth = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
+    if (sortedMonths.includes(curMonth)) mpMonth.value = curMonth;
+    else if (sortedMonths.length) mpMonth.value = sortedMonths[0];
+  }
+
+  // Populate TL filter
+  const tls = [...new Set(mpAllEvals.map(e=>e.tl_name).filter(Boolean))].sort();
+  const mpTL = document.getElementById('mpTL');
+  if (mpTL) {
+    mpTL.innerHTML = '<option value="">All Team Leaders</option>'
+      + tls.map(t=>`<option value="${t}">${t}</option>`).join('');
+  }
+
+  loadMonthlyPerf();
+}
+
+function getMonthEvals(month, tlFilter) {
+  return mpAllEvals.filter(e => {
+    // Match by call date first, fall back to eval date
+    const dateStr = e.date || (e.created_at ? e.created_at.slice(0,10) : '');
+    const d = new Date(dateStr);
+    if (isNaN(d)) return false;
+    const eMonth = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+    const matchMonth = eMonth === month;
+    const matchTL    = !tlFilter || e.tl_name === tlFilter;
+    return matchMonth && matchTL && e.status !== 'draft';
+  });
+}
+
+function loadMonthlyPerf() {
+  const month    = document.getElementById('mpMonth')?.value || '';
+  const tlFilter = document.getElementById('mpTL')?.value   || '';
+  const view     = document.getElementById('mpView')?.value || 'both';
+
+  if (!month) {
+    document.getElementById('mp-tl-content').innerHTML =
+      '<div class="text-sm" style="text-align:center;padding:30px;color:var(--text3)">Select a month above to view performance data.</div>';
+    document.getElementById('mp-agent-tbody').innerHTML =
+      '<tr><td colspan="9"><div class="empty-state"><div class="icon">📅</div><p>Select a month to view agent performance.</p></div></td></tr>';
+    return;
+  }
+
+  const rows = getMonthEvals(month, tlFilter);
+
+  // ── Summary stats ──
+  const scores  = rows.map(e=>Number(e.score)).filter(s=>!isNaN(s));
+  const avg     = scores.length ? Math.round(scores.reduce((a,b)=>a+b,0)/scores.length) : 0;
+  const above80 = scores.filter(s=>s>=80).length;
+  const below60 = scores.filter(s=>s<60).length;
+  const fatal   = rows.filter(e=>e.has_fatal).length;
+  document.getElementById('mp-st-evals').textContent   = rows.length;
+  document.getElementById('mp-st-avg').textContent     = avg + '%';
+  document.getElementById('mp-st-above80').textContent = above80;
+  document.getElementById('mp-st-below60').textContent = below60;
+  document.getElementById('mp-st-fatal').textContent   = fatal;
+  document.getElementById('mp-st-avg').style.color     = avg>=80?'var(--green)':avg>=60?'var(--amber)':'var(--red)';
+
+  // Show/hide sections
+  document.getElementById('mp-tl-section').style.display    = (view==='team'||view==='both') ? '' : 'none';
+  document.getElementById('mp-agent-section').style.display = (view==='agent'||view==='both') ? '' : 'none';
+
+  // ── TL performance ──
+  if (view === 'team' || view === 'both') renderTLTable(rows, month);
+
+  // ── Agent performance ──
+  if (view === 'agent' || view === 'both') {
+    buildAgentData(rows, month);
+    renderAgentTable();
+  }
+}
+
+function renderTLTable(rows, month) {
+  const tlMap = {};
+  rows.forEach(e => {
+    const tl = e.tl_name || 'Unknown';
+    if (!tlMap[tl]) tlMap[tl] = { tl, evals:0, scores:[], fatal:0, agents:new Set() };
+    tlMap[tl].evals++;
+    tlMap[tl].scores.push(Number(e.score));
+    if (e.has_fatal) tlMap[tl].fatal++;
+    if (e.agent_name) tlMap[tl].agents.add(e.agent_name);
+  });
+
+  const tlArr = Object.values(tlMap).sort((a,b) => {
+    const avgA = a.scores.reduce((x,y)=>x+y,0)/a.scores.length;
+    const avgB = b.scores.reduce((x,y)=>x+y,0)/b.scores.length;
+    return avgB - avgA;
+  });
+
+  // Get previous month for trend
+  const [yr, mo] = month.split('-').map(Number);
+  const prevDate = new Date(yr, mo-2, 1);
+  const prevMonth = `${prevDate.getFullYear()}-${String(prevDate.getMonth()+1).padStart(2,'0')}`;
+  const prevRows  = getMonthEvals(prevMonth, '');
+
+  const el = document.getElementById('mp-tl-content');
+  if (!tlArr.length) { el.innerHTML = '<div class="text-sm" style="text-align:center;padding:20px">No data for this month.</div>'; return; }
+
+  el.innerHTML = `
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px">
+      ${tlArr.map((t,i) => {
+        const avg     = Math.round(t.scores.reduce((a,b)=>a+b,0)/t.scores.length*100)/100;
+        const highest = Math.max(...t.scores);
+        const lowest  = Math.min(...t.scores);
+        const color   = avg>=80?'var(--green)':avg>=60?'var(--amber)':'var(--red)';
+        const initials= t.tl.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
+
+        // Trend vs prev month
+        const prevTLRows = prevRows.filter(e=>e.tl_name===t.tl);
+        let trendHTML = '';
+        if (prevTLRows.length) {
+          const prevAvg = Math.round(prevTLRows.reduce((a,e)=>a+Number(e.score),0)/prevTLRows.length);
+          const diff    = avg - prevAvg;
+          const trendColor = diff>0?'var(--green)':diff<0?'var(--red)':'var(--text3)';
+          trendHTML = `<span style="font-size:11px;color:${trendColor};font-weight:600">${diff>0?'▲+':'▼'}${diff}% vs prev</span>`;
+        }
+
+        const rank = i+1;
+        const medal = rank===1?'🥇':rank===2?'🥈':rank===3?'🥉':'';
+
+        return `<div class="card" style="margin-bottom:0;padding:16px">
+          <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px">
+            <div style="width:40px;height:40px;border-radius:50%;background:rgba(79,142,247,.15);border:2px solid var(--accent);
+              display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:var(--accent);flex-shrink:0">${initials}</div>
+            <div style="flex:1;min-width:0">
+              <div style="font-weight:600;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${medal} ${t.tl}</div>
+              <div style="font-size:11px;color:var(--text3)">${t.agents.size} agent${t.agents.size!==1?'s':''} · ${t.evals} eval${t.evals!==1?'s':''}</div>
+            </div>
+            <div style="font-family:'JetBrains Mono',monospace;font-size:28px;font-weight:700;color:${color}">${avg.toFixed(2)}%</div>
+          </div>
+          <div style="height:6px;background:var(--surface3);border-radius:3px;overflow:hidden;margin-bottom:10px">
+            <div style="height:100%;width:${avg}%;background:${color};border-radius:3px"></div>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;text-align:center">
+            <div style="background:var(--surface2);border-radius:6px;padding:6px">
+              <div style="font-size:13px;font-weight:700;color:var(--green);font-family:'JetBrains Mono',monospace">${highest.toFixed(2)}%</div>
+              <div style="font-size:9px;color:var(--text3)">Highest</div>
+            </div>
+            <div style="background:var(--surface2);border-radius:6px;padding:6px">
+              <div style="font-size:13px;font-weight:700;color:var(--red);font-family:'JetBrains Mono',monospace">${lowest.toFixed(2)}%</div>
+              <div style="font-size:9px;color:var(--text3)">Lowest</div>
+            </div>
+            <div style="background:var(--surface2);border-radius:6px;padding:6px">
+              <div style="font-size:13px;font-weight:700;color:var(--red);font-family:'JetBrains Mono',monospace">${t.fatal}</div>
+              <div style="font-size:9px;color:var(--text3)">Fatal</div>
+            </div>
+          </div>
+          <div style="margin-top:8px;text-align:center">${trendHTML}</div>
+        </div>`;
+      }).join('')}
+    </div>`;
+}
+
+function buildAgentData(rows, month) {
+  const agentMap = {};
+  rows.forEach(e => {
+    const name = e.agent_name || 'Unknown';
+    if (!agentMap[name]) agentMap[name] = { name, tl: e.tl_name||'--', evals:0, scores:[], fatal:0 };
+    agentMap[name].evals++;
+    agentMap[name].scores.push(Number(e.score));
+    if (e.has_fatal) agentMap[name].fatal++;
+  });
+
+  // Get previous month trend
+  const [yr, mo] = month.split('-').map(Number);
+  const prevDate  = new Date(yr, mo-2, 1);
+  const prevMonth = `${prevDate.getFullYear()}-${String(prevDate.getMonth()+1).padStart(2,'0')}`;
+  const prevRows  = getMonthEvals(prevMonth, '');
+
+  mpAgentData = Object.values(agentMap).map(a => {
+    const avg     = Math.round(a.scores.reduce((x,y)=>x+y,0)/a.scores.length * 100) / 100;
+    const highest = Math.max(...a.scores);
+    const lowest  = Math.min(...a.scores);
+    const prevAgent = prevRows.filter(e=>e.agent_name===a.name);
+    const prevAvg   = prevAgent.length ? Math.round(prevAgent.reduce((x,e)=>x+Number(e.score),0)/prevAgent.length) : null;
+    const trend     = prevAvg !== null ? avg - prevAvg : null;
+    return { ...a, avg, highest, lowest, trend };
+  });
+}
+
+function renderAgentTable() {
+  const search = (document.getElementById('mpAgentSearch')?.value || '').toLowerCase();
+  const sort   = document.getElementById('mpAgentSort')?.value || 'score-desc';
+  const tbody  = document.getElementById('mp-agent-tbody');
+  if (!tbody) return;
+
+  let data = mpAgentData.filter(a => !search || a.name.toLowerCase().includes(search) || a.tl.toLowerCase().includes(search));
+
+  data.sort((a,b) => {
+    if (sort==='score-desc') return b.avg - a.avg;
+    if (sort==='score-asc')  return a.avg - b.avg;
+    if (sort==='name')       return a.name.localeCompare(b.name);
+    if (sort==='evals')      return b.evals - a.evals;
+    return 0;
+  });
+
+  if (!data.length) {
+    tbody.innerHTML = '<tr><td colspan="9"><div class="empty-state"><div class="icon">👤</div><p>No agent data for this period.</p></div></td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = data.map((a, i) => {
+    const color = a.avg>=80?'var(--green)':a.avg>=60?'var(--amber)':'var(--red)';
+    const trendStr = a.trend===null ? '--'
+      : a.trend>0 ? `<span style="color:var(--green)">▲ +${a.trend}%</span>`
+      : a.trend<0 ? `<span style="color:var(--red)">▼ ${a.trend}%</span>`
+      : '<span style="color:var(--text3)">— same</span>';
+    return `<tr>
+      <td style="font-size:12px;color:var(--text3);font-weight:600">${i+1}</td>
+      <td><div style="font-weight:500">${a.name}</div></td>
+      <td style="font-size:12px;color:var(--text3)">${a.tl}</td>
+      <td style="font-family:'JetBrains Mono',monospace;font-size:12px;text-align:center">${a.evals}</td>
+      <td>
+        <div style="display:flex;align-items:center;gap:8px">
+          <div style="flex:1;height:8px;background:var(--surface3);border-radius:4px;overflow:hidden;min-width:60px">
+            <div style="height:100%;width:${a.avg}%;background:${color};border-radius:4px"></div>
+          </div>
+          <span style="font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:700;color:${color};min-width:48px">${a.avg.toFixed(2)}%</span>
+        </div>
+      </td>
+      <td style="font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--green);text-align:center">${a.highest.toFixed(2)}%</td>
+      <td style="font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--red);text-align:center">${a.lowest.toFixed(2)}%</td>
+      <td style="text-align:center">${a.fatal>0?`<span style="color:var(--red);font-weight:700">⛔ ${a.fatal}</span>`:'<span style="color:var(--green)">✅ 0</span>'}</td>
+      <td style="font-size:12px">${trendStr}</td>
+    </tr>`;
+  }).join('');
+}
+
+// ===============================================
+//  FAILURE ANALYSIS
+// ===============================================
+
+async function loadFailAnalysis() {
+  const monthFilter  = document.getElementById('faMonth')?.value    || '';
+  const tplFilter    = document.getElementById('faTemplate')?.value  || '';
+  const csatFilter   = document.getElementById('faCsat')?.value      || '';
+  const tlFilter     = document.getElementById('faTL')?.value        || '';
+  const agentFilter  = document.getElementById('faAgent')?.value     || '';
+  const qaFilter     = document.getElementById('faQA')?.value        || '';
+  const topN         = parseInt(document.getElementById('faTop')?.value || '10');
+
+  // Load all evals (exclude drafts)
+  const all = await loadEvals();
+  const scored = all.filter(e => e.status !== 'draft' && e.answers && Object.keys(e.answers).length > 0);
+
+  // Populate month filter
+  const months = new Set();
+  scored.forEach(e => {
+    const d = e.date || (e.created_at ? e.created_at.slice(0,10) : '');
+    if (d) { const dt = new Date(d); if (!isNaN(dt)) months.add(`${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,'0')}`); }
+  });
+  const faMonthSel = document.getElementById('faMonth');
+  if (faMonthSel && faMonthSel.options.length <= 1) {
+    [...months].sort().reverse().forEach(m => {
+      const [yr,mo] = m.split('-');
+      const lbl = new Date(yr,mo-1,1).toLocaleDateString('en-MY',{month:'long',year:'numeric'});
+      const o = document.createElement('option'); o.value=m; o.textContent=lbl; faMonthSel.appendChild(o);
+    });
+  }
+
+  // Populate TL filter
+  const tls = [...new Set(scored.map(e=>e.tl_name).filter(Boolean))].sort();
+  const tlSel = document.getElementById('faTL');
+  if (tlSel && tlSel.options.length <= 1) {
+    tls.forEach(t => { const o=document.createElement('option'); o.value=t; o.textContent=t; tlSel.appendChild(o); });
+  }
+
+  // Populate Agent filter
+  const agents = [...new Set(scored.map(e=>e.agent_name).filter(Boolean))].sort();
+  const agentSel = document.getElementById('faAgent');
+  if (agentSel && agentSel.options.length <= 1) {
+    agents.forEach(a => { const o=document.createElement('option'); o.value=a; o.textContent=a; agentSel.appendChild(o); });
+  }
+
+  // Populate QA filter
+  const qas = [...new Set(scored.map(e=>e.qa_user_name).filter(Boolean))].sort();
+  const qaSel = document.getElementById('faQA');
+  if (qaSel && qaSel.options.length <= 1) {
+    qas.forEach(q => { const o=document.createElement('option'); o.value=q; o.textContent=q; qaSel.appendChild(o); });
+  }
+
+  // Apply filters
+  let filtered = scored.filter(e => {
+    const matchTpl   = !tplFilter   || e.call_category === tplFilter;
+    const matchCsat  = !csatFilter  || e.csat === csatFilter;
+    const matchTL    = !tlFilter    || e.tl_name === tlFilter;
+    const matchAgent = !agentFilter || e.agent_name === agentFilter;
+    const matchQA    = !qaFilter    || e.qa_user_name === qaFilter;
+    let matchMonth = true;
+    if (monthFilter) {
+      const d = e.date || (e.created_at ? e.created_at.slice(0,10) : '');
+      if (!d) { matchMonth = false; }
+      else {
+        const dt = new Date(d);
+        matchMonth = !isNaN(dt) && `${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,'0')}` === monthFilter;
+      }
+    }
+    return matchTpl && matchCsat && matchTL && matchAgent && matchQA && matchMonth;
+  });
+
+  if (!filtered.length) {
+    document.getElementById('faChartContainer').innerHTML =
+      '<div class="empty-state"><div class="icon">📊</div><p>No evaluations match the selected filters.</p></div>';
+    document.getElementById('faFatalContainer').innerHTML = '';
+    return;
+  }
+
+  // ── Aggregate question stats ──
+  // For each question: count appearances, count failures (score=0), count partial (score<max)
+  const qStats = {}; // qid -> { q, wt, type, total, fails, partial, totalScore, maxScore }
+
+  filtered.forEach(e => {
+    const qs      = e.questions || [];
+    const answers = e.answers   || {};
+    qs.forEach(q => {
+      if (!qStats[q.id]) {
+        qStats[q.id] = { num:q.num, q:q.q, wt:q.wt, type:q.type, total:0, fails:0, partial:0, totalScore:0, maxScore:0 };
+      }
+      const s   = qStats[q.id];
+      const ans = answers[q.id];
+      if (!ans || ans.val === null || ans.val === undefined) return;
+      s.total++;
+      s.maxScore += q.wt;
+      s.totalScore += Number(ans.score || 0);
+      if (Number(ans.score || 0) === 0) s.fails++;
+      else if (Number(ans.score || 0) < q.wt) s.partial++;
+    });
+  });
+
+  // Calculate fail rate per question
+  const qArr = Object.values(qStats)
+    .filter(s => s.total > 0)
+    .map(s => ({
+      ...s,
+      failRate:    s.total > 0 ? Math.round(s.fails   / s.total * 10000) / 100 : 0,
+      partialRate: s.total > 0 ? Math.round(s.partial / s.total * 10000) / 100 : 0,
+      avgScore:    s.maxScore > 0 ? Math.round(s.totalScore / s.maxScore * 10000) / 100 : 100,
+    }))
+    .sort((a,b) => b.failRate - a.failRate);
+
+  const displayed = topN > 0 ? qArr.slice(0, topN) : qArr;
+  const avgFailRate = qArr.length > 0 ? Math.round(qArr.reduce((a,q)=>a+q.failRate,0)/qArr.length) : 0;
+  const worst = qArr[0];
+  const best  = qArr[qArr.length-1];
+
+  // ── Update summary stats ──
+  document.getElementById('fa-st-evals').textContent = filtered.length;
+  document.getElementById('fa-st-fails').textContent = avgFailRate + '%';
+  document.getElementById('fa-st-worst').textContent = worst ? worst.num + ' — ' + worst.q.substring(0,40)+'...' : '--';
+  document.getElementById('fa-st-best').textContent  = best  ? best.num  + ' — ' + best.q.substring(0,40)+'...'  : '--';
+
+  // ── Render chart bars ──
+  const maxFail = displayed.length > 0 ? Math.max(...displayed.map(q=>q.failRate)) : 100;
+
+  // Store filtered evals for drill-down
+  window._faFilteredEvals = filtered;
+
+  const container = document.getElementById('faChartContainer');
+  container.innerHTML = '';
+  displayed.forEach(q => {
+    const color = q.failRate>=50?'var(--red)':q.failRate>=25?'var(--amber)':'var(--green)';
+    const barW  = maxFail > 0 ? Math.round(q.failRate/maxFail*100) : 0;
+    const row = document.createElement('div');
+    row.style.cssText = 'display:grid;grid-template-columns:50px 220px 1fr 80px 60px 90px;gap:10px;align-items:center;padding:6px 0;border-bottom:1px solid var(--border);cursor:pointer;border-radius:6px;transition:background .15s';
+    row.title = 'Click to see who failed this question';
+    row.innerHTML =
+      `<span style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--text3);text-align:right">${q.num}</span>`
+      + `<span style="font-size:11px;color:var(--text2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${q.q}">${q.q}</span>`
+      + `<div style="position:relative;height:18px;background:var(--surface3);border-radius:3px;overflow:hidden">`
+      + `<div style="height:100%;width:${barW}%;background:${color};border-radius:3px;transition:width .4s"></div></div>`
+      + `<div style="text-align:center"><div style="font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:700;color:${color}">${q.failRate.toFixed(2)}%</div><div style="font-size:9px;color:var(--text3)">fail rate</div></div>`
+      + `<div style="text-align:center"><div style="font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--accent)">${q.avgScore}%</div><div style="font-size:9px;color:var(--text3)">avg score</div></div>`
+      + `<button class="btn btn-ghost btn-sm" style="font-size:11px">🔍 Drill down</button>`;
+    row.addEventListener('mouseenter', () => row.style.background = 'var(--surface2)');
+    row.addEventListener('mouseleave', () => row.style.background = '');
+    row.addEventListener('click', () => openFailDrillDown(q, filtered));
+    container.appendChild(row);
+  });
+
+  // ── Fatal errors breakdown ──
+  const fatalStats = {};
+  FATALS.forEach(fe => { fatalStats[fe.id] = { q:fe.q, count:0, total:0 }; });
+  filtered.forEach(e => {
+    const fa = e.fatal_answers || {};
+    FATALS.forEach(fe => {
+      if (!fatalStats[fe.id]) return;
+      fatalStats[fe.id].total++;
+      if (fa[fe.id]?.val === 'Y') fatalStats[fe.id].count++;
+    });
+  });
+  const fatalArr = Object.values(fatalStats).filter(f=>f.total>0).sort((a,b)=>b.count-a.count);
+  const maxFatal = fatalArr.length>0 ? Math.max(...fatalArr.map(f=>f.count)) : 1;
+
+  document.getElementById('faFatalContainer').innerHTML = fatalArr.length === 0
+    ? '<div class="text-sm" style="text-align:center;padding:20px;color:var(--green)">No fatal errors recorded.</div>'
+    : fatalArr.map(f => {
+        const rate = f.total>0?Math.round(f.count/f.total*100):0;
+        const barW = maxFatal>0?Math.round(f.count/maxFatal*100):0;
+        const color= rate>10?'var(--red)':rate>5?'var(--amber)':'var(--green)';
+        return `<div style="display:grid;grid-template-columns:1fr 200px 50px;gap:12px;align-items:center;padding:8px 0;border-bottom:1px solid var(--border)">
+          <span style="font-size:12px;color:var(--text2)">${f.q}</span>
+          <div style="height:12px;background:var(--surface3);border-radius:6px;overflow:hidden">
+            <div style="height:100%;width:${barW}%;background:${color};border-radius:6px"></div>
+          </div>
+          <div style="text-align:right;font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:700;color:${color}">${f.count}x</div>
+        </div>`;
+      }).join('');
+}
+
+// ===============================================
+//  MY EVALUATIONS (QA view)
+// ===============================================
+
+let _myEvalsData = [];
+
+async function loadMyEvals() {
+  // Load only evals submitted by current user
+  const all = await loadEvals();
+  const myName  = currentStaff?.name || '';
+  const myEmail = currentUser?.email || '';
+
+  // Filter to evals this QA submitted
+  _myEvalsData = all.filter(e =>
+    e.qa_user_name === myName ||
+    e.qa_user_id   === currentUser?.id ||
+    (myEmail && e.qa_user_name && e.qa_user_name.toLowerCase() === myName.toLowerCase())
+  );
+
+  // Populate month filter
+  const months = new Set();
+  _myEvalsData.forEach(e => {
+    const d = e.date || (e.created_at||'').slice(0,10);
+    if (d) { const dt=new Date(d); if(!isNaN(dt)) months.add(`${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,'0')}`); }
+  });
+  const moSel = document.getElementById('myEvalsMonth');
+  if (moSel) {
+    const cur = moSel.value;
+    moSel.innerHTML = '<option value="">All Time</option>'
+      + [...months].sort().reverse().map(m => {
+          const [yr,mo]=m.split('-');
+          const lbl=new Date(yr,mo-1,1).toLocaleDateString('en-MY',{month:'long',year:'numeric'});
+          return `<option value="${m}">${lbl}</option>`;
+        }).join('');
+    if (cur) moSel.value = cur;
+  }
+
+  // Apply month filter
+  const selMonth = document.getElementById('myEvalsMonth')?.value || '';
+  const filtered = selMonth ? _myEvalsData.filter(e => {
+    const d = e.date||(e.created_at||'').slice(0,10);
+    if (!d) return false;
+    const dt=new Date(d); if(isNaN(dt)) return false;
+    return `${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,'0')}` === selMonth;
+  }) : _myEvalsData;
+
+  // Stats
+  const scores  = filtered.map(e=>Number(e.score)).filter(s=>!isNaN(s));
+  const avg     = scores.length ? Math.round(scores.reduce((a,b)=>a+b,0)/scores.length) : 0;
+  const agents  = new Set(filtered.map(e=>e.agent_name).filter(Boolean));
+  const pending = filtered.filter(e=>['submitted','tl-approved'].includes(e.status)).length;
+
+  document.getElementById('me-total').textContent   = filtered.length;
+  document.getElementById('me-agents').textContent  = agents.size;
+  document.getElementById('me-avg').textContent     = avg + '%';
+  document.getElementById('me-avg').style.color     = avg>=80?'var(--green)':avg>=60?'var(--amber)':'var(--red)';
+  document.getElementById('me-pending').textContent = pending;
+
+  const label = selMonth ? (() => { const [yr,mo]=selMonth.split('-'); return new Date(yr,mo-1,1).toLocaleDateString('en-MY',{month:'long',year:'numeric'}); })() : 'All Time';
+  document.getElementById('myEvalsSubtitle').textContent = `${filtered.length} evaluations · ${label}`;
+
+  // Build agent map
+  const agentMap = {};
+  filtered.forEach(e => {
+    const name = e.agent_name || 'Unknown';
+    if (!agentMap[name]) agentMap[name] = { name, tl:e.tl_name||'--', evals:[], scores:[], fatal:0 };
+    agentMap[name].evals.push(e);
+    agentMap[name].scores.push(Number(e.score));
+    if (e.has_fatal) agentMap[name].fatal++;
+  });
+  window._meAgentMap = agentMap;
+  window._meFiltered = filtered;
+
+  // Populate agent filter dropdown
+  const agentSel = document.getElementById('meAgentFilter');
+  if (agentSel) {
+    agentSel.innerHTML = '<option value="">All Agents</option>'
+      + Object.keys(agentMap).sort().map(n=>`<option value="${n}">${n}</option>`).join('');
+  }
+
+  renderMyEvalsAgents();
+  renderMyEvalsList();
+}
+
+function renderMyEvalsAgents() {
+  const search = (document.getElementById('meAgentSearch')?.value||'').toLowerCase();
+  const agentMap = window._meAgentMap || {};
+  const grid = document.getElementById('meAgentGrid');
+  if (!grid) return;
+
+  const entries = Object.values(agentMap)
+    .filter(a => !search || a.name.toLowerCase().includes(search))
+    .sort((a,b) => b.evals.length - a.evals.length);
+
+  if (!entries.length) {
+    grid.innerHTML = '<div class="text-sm" style="text-align:center;padding:30px;grid-column:1/-1;color:var(--text3)">No evaluations found.</div>';
+    return;
+  }
+
+  const maxEvals = Math.max(...entries.map(a=>a.evals.length));
+
+  grid.innerHTML = entries.map(a => {
+    const avg     = Math.round(a.scores.reduce((x,y)=>x+y,0)/a.scores.length);
+    const color   = avg>=80?'var(--green)':avg>=60?'var(--amber)':'var(--red)';
+    const barW    = maxEvals>0 ? Math.round(a.evals.length/maxEvals*100) : 0;
+    const initials= a.name.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
+    const pending = a.evals.filter(e=>['submitted','tl-approved'].includes(e.status)).length;
+    const closed  = a.evals.filter(e=>e.status==='closed').length;
+
+    return `<div class="card" style="margin-bottom:0;padding:14px;cursor:pointer;transition:border-color .2s"
+      onmouseenter="this.style.borderColor='var(--accent)'" onmouseleave="this.style.borderColor=''"
+      onclick="document.getElementById('meAgentFilter').value='${a.name}';renderMyEvalsList();document.getElementById('meListBody').scrollIntoView({behavior:'smooth'})">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+        <div style="width:36px;height:36px;border-radius:50%;background:rgba(79,142,247,.15);border:2px solid var(--accent);
+          display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:var(--accent);flex-shrink:0">${initials}</div>
+        <div style="flex:1;min-width:0">
+          <div style="font-weight:600;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${a.name}</div>
+          <div style="font-size:11px;color:var(--text3)">TL: ${a.tl}</div>
+        </div>
+        <div style="text-align:right;flex-shrink:0">
+          <div style="font-size:22px;font-weight:700;font-family:'JetBrains Mono',monospace;color:var(--accent)">${a.evals.length}</div>
+          <div style="font-size:9px;color:var(--text3)">EVALS</div>
+        </div>
+      </div>
+      <div style="height:5px;background:var(--surface3);border-radius:3px;overflow:hidden;margin-bottom:8px">
+        <div style="height:100%;width:${barW}%;background:var(--accent);border-radius:3px"></div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:4px;text-align:center">
+        <div style="background:var(--surface2);border-radius:5px;padding:5px">
+          <div style="font-size:13px;font-weight:700;font-family:'JetBrains Mono',monospace;color:${color}">${avg}%</div>
+          <div style="font-size:9px;color:var(--text3)">Avg Score</div>
+        </div>
+        <div style="background:var(--surface2);border-radius:5px;padding:5px">
+          <div style="font-size:13px;font-weight:700;font-family:'JetBrains Mono',monospace;color:var(--amber)">${pending}</div>
+          <div style="font-size:9px;color:var(--text3)">Pending</div>
+        </div>
+        <div style="background:var(--surface2);border-radius:5px;padding:5px">
+          <div style="font-size:13px;font-weight:700;font-family:'JetBrains Mono',monospace;color:var(--green)">${closed}</div>
+          <div style="font-size:9px;color:var(--text3)">Closed</div>
+        </div>
+      </div>
+      ${a.fatal>0?`<div style="margin-top:6px;font-size:11px;color:var(--red);text-align:center">⛔ ${a.fatal} fatal error${a.fatal>1?'s':''}</div>`:''}
+    </div>`;
+  }).join('');
+}
+
+function renderMyEvalsList() {
+  const agentFilter = document.getElementById('meAgentFilter')?.value || '';
+  const filtered    = (window._meFiltered || []).filter(e => !agentFilter || e.agent_name === agentFilter);
+  const tbody       = document.getElementById('meListBody');
+  const subtitle    = document.getElementById('meListSubtitle');
+  if (subtitle) subtitle.textContent = agentFilter ? `${filtered.length} evals for ${agentFilter}` : `${filtered.length} total evaluations`;
+  if (!tbody) return;
+
+  if (!filtered.length) {
+    tbody.innerHTML = '<tr><td colspan="10"><div class="empty-state"><div class="icon">📋</div><p>No evaluations found.</p></div></td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = filtered.map(e => {
+    const evalDT = e.created_at ? new Date(e.created_at) : null;
+    const evalDate = evalDT ? evalDT.toLocaleDateString('en-MY',{day:'2-digit',month:'2-digit',year:'numeric'}) : '--';
+    return `<tr style="cursor:pointer" onclick="viewEval('${e.id}')">
+      <td><span style="font-family:'JetBrains Mono',monospace;color:var(--accent);font-size:12px">#${e.ref}</span></td>
+      <td style="font-weight:500">${e.agent_name||'--'}</td>
+      <td style="font-size:12px;color:var(--text3)">${e.tl_name||'--'}</td>
+      <td><span class="pill" style="font-size:10px">${tplLabel(e)}</span></td>
+      <td><span class="score-badge ${scoreClass(e.score)}">${fmtScore(e.score)}</span></td>
+      <td>${e.has_fatal?'<span style="color:var(--red)">⛔</span>':'<span style="color:var(--green)">✅</span>'}</td>
+      <td>${statusBadge(e.status)}</td>
+      <td style="font-size:11px;color:var(--text3)">${e.date||'--'}</td>
+      <td style="font-size:11px;color:var(--text3)">${evalDate}</td>
+      <td onclick="event.stopPropagation()"><button class="btn btn-ghost btn-sm" onclick="viewEval('${e.id}')">View</button></td>
+    </tr>`;
+  }).join('');
+}
+
+// ===============================================
+//  FAILURE ANALYSIS DRILL-DOWN
+// ===============================================
+
+let _drillEvals = [];
+let _drillTab   = 'failed';
+
+function openFailDrillDown(q, filtered) {
+  _drillTab = 'failed';
+
+  // Debug: log what we're looking for
+  console.log('[Drill] question id:', q.id, '| num:', q.num);
+  console.log('[Drill] sample eval answers keys:', filtered[0] ? Object.keys(filtered[0].answers||{}).slice(0,5) : 'no evals');
+
+  const failed  = [];
+  const partial = [];
+  const passed  = [];
+  const notAnswered = [];
+
+  filtered.forEach(e => {
+    const answers = e.answers || {};
+    const eqs     = e.questions || [];
+
+    // Step 1: try direct q.id match (same as stats aggregation)
+    let ans    = answers[q.id];
+    let matchedWt = q.wt;
+
+    // Step 2: if not found, find the matching question in THIS eval's question list
+    // (question IDs may differ across templates e.g. s23 vs g16 for same question text)
+    if (!ans || ans.val === null || ans.val === undefined) {
+      const matchQ = eqs.find(eq => eq.num === q.num || eq.q === q.q);
+      if (matchQ) {
+        ans = answers[matchQ.id];
+        matchedWt = matchQ.wt;
+      }
+    }
+
+    // Skip if still not answered (consistent with stats)
+    if (!ans || ans.val === null || ans.val === undefined) return;
+
+    const score    = Number(ans.score || 0);
+    const maxScore = matchedWt;
+    if (score === 0)           failed.push({ e, ans, score, maxScore });
+    else if (score < maxScore) partial.push({ e, ans, score, maxScore });
+    else                       passed.push({ e, ans, score, maxScore });
+  });
+
+  console.log('[Drill] failed:', failed.length, 'partial:', partial.length, 'passed:', passed.length, '| stats total:', q.total, 'failRate:', q.failRate + '%');
+
+  _drillEvals = { failed, partial, passed };
+
+  document.getElementById('faDrillTitle').textContent = q.num + ' — ' + q.q;
+  const drillTotal = failed.length + partial.length + passed.length;
+  document.getElementById('faDrillSubtitle').textContent =
+    'Weight: ' + q.wt + 'pts  ·  Fail rate: ' + q.failRate.toFixed(2) + '%  ·  '
+    + failed.length + ' failed, ' + partial.length + ' partial, ' + passed.length + ' passed  ·  '
+    + drillTotal + ' answered out of ' + filtered.length + ' evals';
+
+  document.getElementById('drill-tab-failed').textContent  = 'Failed (' + failed.length + ')';
+  document.getElementById('drill-tab-partial').textContent = 'Partial (' + partial.length + ')';
+  document.getElementById('drill-tab-passed').textContent  = 'Passed (' + passed.length + ')';
+
+  // Switch to the most relevant tab
+  const firstNonEmpty = failed.length ? 'failed' : partial.length ? 'partial' : 'passed';
+  switchDrillTab(firstNonEmpty);
+
+  const panel = document.getElementById('faDrillPanel');
+  panel.style.display = '';
+  panel.scrollIntoView({ behavior:'smooth', block:'start' });
+}
+
+function switchDrillTab(tab) {
+  _drillTab = tab;
+  ['failed','partial','passed'].forEach(t => {
+    document.getElementById('drill-tab-'+t)?.classList.toggle('active', t===tab);
+  });
+  renderDrillTable(tab);
+}
+
+function renderDrillTable(tab) {
+  const tbody = document.getElementById('faDrillBody');
+  if (!tbody) return;
+
+  const rows = (_drillEvals[tab] || []);
+  if (!rows.length) {
+    tbody.innerHTML = `<tr><td colspan="9"><div class="empty-state" style="padding:30px"><div class="icon">${tab==='passed'?'✅':tab==='partial'?'🟡':'❌'}</div><p>No evaluations in this category.</p></div></td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = rows.map(({ e, ans, score, maxScore }) => {
+    const scoreColor = score===0?'var(--red)':score<(maxScore||1)?'var(--amber)':'var(--green)';
+    return `<tr style="cursor:pointer" onclick="viewEval('${e.id}')">
+      <td><span style="font-family:'JetBrains Mono',monospace;color:var(--accent);font-size:12px">#${e.ref}</span></td>
+      <td><div style="font-weight:500;font-size:13px">${e.agent_name||'--'}</div></td>
+      <td style="font-size:12px;color:var(--text3)">${e.tl_name||'--'}</td>
+      <td style="font-size:12px;color:var(--accent)">${e.qa_user_name||'--'}</td>
+      <td>
+        <div style="display:flex;align-items:center;gap:6px">
+          <span style="font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:700;color:${scoreColor}">${score}/${maxScore}pts</span>
+          <span style="font-size:12px;font-weight:700;padding:2px 6px;border-radius:4px;background:${scoreColor}22;color:${scoreColor}">${ans.val||'--'}</span>
+          ${ans.comment?`<span style="font-size:10px;color:var(--text3);font-style:italic"> — ${ans.comment}</span>`:''}
+        </div>
+      </td>
+      <td><span class="score-badge ${scoreClass(e.score)}">${fmtScore(e.score)}</span></td>
+      <td style="font-size:11px;color:var(--text3)">${e.date||'--'}</td>
+      <td>${statusBadge(e.status)}</td>
+      <td><button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();viewEval('${e.id}')">View</button></td>
+    </tr>`;
+  }).join('');
+}
+
+function closeDrillDown() {
+  document.getElementById('faDrillPanel').style.display = 'none';
+  _drillEvals = {};
+}
+
+// ===============================================
+//  PIPELINE TRACKER
+// ===============================================
+
+const PIPELINE_STAGES = [
+  { key: 'submitted',      label: 'Pending TL',       color: 'var(--accent)',  icon: '⏳', waitingOn: 'Team Leader' },
+  { key: 'tl-approved',   label: 'Pending Agent',     color: 'var(--purple)', icon: '👤', waitingOn: 'Agent' },
+  { key: 'tl-disputed',   label: 'TL Disputed',       color: 'var(--amber)',  icon: '⚠️', waitingOn: 'QA Evaluator' },
+  { key: 'agent-disputed',label: 'Agent Disputed',    color: 'var(--red)',    icon: '⚠️', waitingOn: 'QA / Manager' },
+  { key: 'qa-review',     label: 'QA Review',         color: 'var(--accent2)',icon: '🔍', waitingOn: 'QA Evaluator' },
+  { key: 'closed',        label: 'Closed',            color: 'var(--green)',  icon: '✅', waitingOn: '--' },
+];
+
+let pipelineData = [];
+
+async function loadPipeline() {
+  pipelineData = await loadEvals();
+
+  // Populate month filter
+  const months = new Set();
+  pipelineData.forEach(e => {
+    const d = e.date || (e.created_at ? e.created_at.slice(0,10) : '');
+    if (d) { const dt = new Date(d); if (!isNaN(dt)) months.add(`${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,'0')}`); }
+  });
+  const moSel = document.getElementById('pipelineMonthFilter');
+  if (moSel) {
+    moSel.innerHTML = '<option value="">All Months</option>'
+      + [...months].sort().reverse().map(m => {
+          const [yr,mo] = m.split('-');
+          const lbl = new Date(yr,mo-1,1).toLocaleDateString('en-MY',{month:'long',year:'numeric'});
+          return `<option value="${m}">${lbl}</option>`;
+        }).join('');
+  }
+
+  // Populate TL filter
+  const tls = [...new Set(pipelineData.map(e => e.tl_name).filter(Boolean))].sort();
+  const tlSel = document.getElementById('pipelineTLFilter');
+  if (tlSel) {
+    tlSel.innerHTML = '<option value="">All TLs</option>'
+      + tls.map(t => `<option value="${t}">${t}</option>`).join('');
+  }
+
+  renderPipeline();
+}
+
+function renderPipeline() {
+  const search       = (document.getElementById('pipelineSearch')?.value || '').toLowerCase();
+  const tlFilter     = document.getElementById('pipelineTLFilter')?.value || '';
+  const statusFilter = document.getElementById('pipelineStatusFilter')?.value || '';
+  const monthFilter  = document.getElementById('pipelineMonthFilter')?.value || '';
+
+  let rows = pipelineData.filter(e => {
+    const matchSearch = !search ||
+      (e.agent_name||'').toLowerCase().includes(search) ||
+      (e.tl_name||'').toLowerCase().includes(search) ||
+      (e.qa_user_name||'').toLowerCase().includes(search) ||
+      String(e.ref).includes(search);
+    const matchTL     = !tlFilter     || e.tl_name === tlFilter;
+    const matchStatus = !statusFilter || e.status   === statusFilter;
+    let matchMonth = true;
+    if (monthFilter) {
+      const d = e.date || (e.created_at ? e.created_at.slice(0,10) : '');
+      if (!d) { matchMonth = false; }
+      else {
+        const dt = new Date(d);
+        matchMonth = !isNaN(dt) && `${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,'0')}` === monthFilter;
+      }
+    }
+    return matchSearch && matchTL && matchStatus && matchMonth;
+  });
+
+  // ── Stage summary cards ──
+  const stagesEl = document.getElementById('pipelineStages');
+  if (stagesEl) {
+    stagesEl.innerHTML = PIPELINE_STAGES.map(s => {
+      const count = pipelineData.filter(e => e.status === s.key).length;
+      const isActive = !statusFilter || statusFilter === s.key;
+      return `<div class="card" style="margin-bottom:0;padding:14px;text-align:center;cursor:pointer;
+        border-color:${count>0&&s.key!=='closed'?s.color:'var(--border)'};
+        opacity:${isActive?1:0.5};transition:all .2s"
+        onclick="document.getElementById('pipelineStatusFilter').value='${s.key}';renderPipeline()">
+        <div style="font-size:20px;margin-bottom:4px">${s.icon}</div>
+        <div style="font-size:24px;font-weight:700;font-family:'JetBrains Mono',monospace;color:${s.color}">${count}</div>
+        <div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.4px;color:var(--text3);margin-top:2px">${s.label}</div>
+        ${count>0&&s.key!=='closed'?`<div style="font-size:9px;color:${s.color};margin-top:4px">Waiting: ${s.waitingOn}</div>`:''}
+      </div>`;
+    }).join('');
+  }
+
+  // ── Pipeline table ──
+  const tbody = document.getElementById('pipelineBody');
+  if (!tbody) return;
+
+  if (!rows.length) {
+    tbody.innerHTML = '<tr><td colspan="10"><div class="empty-state"><div class="icon">✅</div><p>No evaluations match.</p></div></td></tr>';
+    return;
+  }
+
+  // Sort: active stages first (not closed), then by date desc
+  const stageOrder = {'submitted':0,'tl-approved':1,'tl-disputed':2,'agent-disputed':3,'qa-review':4,'closed':99};
+  rows.sort((a,b) => (stageOrder[a.status]??5) - (stageOrder[b.status]??5) || new Date(b.created_at)-new Date(a.created_at));
+
+  tbody.innerHTML = rows.map(e => {
+    const stage    = PIPELINE_STAGES.find(s=>s.key===e.status) || {label:e.status,color:'var(--text3)',waitingOn:'--',icon:'?'};
+    const lastWf   = (e.workflow||[]).slice(-1)[0];
+    const sinceTs  = lastWf?.ts || e.created_at;
+    const sinceDate= sinceTs ? new Date(sinceTs) : null;
+    const sinceStr = sinceDate ? sinceDate.toLocaleDateString('en-MY',{day:'2-digit',month:'2-digit',year:'numeric'}) : '--';
+    let daysSince = '--';
+    let daysLabel = '--';
+    let daysColor = 'var(--text3)';
+    if (sinceDate) {
+      const diffMs  = Date.now() - sinceDate;
+      const diffHrs = Math.floor(diffMs / 3600000);
+      const diffDays= Math.floor(diffMs / 86400000);
+      if (diffDays >= 1) {
+        daysSince = diffDays;
+        daysLabel = diffDays + 'd';
+        daysColor = diffDays > 3 ? 'var(--red)' : diffDays > 1 ? 'var(--amber)' : 'var(--green)';
+      } else {
+        daysSince = diffHrs;
+        daysLabel = diffHrs + 'h';
+        daysColor = diffHrs > 8 ? 'var(--amber)' : 'var(--green)';
+      }
+    }
+    const isClosed = e.status==='closed';
+
+    return `<tr style="${!isClosed?'cursor:pointer':''}" onclick="viewEval('${e.id}')">
+      <td><span style="font-family:'JetBrains Mono',monospace;color:var(--accent);font-size:12px">#${e.ref}</span></td>
+      <td><div style="font-weight:500;font-size:13px">${e.agent_name||'--'}</div></td>
+      <td style="font-size:12px;color:var(--text3)">${e.tl_name||'--'}</td>
+      <td style="font-size:12px;color:var(--accent)">${e.qa_user_name||'--'}</td>
+      <td><span class="score-badge ${scoreClass(e.score)}">${fmtScore(e.score)}</span></td>
+      <td>
+        <div style="display:flex;align-items:center;gap:6px">
+          <span>${stage.icon}</span>
+          <span style="font-size:12px;font-weight:600;color:${stage.color}">${stage.label}</span>
+        </div>
+      </td>
+      <td style="font-size:12px;color:${stage.color};font-weight:500">${isClosed?'--':stage.waitingOn}</td>
+      <td style="font-size:11px;color:var(--text3)">${sinceStr}</td>
+      <td style="font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:700;color:${daysColor}">${isClosed?'--':daysLabel}</td>
+      <td onclick="event.stopPropagation()" style="display:flex;gap:5px;flex-wrap:wrap">
+        ${!isClosed && e.status==='submitted' && canActAs('tl') ? `
+          <button class="btn btn-success btn-sm" onclick="event.stopPropagation();tlAction('${e.id}','approve')">✓</button>
+          <button class="btn btn-amber btn-sm"  onclick="event.stopPropagation();tlAction('${e.id}','dispute')">⚠</button>` : ''}
+        ${!isClosed && e.status==='tl-approved' && canActAs('agent') ? `
+          <button class="btn btn-success btn-sm" onclick="event.stopPropagation();agentAction('${e.id}','acknowledge')">✓ Ack</button>` : ''}
+        ${!isClosed && ['tl-disputed','agent-disputed','qa-review'].includes(e.status) && canActAs('manager') ? `
+          <button class="btn btn-primary btn-sm" onclick="event.stopPropagation();resolveDispute('${e.id}')">Resolve</button>` : ''}
+      </td>
+    </tr>`;
+  }).join('');
 }
 
 // ===============================================
@@ -2637,7 +5204,27 @@ function resolveRoleFull(name, email) {
   return null;
 }
 
+function adminUpdatePassingMark() {
+  const val = document.getElementById('rmPassingMarkInput')?.value;
+  if (setPassingMark(val)) {
+    document.getElementById('rmPassingMarkDisplay').textContent = parseFloat(val) + '%';
+  }
+}
+
+function adminSetPassingMark(val) {
+  if (setPassingMark(val)) {
+    document.getElementById('rmPassingMarkDisplay').textContent = val + '%';
+    document.getElementById('rmPassingMarkInput').value = val;
+  }
+}
+
 async function loadRoleManagement() {
+  // Sync passing mark display
+  const pm = getPassingMark();
+  const pmDisp = document.getElementById('rmPassingMarkDisplay');
+  if (pmDisp) pmDisp.textContent = pm + '%';
+  const pmInput = document.getElementById('rmPassingMarkInput');
+  if (pmInput) pmInput.value = pm;
   const tbody = document.getElementById('rmBody');
   if (tbody) tbody.innerHTML = '<tr><td colspan="7"><div class="empty-state"><div class="icon">⏳</div><p>Loading...</p></div></td></tr>';
 
@@ -2834,6 +5421,58 @@ function filterRmStaff(val) {
   list.classList.add('open');
 }
 
+function switchPwTab(tab) {
+  ['direct','email'].forEach(t => {
+    document.getElementById('pwTab-'+t)?.classList.toggle('active', t===tab);
+    const el = document.getElementById('pwSection-'+t);
+    if (el) el.style.display = t===tab ? '' : 'none';
+  });
+}
+
+// Admin can force a user to change their password on next login
+// by clearing their localStorage key (note: only works on same browser)
+// Real enforcement: the SQL-reset password approach + this flag
+
+function adminForcePasswordChange(email) {
+  const pwKey = 'qa_pw_changed_' + (email||'').toLowerCase().replace(/[^a-z0-9]/g,'_');
+  localStorage.removeItem(pwKey);
+  alert('Done. ' + email + ' will be prompted to change password on next login (same browser).');
+}
+
+async function adminSetPassword() {
+  const email   = document.getElementById('pwDirectEmail')?.value.trim();
+  const pw      = document.getElementById('pwDirectPw')?.value;
+  const confirm = document.getElementById('pwDirectConfirm')?.value;
+  const result  = document.getElementById('pwDirectResult');
+  result.style.display = 'none';
+
+  if (!email) { result.innerHTML = '<span style="color:var(--red)">Please enter an email address.</span>'; result.style.display='block'; return; }
+  if (!pw || pw.length < 8) { result.innerHTML = '<span style="color:var(--red)">Password must be at least 8 characters.</span>'; result.style.display='block'; return; }
+  if (pw !== confirm) { result.innerHTML = '<span style="color:var(--red)">Passwords do not match.</span>'; result.style.display='block'; return; }
+
+  // Use Supabase Admin API via SQL — generate the SQL for the admin to run
+  // Since we only have anon key, we can only reset password for the currently logged-in user
+  // For other users, show the SQL they need to run
+  if (email.toLowerCase() === (currentUser?.email||'').toLowerCase()) {
+    // Same user — use updateUser
+    const { error } = await supa.auth.updateUser({ password: pw });
+    if (error) {
+      result.innerHTML = '<span style="color:var(--red)">Error: ' + (error.message||'Unknown') + '</span>';
+    } else {
+      result.innerHTML = '<span style="color:var(--green)">Password updated for ' + email + '</span>';
+      document.getElementById('pwDirectPw').value = '';
+      document.getElementById('pwDirectConfirm').value = '';
+    }
+  } else {
+    // Different user — show SQL to run
+    result.innerHTML = '<span style="color:var(--amber)">To set password for another user, run this SQL in Supabase:</span>'
+      + '<pre style="margin-top:8px;padding:10px;background:var(--surface3);border-radius:6px;font-size:11px;color:var(--accent);white-space:pre-wrap">'
+      + "UPDATE auth.users SET encrypted_password = crypt('" + pw + "', gen_salt('bf')), confirmation_token = COALESCE(confirmation_token,''), recovery_token = COALESCE(recovery_token,''), email_confirmed_at = COALESCE(email_confirmed_at, NOW()), updated_at = NOW() WHERE email = '" + email + "';"
+      + '</pre>';
+  }
+  result.style.display = 'block';
+}
+
 async function sendPasswordReset() {
   const email = document.getElementById('pwResetEmail').value.trim();
   const result = document.getElementById('pwResetResult');
@@ -2869,6 +5508,7 @@ function supabaseLoadFailed() {
 
 // Wait for DOM + Supabase CDN to be ready before calling init
 function safeInit() {
+  initTheme(); // Apply theme immediately before anything renders
   if (typeof supabase === 'undefined' || typeof supabase.createClient !== 'function') {
     document.getElementById('loadingMsg').textContent = 'Waiting for Supabase library...';
     setTimeout(safeInit, 300);
