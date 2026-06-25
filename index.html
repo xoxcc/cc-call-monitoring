@@ -629,24 +629,18 @@
         <div class="page-header">
           <div class="page-header-row">
             <div><h1>All Evaluations</h1><p>Full evaluation history</p></div>
-            <div style="display:flex;gap:8px">
-              <button class="btn btn-ghost" onclick="exportEvals('csv')" title="Export to CSV">⬇ CSV</button>
-              <button class="btn btn-ghost" onclick="exportEvals('excel')" title="Export to Excel">⬇ Excel</button>
+            <div style="display:flex;gap:8px;align-items:center">
+              <button class="btn btn-success" onclick="exportEvals('csv')"
+                style="display:flex;align-items:center;gap:6px;padding:8px 16px;font-weight:600">
+                📄 Export CSV
+              </button>
+              <button class="btn btn-success" onclick="exportEvals('excel')"
+                style="display:flex;align-items:center;gap:6px;padding:8px 16px;font-weight:600;background:rgba(34,197,94,.15);color:var(--green);border-color:var(--green)">
+                📊 Export Excel
+              </button>
               <button class="btn btn-primary" onclick="showPage('new-eval')" id="evalsNewBtn">+ New</button>
             </div>
           </div>
-        </div>
-
-        <!-- Export bar -->
-        <div style="display:flex;gap:8px;margin-bottom:10px;align-items:center">
-          <span style="font-size:12px;color:var(--text3);font-weight:600">EXPORT:</span>
-          <button class="btn btn-ghost" onclick="exportEvals('csv')" style="display:flex;align-items:center;gap:6px;font-weight:600">
-            <span style="font-size:16px">📄</span> Download CSV
-          </button>
-          <button class="btn btn-ghost" onclick="exportEvals('excel')" style="display:flex;align-items:center;gap:6px;font-weight:600">
-            <span style="font-size:16px">📊</span> Download Excel
-          </button>
-          <span style="font-size:11px;color:var(--text3)">Exports apply current filters below</span>
         </div>
 
         <!-- Filter bar -->
