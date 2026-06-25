@@ -1430,6 +1430,15 @@ window.onunhandledrejection = function(e) {
   console.error('[QA PROMISE]', e.reason);
 };
 
+// ── START APP ──
+initTheme();
+loadBuiltinOverrides();
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', init);
+} else {
+  init();
+}
+
 // ===============================================
 //  SUPABASE INIT
 // ===============================================
@@ -1624,26 +1633,27 @@ function setViewRole(role) {
 // ===============================================
 async function init() {
   setLoading(true, 'Connecting to Supabase...');
+
+  // Hard timeout — show login after 4s no matter what
+  const hardTimeout = setTimeout(() => {
+    setLoading(false);
+    document.getElementById('loginWrap').style.display = 'flex';
+  }, 4000);
+
   try {
-    // Race getSession against a 6s timeout
-    const sessionResult = await Promise.race([
-      supa.auth.getSession(),
-      new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 3000))
-    ]);
-    const session = sessionResult?.data?.session;
-    if (session?.user) {
-      await onLoggedIn(session.user);
+    const { data, error } = await supa.auth.getSession();
+    clearTimeout(hardTimeout);
+    if (data?.session?.user) {
+      await onLoggedIn(data.session.user);
     } else {
       setLoading(false);
       document.getElementById('loginWrap').style.display = 'flex';
     }
   } catch (err) {
-    console.warn('[QA App] getSession error:', err.message);
+    clearTimeout(hardTimeout);
+    console.warn('[QA] init error:', err.message);
     setLoading(false);
     document.getElementById('loginWrap').style.display = 'flex';
-    if (err.message === 'timeout') {
-      showLoginError('Connection timed out. Check your network and try again.');
-    }
   }
 }
 
@@ -1836,20 +1846,14 @@ async function onLoggedIn(user) {
   const staffTable = 'staff';
   const tlCol = null;
 
-  // Load all staff with 5s timeout
-  let fullStaff = [], staffErr = null;
+  // Load all staff
+  let fullStaff = [];
   try {
-    const staffResult = await Promise.race([
-      supa.from(staffTable).select('*').order('name'),
-      new Promise((_, r) => setTimeout(() => r(new Error('staff_timeout')), 5000))
-    ]);
-    fullStaff = staffResult.data || [];
-    staffErr  = staffResult.error;
+    const { data: sd } = await supa.from(staffTable).select('*').order('name');
+    fullStaff = sd || [];
   } catch(e) {
-    console.warn('[QA App] Staff load timeout/error:', e.message);
-    fullStaff = [];
+    console.warn('[QA App] Staff load error:', e.message);
   }
-  const _unused = staffErr;
     if (staffErr) {
       console.error('[QA App] Staff load error:', staffErr);
     } else {
