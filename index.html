@@ -1836,9 +1836,8 @@ async function onLoggedIn(user) {
   const staffTable = 'staff';
   const tlCol = null; // TL relationship handled via team column (agent.team = TL first name)
 
-  {
-    // Load all staff
-    const { data: fullStaff, error: staffErr } = await supa.from(staffTable).select('*').order('name');
+  // Load all staff
+  const { data: fullStaff, error: staffErr } = await supa.from(staffTable).select('*').order('name');
     if (staffErr) {
       console.error('[QA App] Staff load error:', staffErr);
     } else {
@@ -1899,8 +1898,6 @@ async function onLoggedIn(user) {
     } else {
       currentStaff = { id: user.id, name: user.email.split('@')[0], role: 'qa' };
       console.warn('[QA App] Could not find staff record for', user.email, '-- using fallback');
-    }
-
 
   window._staffTable = staffTable; // expose for debugging
   applyStoredOverrides(); // merge any admin-set overrides into live maps
