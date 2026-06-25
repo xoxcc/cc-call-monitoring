@@ -427,8 +427,6 @@
                 <option value="">All Time</option>
               </select>
               <button class="btn btn-ghost btn-sm" onclick="document.getElementById('dashMonthFilter').value='';loadDashboard()" title="Clear filter">✕</button>
-              <button class="btn btn-ghost btn-sm" onclick="exportEvals('csv')" title="Export all to CSV">⬇ CSV</button>
-              <button class="btn btn-ghost btn-sm" onclick="exportEvals('excel')" title="Export all to Excel">⬇ Excel</button>
               <button class="btn btn-primary" onclick="showPage('new-eval')" id="dashNewBtn">+ New Evaluation</button>
             </div>
           </div>
@@ -629,17 +627,7 @@
         <div class="page-header">
           <div class="page-header-row">
             <div><h1>All Evaluations</h1><p>Full evaluation history</p></div>
-            <div style="display:flex;gap:8px;align-items:center">
-              <button class="btn btn-success" onclick="exportEvals('csv')"
-                style="display:flex;align-items:center;gap:6px;padding:8px 16px;font-weight:600">
-                📄 Export CSV
-              </button>
-              <button class="btn btn-success" onclick="exportEvals('excel')"
-                style="display:flex;align-items:center;gap:6px;padding:8px 16px;font-weight:600;background:rgba(34,197,94,.15);color:var(--green);border-color:var(--green)">
-                📊 Export Excel
-              </button>
-              <button class="btn btn-primary" onclick="showPage('new-eval')" id="evalsNewBtn">+ New</button>
-            </div>
+            <button class="btn btn-primary" onclick="showPage('new-eval')" id="evalsNewBtn">+ New</button>
           </div>
         </div>
 
@@ -784,110 +772,15 @@
             <button class="btn btn-primary" onclick="openNewTemplateModal()">+ New Template</button>
           </div>
         </div>
-        <!-- Tab bar -->
-        <div class="tab-bar" style="margin-bottom:20px" id="tplMgmtTabs">
-          <button class="tab-btn active" onclick="switchTplTab('builtin')">Built-in Templates</button>
-          <button class="tab-btn" onclick="switchTplTab('editor')">Edit Built-in Questions</button>
-          <button class="tab-btn" onclick="switchTplTab('custom')">Custom Templates</button>
-        </div>
-
-        <!-- Built-in overview -->
-        <div id="tplTab-builtin">
-          <div id="builtinTplList"></div>
-          <div style="margin-top:8px;font-size:11px;color:var(--text3)">
-            ℹ️ Built-in templates can be edited. Changes are saved to Supabase and applied to all new evaluations.
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:20px">
+          <div>
+            <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:var(--text3);margin-bottom:10px">Built-in Templates</div>
+            <div id="builtinTplList"></div>
           </div>
-        </div>
-
-        <!-- Built-in editor -->
-        <div id="tplTab-editor" style="display:none">
-          <div class="tab-bar" style="margin-bottom:16px">
-            <button class="tab-btn active" id="qset-tab-std" onclick="switchQSetTab('std')">Standard Call</button>
-            <button class="tab-btn" id="qset-tab-gen" onclick="switchQSetTab('gen')">General Enquiries</button>
-            <button class="tab-btn" id="qset-tab-fatal" onclick="switchQSetTab('fatal')">Fatal Errors</button>
+          <div>
+            <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:var(--text3);margin-bottom:10px">Custom Templates</div>
+            <div id="customTplList"><div class="text-sm" style="padding:20px;text-align:center;color:var(--text3)">No custom templates yet. Click "+ New Template" to create one.</div></div>
           </div>
-
-          <!-- Standard Call editor -->
-          <div id="qset-std">
-            <div class="card" style="margin-bottom:12px">
-              <div class="card-header" style="margin-bottom:12px">
-                <div><div class="card-title">Standard Call Questions</div><div class="card-subtitle">Edit questions, weights and answer types. Changes apply to all new evaluations.</div></div>
-                <div style="display:flex;gap:8px">
-                  <button class="btn btn-ghost btn-sm" onclick="addBuiltinQuestion('std')">+ Add Question</button>
-                  <button class="btn btn-primary btn-sm" onclick="saveBuiltinTemplate('std')">Save Changes</button>
-                </div>
-              </div>
-              <div style="display:grid;grid-template-columns:40px 1fr 70px 110px 36px;gap:8px;padding:6px 0;border-bottom:1px solid var(--border2);font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase">
-                <span style="text-align:center">#</span><span>Question</span><span style="text-align:center">Weight</span><span style="text-align:center">Type</span><span></span>
-              </div>
-              <div id="qeditor-std"></div>
-            </div>
-            <div class="card">
-              <div class="card-header" style="margin-bottom:12px">
-                <div><div class="card-title">Standard Call — CSAT Questions</div><div class="card-subtitle">Additional questions shown when CSAT template is selected</div></div>
-                <div style="display:flex;gap:8px">
-                  <button class="btn btn-ghost btn-sm" onclick="addBuiltinQuestion('std-csat')">+ Add</button>
-                  <button class="btn btn-primary btn-sm" onclick="saveBuiltinTemplate('std-csat')">Save</button>
-                </div>
-              </div>
-              <div style="display:grid;grid-template-columns:40px 1fr 70px 110px 36px;gap:8px;padding:6px 0;border-bottom:1px solid var(--border2);font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase">
-                <span style="text-align:center">#</span><span>Question</span><span style="text-align:center">Weight</span><span style="text-align:center">Type</span><span></span>
-              </div>
-              <div id="qeditor-std-csat"></div>
-            </div>
-          </div>
-
-          <!-- General Enquiries editor -->
-          <div id="qset-gen" style="display:none">
-            <div class="card" style="margin-bottom:12px">
-              <div class="card-header" style="margin-bottom:12px">
-                <div><div class="card-title">General Enquiries Questions</div><div class="card-subtitle">Edit questions for General Enquiries call category</div></div>
-                <div style="display:flex;gap:8px">
-                  <button class="btn btn-ghost btn-sm" onclick="addBuiltinQuestion('gen')">+ Add Question</button>
-                  <button class="btn btn-primary btn-sm" onclick="saveBuiltinTemplate('gen')">Save Changes</button>
-                </div>
-              </div>
-              <div style="display:grid;grid-template-columns:40px 1fr 70px 110px 36px;gap:8px;padding:6px 0;border-bottom:1px solid var(--border2);font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase">
-                <span style="text-align:center">#</span><span>Question</span><span style="text-align:center">Weight</span><span style="text-align:center">Type</span><span></span>
-              </div>
-              <div id="qeditor-gen"></div>
-            </div>
-            <div class="card">
-              <div class="card-header" style="margin-bottom:12px">
-                <div><div class="card-title">General Enquiries — CSAT Questions</div></div>
-                <div style="display:flex;gap:8px">
-                  <button class="btn btn-ghost btn-sm" onclick="addBuiltinQuestion('gen-csat')">+ Add</button>
-                  <button class="btn btn-primary btn-sm" onclick="saveBuiltinTemplate('gen-csat')">Save</button>
-                </div>
-              </div>
-              <div style="display:grid;grid-template-columns:40px 1fr 70px 110px 36px;gap:8px;padding:6px 0;border-bottom:1px solid var(--border2);font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase">
-                <span style="text-align:center">#</span><span>Question</span><span style="text-align:center">Weight</span><span style="text-align:center">Type</span><span></span>
-              </div>
-              <div id="qeditor-gen-csat"></div>
-            </div>
-          </div>
-
-          <!-- Fatal errors editor -->
-          <div id="qset-fatal" style="display:none">
-            <div class="card">
-              <div class="card-header" style="margin-bottom:12px">
-                <div><div class="card-title">Fatal Errors</div><div class="card-subtitle">Fatal errors result in automatic 0% score regardless of other answers</div></div>
-                <div style="display:flex;gap:8px">
-                  <button class="btn btn-ghost btn-sm" onclick="addBuiltinQuestion('fatal')">+ Add Fatal Error</button>
-                  <button class="btn btn-primary btn-sm" onclick="saveBuiltinTemplate('fatal')">Save Changes</button>
-                </div>
-              </div>
-              <div style="display:grid;grid-template-columns:40px 1fr 36px;gap:8px;padding:6px 0;border-bottom:1px solid var(--border2);font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase">
-                <span style="text-align:center">#</span><span>Fatal Error Description</span><span></span>
-              </div>
-              <div id="qeditor-fatal"></div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Custom templates -->
-        <div id="tplTab-custom" style="display:none">
-          <div id="customTplList"><div class="text-sm" style="padding:20px;text-align:center;color:var(--text3)">No custom templates yet. Click "+ New Template" to create one.</div></div>
         </div>
       </div>
 
@@ -1430,18 +1323,6 @@ window.onunhandledrejection = function(e) {
   console.error('[QA PROMISE]', e.reason);
 };
 
-// ── START APP — must be last, after all functions defined ──
-initTheme();
-if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', function() {
-    loadBuiltinOverrides();
-    init();
-  });
-} else {
-  loadBuiltinOverrides();
-  init();
-}
-
 // ===============================================
 //  SUPABASE INIT
 // ===============================================
@@ -1452,7 +1333,7 @@ const supa = supabase.createClient(SUPA_URL, SUPA_KEY);
 // ===============================================
 //  QUESTION DATA
 // ===============================================
-let STD_QS = [
+const STD_QS = [
   {id:'s1',num:'1.1',q:'Opening script - Thank, company name, agent name, offer assistance (Must follow)',wt:3,type:'yn'},
   {id:'s2',num:'1.2',q:"Did agent's greeting was hearable?",wt:2,type:'yn'},
   {id:'s3',num:'1.3',q:'Did agent alert on incoming calls? (2 Secs)',wt:2,type:'yn'},
@@ -1492,7 +1373,7 @@ let STD_QS = [
 ];
 const STD_CSAT = {id:'s_csat',num:'1.34c',q:'Did agent use the CSAT script before ending the call?',wt:4,type:'yn'};
 
-let GEN_QS = [
+const GEN_QS = [
   {id:'g1',num:'1.1',q:'Opening script - Thank, company name, agent name, offer assistance (Must follow)',wt:3,type:'yn'},
   {id:'g2',num:'1.2',q:"Did agent's greeting was hearable?",wt:2,type:'yn'},
   {id:'g3',num:'1.3',q:'Did agent alert on incoming calls? (2 Secs)',wt:3,type:'yn'},
@@ -1525,7 +1406,7 @@ let GEN_QS = [
 ];
 const GEN_CSAT = {id:'g_csat',num:'1.27c',q:'Did agent use the CSAT script before ending the call?',wt:4,type:'yn'};
 
-let FATALS = [
+const FATALS = [
   {id:'f1',q:'Drop call without insufficient reason'},
   {id:'f2',q:'Failure to answer call'},
   {id:'f3',q:'Failed to verify authorized user when required (PDPA)'},
@@ -1636,27 +1517,26 @@ function setViewRole(role) {
 // ===============================================
 async function init() {
   setLoading(true, 'Connecting to Supabase...');
-
-  // Hard timeout — show login after 4s no matter what
-  const hardTimeout = setTimeout(() => {
-    setLoading(false);
-    document.getElementById('loginWrap').style.display = 'flex';
-  }, 4000);
-
   try {
-    const { data, error } = await supa.auth.getSession();
-    clearTimeout(hardTimeout);
-    if (data?.session?.user) {
-      await onLoggedIn(data.session.user);
+    // Race getSession against a 6s timeout
+    const sessionResult = await Promise.race([
+      supa.auth.getSession(),
+      new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 6000))
+    ]);
+    const session = sessionResult?.data?.session;
+    if (session?.user) {
+      await onLoggedIn(session.user);
     } else {
       setLoading(false);
       document.getElementById('loginWrap').style.display = 'flex';
     }
   } catch (err) {
-    clearTimeout(hardTimeout);
-    console.warn('[QA] init error:', err.message);
+    console.warn('[QA App] getSession error:', err.message);
     setLoading(false);
     document.getElementById('loginWrap').style.display = 'flex';
+    if (err.message === 'timeout') {
+      showLoginError('Connection timed out. Check your network and try again.');
+    }
   }
 }
 
@@ -1845,18 +1725,42 @@ async function onLoggedIn(user) {
   currentUser = user;
   setLoading(true, 'Loading staff data...');
 
-  // Staff table is known — hardcoded for performance
-  const staffTable = 'staff';
-  const tlCol = null;
+  // ── Try to detect the correct staff table name ──
+  const TABLE_CANDIDATES = ['staff', 'employees', 'users', 'cc_staff', 'agents'];
+  let staffTable = null;
+  let allStaffData = [];
 
-  // Load all staff
-  let fullStaff = [];
-  try {
-    const { data: sd } = await supa.from(staffTable).select('*').order('name');
-    fullStaff = sd || [];
-  } catch(e) {
-    console.warn('[QA App] Staff load error:', e.message);
+  for (const tbl of TABLE_CANDIDATES) {
+    try {
+      const { data, error } = await Promise.race([
+        supa.from(tbl).select('*').limit(3),
+        new Promise((_, r) => setTimeout(() => r(new Error('timeout')), 5000))
+      ]);
+      if (!error && data) {
+        staffTable = tbl;
+        console.log(`[QA App] Staff table found: "${tbl}", sample:`, data);
+        break;
+      } else {
+        console.log(`[QA App] Table "${tbl}" not usable:`, error?.message);
+      }
+    } catch(e) {
+      console.log(`[QA App] Table "${tbl}" timed out or errored`);
+    }
   }
+
+  if (staffTable) {
+    // Detect TL column: try team_leader_id, tl_id, supervisor_id
+    const TL_COL_CANDIDATES = ['team_leader_id', 'tl_id', 'supervisor_id', 'manager_id'];
+    let { data: sample } = await supa.from(staffTable).select('*').limit(1);
+    let tlCol = null;
+    if (sample && sample[0]) {
+      tlCol = TL_COL_CANDIDATES.find(c => c in sample[0]) || null;
+      console.log('[QA App] Columns in row:', Object.keys(sample[0]));
+      console.log('[QA App] TL column detected:', tlCol);
+    }
+
+    // Load all staff - select all columns so we can map whatever is there
+    const { data: fullStaff, error: staffErr } = await supa.from(staffTable).select('*').order('name');
     if (staffErr) {
       console.error('[QA App] Staff load error:', staffErr);
     } else {
@@ -1879,10 +1783,17 @@ async function onLoggedIn(user) {
 
     // Find current user's staff record -- try multiple column strategies
     let myRow = null;
-    // Find staff record by email match from already-loaded allStaff
-    myRow = allStaff.find(s => (s._raw?.email||'').toLowerCase() === user.email.toLowerCase())
-         || allStaff.find(s => s.name.toLowerCase().includes(user.email.split('@')[0].toLowerCase()))
-         || null;
+    // Try by email
+    const { data: byEmail } = await supa.from(staffTable).select('*')
+      .eq('email', user.email).limit(1);
+    if (byEmail && byEmail.length) { myRow = byEmail[0]; }
+
+    // Try by user_id / auth_id columns if email didn't match
+    if (!myRow) {
+      const { data: byUid } = await supa.from(staffTable).select('*')
+        .or(`user_id.eq.${user.id},auth_id.eq.${user.id}`).limit(1);
+      if (byUid && byUid.length) myRow = byUid[0];
+    }
 
     if (myRow) {
       const rawName = myRow.name || myRow.full_name || myRow.staff_name || user.email.split('@')[0];
@@ -1910,6 +1821,11 @@ async function onLoggedIn(user) {
     } else {
       currentStaff = { id: user.id, name: user.email.split('@')[0], role: 'qa' };
       console.warn('[QA App] Could not find staff record for', user.email, '-- using fallback');
+    }
+  } else {
+    console.error('[QA App] No staff table found! Tried:', TABLE_CANDIDATES);
+    currentStaff = { id: user.id, name: user.email.split('@')[0], role: 'qa' };
+  }
 
   window._staffTable = staffTable; // expose for debugging
   applyStoredOverrides(); // merge any admin-set overrides into live maps
@@ -1948,7 +1864,6 @@ async function onLoggedIn(user) {
   document.getElementById('appWrap').style.display = 'block';
   renderUserInfo();
   updateNavVisibility();
-  loadBuiltinOverrides();
   showPage('dashboard');
 
   // Check if this user has ever set their own password
@@ -2171,7 +2086,7 @@ function showPage(id) {
   if (id === 'pending-agent') loadPendingAgent();
   if (id === 'disputes') loadDisputes();
   if (id === 'role-mgmt') loadRoleManagement();
-  if (id === 'tpl-mgmt') { loadTplMgmt(); switchTplTab('builtin'); }
+  if (id === 'tpl-mgmt') loadTplMgmt();
   if (id === 'my-evals') loadMyEvals();
   if (id === 'pipeline') loadPipeline();
   if (id === 'fail-analysis') loadFailAnalysis();
@@ -3939,220 +3854,6 @@ function forceShowLogin() {
 }
 
 // ===============================================
-//  EXPORT TO CSV / EXCEL
-// ===============================================
-
-function exportEvals(format) {
-  // Force hide any loading overlay immediately
-  setLoading(false);
-
-  // Use ONLY cached evaluations — never trigger a new Supabase call
-  const all = evaluations && evaluations.length > 0 ? evaluations : null;
-  if (!all) {
-    alert('No data loaded yet. The dashboard loads automatically — please wait a moment then try again.');
-    return;
-  }
-
-  // Apply current page filters if on All Evaluations page, otherwise export all
-  const dateType = document.getElementById('evFilter_dateType')?.value || 'call';
-  const dateFrom = document.getElementById('evFilter_dateFrom')?.value || '';
-  const dateTo   = document.getElementById('evFilter_dateTo')?.value   || '';
-  const status   = document.getElementById('evFilter_status')?.value   || '';
-  const fatal    = document.getElementById('evFilter_fatal')?.value    || '';
-  const tl       = document.getElementById('evFilter_tl')?.value       || '';
-  const qa       = document.getElementById('evFilter_qa')?.value       || '';
-  const tagF     = document.getElementById('evFilter_tag')?.value      || '';
-  const search   = (document.getElementById('evFilter_search')?.value||'').toLowerCase();
-
-  const hasFilters = dateFrom || dateTo || status || fatal || tl || qa || tagF || search;
-
-  const filtered = hasFilters ? all.filter(e => {
-    if (status && e.status !== status) return false;
-    if (fatal === 'yes' && !e.has_fatal) return false;
-    if (fatal === 'no'  &&  e.has_fatal) return false;
-    if (tl     && e.tl_name !== tl) return false;
-    if (qa     && e.qa_user_name !== qa) return false;
-    if (tagF   && e.eval_tag !== tagF) return false;
-    if (search && !(e.agent_name||'').toLowerCase().includes(search)) return false;
-    if (dateFrom || dateTo) {
-      const dateStr = dateType==='eval' ? (e.created_at||'').slice(0,10) : e.date||'';
-      if (!dateStr) return false;
-      const d = new Date(dateStr);
-      if (isNaN(d)) return false;
-      if (dateFrom && d < new Date(dateFrom)) return false;
-      if (dateTo   && d > new Date(dateTo+'T23:59:59')) return false;
-    }
-    return true;
-  }) : all;
-
-  if (!filtered.length) { alert('No evaluations match the current filters.'); return; }
-
-  // Build rows with all captured details
-  const rows = filtered.map(e => {
-    const answers      = e.answers      || {};
-    const fatalAnswers = e.fatal_answers || {};
-    const workflow     = e.workflow      || [];
-    const complaint    = e.complaint     || {};
-
-    // Workflow timestamps
-    const getWFTime = (action) => {
-      const wf = workflow.find(w => w.action && w.action.toLowerCase().includes(action.toLowerCase()));
-      return wf?.ts ? new Date(wf.ts).toLocaleString('en-MY') : '';
-    };
-    const getWFNote = (action) => {
-      const wf = workflow.find(w => w.action && w.action.toLowerCase().includes(action.toLowerCase()));
-      return wf?.note || '';
-    };
-    const getWFBy = (action) => {
-      const wf = workflow.find(w => w.action && w.action.toLowerCase().includes(action.toLowerCase()));
-      return wf?.by || '';
-    };
-
-    // Build question answers
-    const qAnswers = {};
-    const allQs = [...(e.questions || [])];
-    allQs.forEach(q => {
-      const ans = answers[q.id] || {};
-      qAnswers['Q' + q.num + ' - ' + q.q.substring(0,50)] = ans.val || '';
-      qAnswers['Q' + q.num + ' Score']  = ans.score !== undefined ? ans.score : '';
-      if (ans.comment) qAnswers['Q' + q.num + ' Comment'] = ans.comment;
-    });
-
-    // Fatal errors
-    const fatalQs = {};
-    (e.fatals || FATALS).forEach(f => {
-      const ans = fatalAnswers[f.id] || {};
-      fatalQs['FATAL: ' + f.q.substring(0,50)] = ans.val || '';
-    });
-
-    return {
-      // ── Identification ──
-      'Ref':              '#' + (e.ref || ''),
-      'Eval Tag':         e.eval_tag || '',
-      'Template':         tplLabel(e),
-      'Call Type':        e.call_category || '',
-      'CSAT':             e.csat === 'yes' ? 'Yes' : 'No',
-
-      // ── Agent & Team ──
-      'Agent Name':       e.agent_name || '',
-      'Team Leader':      e.tl_name    || '',
-      'QA Evaluator':     e.qa_user_name || '',
-
-      // ── Call Details ──
-      'Call Date':        e.date        || '',
-      'Call Timestamp':   e.call_time   || '',
-      'Call Duration':    e.duration    || '',
-      'Calling Number':   e.calling_num || '',
-      'Contact ID/Case':  e.contact_id  || '',
-      'QA Remarks':       e.call_remarks || '',
-
-      // ── Scores ──
-      'Score (%)':        e.score !== null ? Number(e.score).toFixed(2) : '',
-      'Earned Points':    e.earned_pts  || '',
-      'Total Weight':     e.total_wt    || '',
-      'Has Fatal Error':  e.has_fatal   ? 'YES' : 'No',
-      'Pass/Fail':        Number(e.score) >= getPassingMark() ? 'PASS' : 'FAIL',
-      'Passing Mark (%)': getPassingMark(),
-
-      // ── Workflow Status ──
-      'Status':           e.status      || '',
-      'Eval Submitted':   e.created_at  ? new Date(e.created_at).toLocaleString('en-MY') : '',
-      'Eval Submitted By': e.qa_user_name || '',
-      'TL Action':        getWFTime('tl approved') || getWFTime('tl disputed'),
-      'TL Action By':     getWFBy('tl approved')   || getWFBy('tl disputed'),
-      'TL Action Type':   workflow.find(w=>w.action&&(w.action.includes('Approved')||w.action.includes('Disputed')))?.action || '',
-      'TL Notes':         getWFNote('tl approved') || getWFNote('tl disputed'),
-      'Dispute Raised':   getWFTime('disputed'),
-      'Dispute Reason':   getWFNote('disputed'),
-      'Resolved At':      getWFTime('resolved'),
-      'Resolved By':      getWFBy('resolved'),
-      'Resolution Notes': getWFNote('resolved'),
-      'Agent Acknowledged': getWFTime('agent acknowledged'),
-      'Agent Ack By':     getWFBy('agent acknowledged'),
-      'Closed At':        getWFTime('closed'),
-
-      // ── Complaint Details (if applicable) ──
-      'Complaint Ref':      complaint.ref          || '',
-      'Complaint Channel':  complaint.channel      || '',
-      'Complaint Category': complaint.category     || '',
-      'Complaint Date':     complaint.date_received|| '',
-      'Complaint Summary':  complaint.summary      || '',
-      'Root Cause':         complaint.root_cause   || '',
-      'Action Taken':       complaint.action       || '',
-      'Resolution Status':  complaint.resolution   || '',
-      'Chronology':         (complaint.chronology||[]).map(c=>`[${c.datetime}] ${c.event}`).join(' | '),
-
-      // ── Individual Question Answers ──
-      ...qAnswers,
-      ...fatalQs,
-    };
-  });
-
-  if (format === 'csv') {
-    downloadCSV(rows, 'XOX_QA_Evaluations_' + new Date().toISOString().slice(0,10) + '.csv');
-  } else {
-    downloadExcel(rows, 'XOX_QA_Evaluations_' + new Date().toISOString().slice(0,10) + '.xlsx');
-  }
-}
-
-function downloadCSV(rows, filename) {
-  if (!rows.length) return;
-  const headers = Object.keys(rows[0]);
-  const escape  = v => '"' + String(v||'').replace(/"/g, '""') + '"';
-  const csv = [
-    headers.map(escape).join(','),
-    ...rows.map(r => headers.map(h => escape(r[h]||'')).join(','))
-  ].join('
-');
-
-  const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8;' });
-  const url  = URL.createObjectURL(blob);
-  const a    = document.createElement('a');
-  a.href = url; a.download = filename; a.click();
-  URL.revokeObjectURL(url);
-}
-
-function downloadExcel(rows, filename) {
-  if (!rows.length) return;
-  const headers = Object.keys(rows[0]);
-
-  // Build XML-based Excel (XLSX-compatible via data URI)
-  // Use a simple but effective approach: HTML table saved as .xls
-  // which Excel opens natively
-  let html = '<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel">';
-  html += '<head><meta charset="UTF-8">';
-  html += '<style>th{background:#1a2540;color:#fff;font-weight:bold;padding:6px;border:1px solid #ccc;}';
-  html += 'td{padding:4px 6px;border:1px solid #ddd;vertical-align:top;}';
-  html += '.pass{color:#16a34a;font-weight:bold}.fail{color:#dc2626;font-weight:bold}';
-  html += '.fatal{color:#dc2626;font-weight:bold}.score{font-weight:bold}</style></head><body>';
-  html += '<table border="1"><thead><tr>';
-  headers.forEach(h => { html += '<th>' + h + '</th>'; });
-  html += '</tr></thead><tbody>';
-  rows.forEach(r => {
-    html += '<tr>';
-    headers.forEach(h => {
-      let val = String(r[h] || '');
-      let cls = '';
-      if (h === 'Pass/Fail') cls = val === 'PASS' ? ' class="pass"' : ' class="fail"';
-      if (h === 'Has Fatal Error' && val === 'YES') cls = ' class="fatal"';
-      if (h === 'Score (%)') cls = ' class="score"';
-      html += '<td' + cls + '>' + val.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;') + '</td>';
-    });
-    html += '</tr>';
-  });
-  html += '</tbody></table></body></html>';
-
-  const blob = new Blob([html], { type: 'application/vnd.ms-excel;charset=utf-8;' });
-  const url  = URL.createObjectURL(blob);
-  const a    = document.createElement('a');
-  a.href = url; a.download = filename; a.click();
-  URL.revokeObjectURL(url);
-
-  // Show count
-  alert(`Exported ${rows.length} evaluation${rows.length!==1?'s':''} to Excel.`);
-}
-
-// ===============================================
 //  PASSING MARK CONFIG
 // ===============================================
 
@@ -4335,25 +4036,15 @@ const BUILTIN_TEMPLATES = [
 async function loadTplMgmt() {
   const builtinEl = document.getElementById('builtinTplList');
   if (builtinEl) {
-    builtinEl.innerHTML = '';
-    BUILTIN_TEMPLATES.forEach(t => {
-      const div = document.createElement('div');
-      div.className = 'tpl-card tpl-builtin';
-      const qCount = t.id === 'hist-no' || t.id === 'hist-csat' || t.id === 'live-no' || t.id === 'live-csat'
-        ? (STD_QS.length + GEN_QS.length) + ' questions + ' + FATALS.length + ' fatals'
-        : t.id === 'complaint' ? STD_QS.length + ' questions + ' + FATALS.length + ' fatals + complaint form'
-        : '';
-      div.innerHTML = '<div style="display:flex;justify-content:space-between;align-items:start">'
-        + '<div><div style="font-weight:600;font-size:13px;margin-bottom:3px">' + t.name + '</div>'
-        + '<div style="font-size:11px;color:var(--text3)">' + t.description + '</div>'
-        + '<div style="font-size:10px;color:var(--text3);margin-top:3px">' + qCount + '</div></div>'
-        + '<div style="display:flex;gap:6px;flex-shrink:0;margin-left:8px">'
-        + '<span class="pill" style="font-size:10px">' + t.type + '</span>'
-        + '<button class="btn btn-ghost btn-sm" data-builtin-id="' + t.id + '">Edit</button>'
-        + '</div></div>';
-      div.querySelector('[data-builtin-id]').addEventListener('click', () => editBuiltinTemplate(t.id));
-      builtinEl.appendChild(div);
-    });
+    builtinEl.innerHTML = BUILTIN_TEMPLATES.map(t =>
+      '<div class="tpl-card tpl-builtin">'
+      + '<div style="display:flex;justify-content:space-between;align-items:start">'
+      + '<div><div style="font-weight:600;font-size:13px;margin-bottom:3px">' + t.name + '</div>'
+      + '<div style="font-size:11px;color:var(--text3)">' + t.description + '</div></div>'
+      + '<span class="pill" style="font-size:10px;flex-shrink:0;margin-left:8px">' + t.type + '</span>'
+      + '</div><div style="margin-top:6px;font-size:11px;color:var(--text3)">Built-in - read only</div>'
+      + '</div>'
+    ).join('');
   }
   try {
     const { data, error } = await supa.from('qa_templates').select('*').order('created_at',{ascending:false});
@@ -4389,213 +4080,6 @@ function renderCustomTemplates() {
     div.querySelector('[data-tpl-del]').addEventListener('click',  () => deleteTemplate(t.id));
     el.appendChild(div);
   });
-}
-
-function editBuiltinTemplate(tplId) {
-  // Determine which question set to edit
-  let qs, label, saveKey;
-  if (tplId === 'complaint') {
-    qs = STD_QS; label = 'Complaint / Standard Call Questions'; saveKey = 'std';
-  } else if (['hist-no','hist-csat','live-no','live-csat'].includes(tplId)) {
-    // Show both STD and GEN sections
-    openBuiltinTemplateEditor(tplId);
-    return;
-  }
-  openBuiltinTemplateEditor(tplId);
-}
-
-async function openBuiltinTemplateEditor(tplId) {
-  const isStdBased = ['hist-no','hist-csat','live-no','live-csat','complaint'].includes(tplId);
-  const tplName = BUILTIN_TEMPLATES.find(t=>t.id===tplId)?.name || tplId;
-
-  // Load any saved overrides from Supabase
-  let savedStd = null, savedGen = null, savedFatals = null;
-  try {
-    const { data } = await supa.from('qa_templates').select('*').eq('id', 'builtin_' + tplId).single();
-    if (data?.questions) savedStd = data.questions;
-    if (data?.gen_questions) savedGen = data.gen_questions;
-    if (data?.fatals) savedFatals = data.fatals;
-  } catch(e) { /* no override saved yet */ }
-
-  const workingStd    = savedStd    || STD_QS;
-  const workingGen    = savedGen    || GEN_QS;
-  const workingFatals = savedFatals || FATALS;
-
-  document.getElementById('actionModalTitle').textContent = 'Edit: ' + tplName;
-
-  const body = document.getElementById('actionModalBody');
-  body.innerHTML = '<div class="alert alert-warning" style="margin-bottom:12px">Changes will apply to all new evaluations using this template. Existing evaluations are not affected.</div>';
-
-  // Section builder
-  const makeSection = (title, qs, sectionId) => {
-    const sec = document.createElement('div');
-    sec.style.marginBottom = '16px';
-    const hdr = document.createElement('div');
-    hdr.style.cssText = 'font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--text3);margin-bottom:8px;display:flex;justify-content:space-between;align-items:center';
-    hdr.innerHTML = title + ' <span style="font-weight:400;color:var(--text3)">(' + qs.length + ' questions)</span>';
-    const list = document.createElement('div');
-    list.id = sectionId;
-    list.style.cssText = 'max-height:220px;overflow-y:auto;border:1px solid var(--border);border-radius:var(--radius);padding:8px';
-    const addBtn = document.createElement('button');
-    addBtn.className = 'btn btn-ghost btn-sm'; addBtn.style.marginTop = '6px';
-    addBtn.textContent = '+ Add Question';
-    addBtn.addEventListener('click', () => addTplQuestionTo(sectionId));
-    sec.appendChild(hdr); sec.appendChild(list); sec.appendChild(addBtn);
-    body.appendChild(sec);
-    renderTplQuestionsInto(list, qs);
-  };
-
-  makeSection('Standard Call Questions', workingStd, 'editStdList');
-  if (tplId !== 'complaint') {
-    makeSection('General Enquiries Questions', workingGen, 'editGenList');
-  }
-  makeSection('Fatal Errors', workingFatals, 'editFatalList');
-
-  const footer = document.getElementById('actionModalFooter');
-  footer.innerHTML = '';
-  const cancelBtn = document.createElement('button'); cancelBtn.className='btn btn-ghost'; cancelBtn.textContent='Cancel';
-  cancelBtn.addEventListener('click', () => closeModal('actionModal'));
-  const resetBtn = document.createElement('button'); resetBtn.className='btn btn-ghost'; resetBtn.textContent='Reset to Default';
-  resetBtn.style.color = 'var(--red)';
-  resetBtn.addEventListener('click', () => resetBuiltinTemplate(tplId));
-  const saveBtn = document.createElement('button'); saveBtn.className='btn btn-primary'; saveBtn.textContent='Save Changes';
-  saveBtn.addEventListener('click', () => saveBuiltinTemplate(tplId));
-  footer.appendChild(cancelBtn); footer.appendChild(resetBtn); footer.appendChild(saveBtn);
-
-  document.getElementById('actionModal').classList.remove('hidden');
-}
-
-function renderTplQuestionsInto(container, qs) {
-  container.innerHTML = '';
-  qs.forEach((q, i) => {
-    const row = document.createElement('div');
-    row.className = 'tpl-q-row'; row.id = container.id + '_row_' + i;
-    const num  = document.createElement('span'); num.className='tpl-q-num'; num.textContent=i+1;
-    const qInp = document.createElement('input'); qInp.className='form-input';
-    qInp.value=q.q||''; qInp.style.cssText='padding:5px 8px;font-size:12px';
-    const wtInp= document.createElement('input'); wtInp.className='form-input';
-    wtInp.type='number'; wtInp.value=q.wt||3; wtInp.min=1; wtInp.max=10;
-    wtInp.style.cssText='padding:5px 8px;font-size:12px;text-align:center';
-    const typeSel=document.createElement('select'); typeSel.className='form-select';
-    typeSel.style.cssText='padding:5px 8px;font-size:12px';
-    [['yn','Yes/No'],['012','0/1/2'],['fatal','Fatal']].forEach(([v,t])=>{
-      const o=document.createElement('option'); o.value=v; o.textContent=t;
-      if(q.type===v) o.selected=true; typeSel.appendChild(o);
-    });
-    const del=document.createElement('button');
-    del.textContent='x'; del.style.cssText='background:none;border:none;color:var(--red);cursor:pointer;font-size:16px';
-    del.addEventListener('click',()=>row.remove());
-    row.appendChild(num); row.appendChild(qInp); row.appendChild(wtInp); row.appendChild(typeSel); row.appendChild(del);
-    container.appendChild(row);
-  });
-}
-
-function addTplQuestionTo(sectionId) {
-  const container = document.getElementById(sectionId);
-  if (!container) return;
-  const i = container.children.length;
-  const row = document.createElement('div');
-  row.className = 'tpl-q-row'; row.id = sectionId + '_row_' + i;
-  const num=document.createElement('span'); num.className='tpl-q-num'; num.textContent=i+1;
-  const qInp=document.createElement('input'); qInp.className='form-input';
-  qInp.placeholder='Enter question...'; qInp.style.cssText='padding:5px 8px;font-size:12px';
-  const wtInp=document.createElement('input'); wtInp.className='form-input';
-  wtInp.type='number'; wtInp.value=3; wtInp.min=1; wtInp.max=10;
-  wtInp.style.cssText='padding:5px 8px;font-size:12px;text-align:center';
-  const typeSel=document.createElement('select'); typeSel.className='form-select';
-  typeSel.style.cssText='padding:5px 8px;font-size:12px';
-  [['yn','Yes/No'],['012','0/1/2'],['fatal','Fatal']].forEach(([v,t])=>{
-    const o=document.createElement('option'); o.value=v; o.textContent=t; typeSel.appendChild(o);
-  });
-  const del=document.createElement('button');
-  del.textContent='x'; del.style.cssText='background:none;border:none;color:var(--red);cursor:pointer;font-size:16px';
-  del.addEventListener('click',()=>row.remove());
-  row.appendChild(num); row.appendChild(qInp); row.appendChild(wtInp); row.appendChild(typeSel); row.appendChild(del);
-  container.appendChild(row);
-}
-
-function collectQsFrom(sectionId) {
-  const container = document.getElementById(sectionId);
-  if (!container) return [];
-  return [...container.querySelectorAll('.tpl-q-row')].map((row,i) => {
-    const inputs = row.querySelectorAll('input');
-    const selects = row.querySelectorAll('select');
-    return {
-      id: sectionId + '_' + i,
-      num: (i+1) + '.' + (i+1),
-      q: inputs[0]?.value?.trim()||'',
-      wt: parseInt(inputs[1]?.value||'3'),
-      type: selects[0]?.value||'yn'
-    };
-  }).filter(q=>q.q);
-}
-
-async function saveBuiltinTemplate(tplId) {
-  const newStd    = collectQsFrom('editStdList');
-  const newGen    = tplId !== 'complaint' ? collectQsFrom('editGenList') : null;
-  const newFatals = collectQsFrom('editFatalList');
-
-  if (!newStd.length) { alert('Standard questions cannot be empty.'); return; }
-
-  // Save to Supabase with a special builtin_ prefix id
-  const payload = {
-    id: 'builtin_' + tplId,
-    name: BUILTIN_TEMPLATES.find(t=>t.id===tplId)?.name || tplId,
-    type: 'builtin_override',
-    questions: newStd,
-    description: 'Admin override for built-in template: ' + tplId,
-    created_by: currentStaff?.name || currentUser?.email,
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString()
-  };
-  if (newGen)    payload.gen_questions = newGen;
-  if (newFatals) payload.fatals        = newFatals;
-
-  try {
-    // Upsert — create or update
-    const { error } = await supa.from('qa_templates').upsert(payload, { onConflict: 'id' });
-    if (error) throw error;
-
-    // Apply immediately to in-memory arrays
-    STD_QS = newStd;
-    if (newGen)    GEN_QS = newGen;
-    if (newFatals) FATALS = newFatals;
-
-    closeModal('actionModal');
-    loadTplMgmt();
-    alert('Template saved! Changes applied to all new evaluations.');
-  } catch(e) {
-    alert('Error saving: ' + (e.message||'Unknown error'));
-  }
-}
-
-async function resetBuiltinTemplate(tplId) {
-  if (!confirm('Reset this template to factory defaults? Your customisations will be deleted.')) return;
-  try {
-    await supa.from('qa_templates').delete().eq('id', 'builtin_' + tplId);
-    // Reload original arrays from page source — reload page
-    closeModal('actionModal');
-    alert('Template reset to defaults. Reloading...');
-    setTimeout(() => location.reload(), 1000);
-  } catch(e) {
-    alert('Error: ' + (e.message||'Unknown'));
-  }
-}
-
-// Load any saved built-in overrides on app start
-async function loadBuiltinOverrides() {
-  try {
-    const { data } = await supa.from('qa_templates').select('*').like('id', 'builtin_%');
-    if (!data || !data.length) return;
-    data.forEach(override => {
-      if (override.questions?.length) STD_QS = override.questions;
-      if (override.gen_questions?.length) GEN_QS = override.gen_questions;
-      if (override.fatals?.length) FATALS = override.fatals;
-      console.log('[QA] Loaded built-in override for:', override.id);
-    });
-  } catch(e) {
-    // Table doesn't exist yet, skip
-  }
 }
 
 function openNewTemplateModal() {
@@ -5410,158 +4894,649 @@ function renderMyEvalsList() {
 }
 
 // ===============================================
-//  BUILTIN TEMPLATE EDITOR
+//  FAILURE ANALYSIS DRILL-DOWN
 // ===============================================
 
-// Runtime copies of built-in templates (loaded from Supabase overrides or defaults)
-let _editableTemplates = {};
+let _drillEvals = [];
+let _drillTab   = 'failed';
 
-const TEMPLATE_STORAGE_KEY = 'qa_templates_builtin';
+function openFailDrillDown(q, filtered) {
+  _drillTab = 'failed';
 
+  // Debug: log what we're looking for
+  console.log('[Drill] question id:', q.id, '| num:', q.num);
+  console.log('[Drill] sample eval answers keys:', filtered[0] ? Object.keys(filtered[0].answers||{}).slice(0,5) : 'no evals');
 
+  const failed  = [];
+  const partial = [];
+  const passed  = [];
+  const notAnswered = [];
 
-function switchTplTab(tab) {
-  ['builtin','editor','custom'].forEach(t => {
-    const el = document.getElementById('tplTab-'+t);
-    if (el) el.style.display = t===tab ? '' : 'none';
-  });
-  document.querySelectorAll('#tplMgmtTabs .tab-btn').forEach((b,i) => {
-    b.classList.toggle('active', ['builtin','editor','custom'][i]===tab);
-  });
-  if (tab === 'editor') renderAllQEditors();
-  if (tab === 'custom') loadTplMgmt();
-}
+  filtered.forEach(e => {
+    const answers = e.answers || {};
+    const eqs     = e.questions || [];
 
-function switchQSetTab(tab) {
-  ['std','gen','fatal'].forEach(t => {
-    const el = document.getElementById('qset-'+t);
-    if (el) el.style.display = t===tab ? '' : 'none';
-    const btn = document.getElementById('qset-tab-'+t);
-    if (btn) btn.classList.toggle('active', t===tab);
-  });
-}
+    // Step 1: try direct q.id match (same as stats aggregation)
+    let ans    = answers[q.id];
+    let matchedWt = q.wt;
 
-function renderAllQEditors() {
-  renderQEditor('std',      STD_QS,   false);
-  renderQEditor('std-csat', STD_CSAT ? [STD_CSAT] : [], false);
-  renderQEditor('gen',      GEN_QS,   false);
-  renderQEditor('gen-csat', GEN_CSAT ? [GEN_CSAT] : [], false);
-  renderQEditor('fatal',    FATALS,   true);
-}
-
-function renderQEditor(key, questions, isFatal) {
-  const container = document.getElementById('qeditor-' + key);
-  if (!container) return;
-  const qs = Array.isArray(questions) ? questions : (questions ? [questions] : []);
-  container.innerHTML = '';
-
-  qs.forEach((q, i) => {
-    const row = document.createElement('div');
-    row.style.cssText = isFatal
-      ? 'display:grid;grid-template-columns:40px 1fr 36px;gap:8px;align-items:center;padding:7px 0;border-bottom:1px solid var(--border)'
-      : 'display:grid;grid-template-columns:40px 1fr 70px 110px 36px;gap:8px;align-items:center;padding:7px 0;border-bottom:1px solid var(--border)';
-
-    const numSpan = document.createElement('span');
-    numSpan.style.cssText = "font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--text3);text-align:center";
-    numSpan.textContent = isFatal ? (i+1) : (q.num || (i+1));
-
-    const qInput = document.createElement('input');
-    qInput.className = 'form-input';
-    qInput.value = q.q || '';
-    qInput.placeholder = isFatal ? 'Fatal error description...' : 'Question text...';
-    qInput.style.cssText = 'padding:5px 8px;font-size:12px';
-    qInput.dataset.field = 'q';
-    qInput.dataset.idx = i;
-
-    row.appendChild(numSpan);
-    row.appendChild(qInput);
-
-    if (!isFatal) {
-      const wtInput = document.createElement('input');
-      wtInput.className = 'form-input';
-      wtInput.type = 'number';
-      wtInput.value = q.wt || 3;
-      wtInput.min = 1; wtInput.max = 10;
-      wtInput.style.cssText = 'padding:5px 8px;font-size:12px;text-align:center';
-      wtInput.dataset.field = 'wt';
-      wtInput.dataset.idx = i;
-
-      const typeSel = document.createElement('select');
-      typeSel.className = 'form-select';
-      typeSel.style.cssText = 'padding:5px 8px;font-size:12px';
-      typeSel.dataset.field = 'type';
-      typeSel.dataset.idx = i;
-      [['yn','Yes / No'],['012','0 / 1 / 2']].forEach(([v,t]) => {
-        const o = document.createElement('option');
-        o.value = v; o.textContent = t;
-        if (q.type === v) o.selected = true;
-        typeSel.appendChild(o);
-      });
-      row.appendChild(wtInput);
-      row.appendChild(typeSel);
+    // Step 2: if not found, find the matching question in THIS eval's question list
+    // (question IDs may differ across templates e.g. s23 vs g16 for same question text)
+    if (!ans || ans.val === null || ans.val === undefined) {
+      const matchQ = eqs.find(eq => eq.num === q.num || eq.q === q.q);
+      if (matchQ) {
+        ans = answers[matchQ.id];
+        matchedWt = matchQ.wt;
+      }
     }
 
-    const delBtn = document.createElement('button');
-    delBtn.textContent = '✕';
-    delBtn.style.cssText = 'background:none;border:none;color:var(--red);cursor:pointer;font-size:14px';
-    delBtn.addEventListener('click', () => {
-      row.remove();
-      // Re-number
-      const rows = container.querySelectorAll('[data-field="q"]');
-      rows.forEach((inp, j) => {
-        const numEl = inp.closest('div')?.firstChild;
-        if (numEl) numEl.textContent = isFatal ? (j+1) : inp.closest('div')?.querySelector('[data-field="q"]')?.dataset.idx || (j+1);
-      });
-    });
-    row.appendChild(delBtn);
-    container.appendChild(row);
+    // Skip if still not answered (consistent with stats)
+    if (!ans || ans.val === null || ans.val === undefined) return;
+
+    const score    = Number(ans.score || 0);
+    const maxScore = matchedWt;
+    if (score === 0)           failed.push({ e, ans, score, maxScore });
+    else if (score < maxScore) partial.push({ e, ans, score, maxScore });
+    else                       passed.push({ e, ans, score, maxScore });
+  });
+
+  console.log('[Drill] failed:', failed.length, 'partial:', partial.length, 'passed:', passed.length, '| stats total:', q.total, 'failRate:', q.failRate + '%');
+
+  _drillEvals = { failed, partial, passed };
+
+  document.getElementById('faDrillTitle').textContent = q.num + ' — ' + q.q;
+  const drillTotal = failed.length + partial.length + passed.length;
+  document.getElementById('faDrillSubtitle').textContent =
+    'Weight: ' + q.wt + 'pts  ·  Fail rate: ' + q.failRate.toFixed(2) + '%  ·  '
+    + failed.length + ' failed, ' + partial.length + ' partial, ' + passed.length + ' passed  ·  '
+    + drillTotal + ' answered out of ' + filtered.length + ' evals';
+
+  document.getElementById('drill-tab-failed').textContent  = 'Failed (' + failed.length + ')';
+  document.getElementById('drill-tab-partial').textContent = 'Partial (' + partial.length + ')';
+  document.getElementById('drill-tab-passed').textContent  = 'Passed (' + passed.length + ')';
+
+  // Switch to the most relevant tab
+  const firstNonEmpty = failed.length ? 'failed' : partial.length ? 'partial' : 'passed';
+  switchDrillTab(firstNonEmpty);
+
+  const panel = document.getElementById('faDrillPanel');
+  panel.style.display = '';
+  panel.scrollIntoView({ behavior:'smooth', block:'start' });
+}
+
+function switchDrillTab(tab) {
+  _drillTab = tab;
+  ['failed','partial','passed'].forEach(t => {
+    document.getElementById('drill-tab-'+t)?.classList.toggle('active', t===tab);
+  });
+  renderDrillTable(tab);
+}
+
+function renderDrillTable(tab) {
+  const tbody = document.getElementById('faDrillBody');
+  if (!tbody) return;
+
+  const rows = (_drillEvals[tab] || []);
+  if (!rows.length) {
+    tbody.innerHTML = `<tr><td colspan="9"><div class="empty-state" style="padding:30px"><div class="icon">${tab==='passed'?'✅':tab==='partial'?'🟡':'❌'}</div><p>No evaluations in this category.</p></div></td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = rows.map(({ e, ans, score, maxScore }) => {
+    const scoreColor = score===0?'var(--red)':score<(maxScore||1)?'var(--amber)':'var(--green)';
+    return `<tr style="cursor:pointer" onclick="viewEval('${e.id}')">
+      <td><span style="font-family:'JetBrains Mono',monospace;color:var(--accent);font-size:12px">#${e.ref}</span></td>
+      <td><div style="font-weight:500;font-size:13px">${e.agent_name||'--'}</div></td>
+      <td style="font-size:12px;color:var(--text3)">${e.tl_name||'--'}</td>
+      <td style="font-size:12px;color:var(--accent)">${e.qa_user_name||'--'}</td>
+      <td>
+        <div style="display:flex;align-items:center;gap:6px">
+          <span style="font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:700;color:${scoreColor}">${score}/${maxScore}pts</span>
+          <span style="font-size:12px;font-weight:700;padding:2px 6px;border-radius:4px;background:${scoreColor}22;color:${scoreColor}">${ans.val||'--'}</span>
+          ${ans.comment?`<span style="font-size:10px;color:var(--text3);font-style:italic"> — ${ans.comment}</span>`:''}
+        </div>
+      </td>
+      <td><span class="score-badge ${scoreClass(e.score)}">${fmtScore(e.score)}</span></td>
+      <td style="font-size:11px;color:var(--text3)">${e.date||'--'}</td>
+      <td>${statusBadge(e.status)}</td>
+      <td><button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();viewEval('${e.id}')">View</button></td>
+    </tr>`;
+  }).join('');
+}
+
+function closeDrillDown() {
+  document.getElementById('faDrillPanel').style.display = 'none';
+  _drillEvals = {};
+}
+
+// ===============================================
+//  PIPELINE TRACKER
+// ===============================================
+
+const PIPELINE_STAGES = [
+  { key: 'submitted',      label: 'Pending TL',       color: 'var(--accent)',  icon: '⏳', waitingOn: 'Team Leader' },
+  { key: 'tl-approved',   label: 'Pending Agent',     color: 'var(--purple)', icon: '👤', waitingOn: 'Agent' },
+  { key: 'tl-disputed',   label: 'TL Disputed',       color: 'var(--amber)',  icon: '⚠️', waitingOn: 'QA Evaluator' },
+  { key: 'agent-disputed',label: 'Agent Disputed',    color: 'var(--red)',    icon: '⚠️', waitingOn: 'QA / Manager' },
+  { key: 'qa-review',     label: 'QA Review',         color: 'var(--accent2)',icon: '🔍', waitingOn: 'QA Evaluator' },
+  { key: 'closed',        label: 'Closed',            color: 'var(--green)',  icon: '✅', waitingOn: '--' },
+];
+
+let pipelineData = [];
+
+async function loadPipeline() {
+  pipelineData = await loadEvals();
+
+  // Populate month filter
+  const months = new Set();
+  pipelineData.forEach(e => {
+    const d = e.date || (e.created_at ? e.created_at.slice(0,10) : '');
+    if (d) { const dt = new Date(d); if (!isNaN(dt)) months.add(`${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,'0')}`); }
+  });
+  const moSel = document.getElementById('pipelineMonthFilter');
+  if (moSel) {
+    moSel.innerHTML = '<option value="">All Months</option>'
+      + [...months].sort().reverse().map(m => {
+          const [yr,mo] = m.split('-');
+          const lbl = new Date(yr,mo-1,1).toLocaleDateString('en-MY',{month:'long',year:'numeric'});
+          return `<option value="${m}">${lbl}</option>`;
+        }).join('');
+  }
+
+  // Populate TL filter
+  const tls = [...new Set(pipelineData.map(e => e.tl_name).filter(Boolean))].sort();
+  const tlSel = document.getElementById('pipelineTLFilter');
+  if (tlSel) {
+    tlSel.innerHTML = '<option value="">All TLs</option>'
+      + tls.map(t => `<option value="${t}">${t}</option>`).join('');
+  }
+
+  renderPipeline();
+}
+
+function renderPipeline() {
+  const search       = (document.getElementById('pipelineSearch')?.value || '').toLowerCase();
+  const tlFilter     = document.getElementById('pipelineTLFilter')?.value || '';
+  const statusFilter = document.getElementById('pipelineStatusFilter')?.value || '';
+  const monthFilter  = document.getElementById('pipelineMonthFilter')?.value || '';
+
+  let rows = pipelineData.filter(e => {
+    const matchSearch = !search ||
+      (e.agent_name||'').toLowerCase().includes(search) ||
+      (e.tl_name||'').toLowerCase().includes(search) ||
+      (e.qa_user_name||'').toLowerCase().includes(search) ||
+      String(e.ref).includes(search);
+    const matchTL     = !tlFilter     || e.tl_name === tlFilter;
+    const matchStatus = !statusFilter || e.status   === statusFilter;
+    let matchMonth = true;
+    if (monthFilter) {
+      const d = e.date || (e.created_at ? e.created_at.slice(0,10) : '');
+      if (!d) { matchMonth = false; }
+      else {
+        const dt = new Date(d);
+        matchMonth = !isNaN(dt) && `${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,'0')}` === monthFilter;
+      }
+    }
+    return matchSearch && matchTL && matchStatus && matchMonth;
+  });
+
+  // ── Stage summary cards ──
+  const stagesEl = document.getElementById('pipelineStages');
+  if (stagesEl) {
+    stagesEl.innerHTML = PIPELINE_STAGES.map(s => {
+      const count = pipelineData.filter(e => e.status === s.key).length;
+      const isActive = !statusFilter || statusFilter === s.key;
+      return `<div class="card" style="margin-bottom:0;padding:14px;text-align:center;cursor:pointer;
+        border-color:${count>0&&s.key!=='closed'?s.color:'var(--border)'};
+        opacity:${isActive?1:0.5};transition:all .2s"
+        onclick="document.getElementById('pipelineStatusFilter').value='${s.key}';renderPipeline()">
+        <div style="font-size:20px;margin-bottom:4px">${s.icon}</div>
+        <div style="font-size:24px;font-weight:700;font-family:'JetBrains Mono',monospace;color:${s.color}">${count}</div>
+        <div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.4px;color:var(--text3);margin-top:2px">${s.label}</div>
+        ${count>0&&s.key!=='closed'?`<div style="font-size:9px;color:${s.color};margin-top:4px">Waiting: ${s.waitingOn}</div>`:''}
+      </div>`;
+    }).join('');
+  }
+
+  // ── Pipeline table ──
+  const tbody = document.getElementById('pipelineBody');
+  if (!tbody) return;
+
+  if (!rows.length) {
+    tbody.innerHTML = '<tr><td colspan="10"><div class="empty-state"><div class="icon">✅</div><p>No evaluations match.</p></div></td></tr>';
+    return;
+  }
+
+  // Sort: active stages first (not closed), then by date desc
+  const stageOrder = {'submitted':0,'tl-approved':1,'tl-disputed':2,'agent-disputed':3,'qa-review':4,'closed':99};
+  rows.sort((a,b) => (stageOrder[a.status]??5) - (stageOrder[b.status]??5) || new Date(b.created_at)-new Date(a.created_at));
+
+  tbody.innerHTML = rows.map(e => {
+    const stage    = PIPELINE_STAGES.find(s=>s.key===e.status) || {label:e.status,color:'var(--text3)',waitingOn:'--',icon:'?'};
+    const lastWf   = (e.workflow||[]).slice(-1)[0];
+    const sinceTs  = lastWf?.ts || e.created_at;
+    const sinceDate= sinceTs ? new Date(sinceTs) : null;
+    const sinceStr = sinceDate ? sinceDate.toLocaleDateString('en-MY',{day:'2-digit',month:'2-digit',year:'numeric'}) : '--';
+    let daysSince = '--';
+    let daysLabel = '--';
+    let daysColor = 'var(--text3)';
+    if (sinceDate) {
+      const diffMs  = Date.now() - sinceDate;
+      const diffHrs = Math.floor(diffMs / 3600000);
+      const diffDays= Math.floor(diffMs / 86400000);
+      if (diffDays >= 1) {
+        daysSince = diffDays;
+        daysLabel = diffDays + 'd';
+        daysColor = diffDays > 3 ? 'var(--red)' : diffDays > 1 ? 'var(--amber)' : 'var(--green)';
+      } else {
+        daysSince = diffHrs;
+        daysLabel = diffHrs + 'h';
+        daysColor = diffHrs > 8 ? 'var(--amber)' : 'var(--green)';
+      }
+    }
+    const isClosed = e.status==='closed';
+
+    return `<tr style="${!isClosed?'cursor:pointer':''}" onclick="viewEval('${e.id}')">
+      <td><span style="font-family:'JetBrains Mono',monospace;color:var(--accent);font-size:12px">#${e.ref}</span></td>
+      <td><div style="font-weight:500;font-size:13px">${e.agent_name||'--'}</div></td>
+      <td style="font-size:12px;color:var(--text3)">${e.tl_name||'--'}</td>
+      <td style="font-size:12px;color:var(--accent)">${e.qa_user_name||'--'}</td>
+      <td><span class="score-badge ${scoreClass(e.score)}">${fmtScore(e.score)}</span></td>
+      <td>
+        <div style="display:flex;align-items:center;gap:6px">
+          <span>${stage.icon}</span>
+          <span style="font-size:12px;font-weight:600;color:${stage.color}">${stage.label}</span>
+        </div>
+      </td>
+      <td style="font-size:12px;color:${stage.color};font-weight:500">${isClosed?'--':stage.waitingOn}</td>
+      <td style="font-size:11px;color:var(--text3)">${sinceStr}</td>
+      <td style="font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:700;color:${daysColor}">${isClosed?'--':daysLabel}</td>
+      <td onclick="event.stopPropagation()" style="display:flex;gap:5px;flex-wrap:wrap">
+        ${!isClosed && e.status==='submitted' && canActAs('tl') ? `
+          <button class="btn btn-success btn-sm" onclick="event.stopPropagation();tlAction('${e.id}','approve')">✓</button>
+          <button class="btn btn-amber btn-sm"  onclick="event.stopPropagation();tlAction('${e.id}','dispute')">⚠</button>` : ''}
+        ${!isClosed && e.status==='tl-approved' && canActAs('agent') ? `
+          <button class="btn btn-success btn-sm" onclick="event.stopPropagation();agentAction('${e.id}','acknowledge')">✓ Ack</button>` : ''}
+        ${!isClosed && ['tl-disputed','agent-disputed','qa-review'].includes(e.status) && canActAs('manager') ? `
+          <button class="btn btn-primary btn-sm" onclick="event.stopPropagation();resolveDispute('${e.id}')">Resolve</button>` : ''}
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+// ===============================================
+//  ROLE MANAGEMENT (Admin)
+// ===============================================
+
+// In-memory role overrides (persisted to localStorage as backup)
+// Structure: { email: role, ... }
+let roleOverrides = JSON.parse(localStorage.getItem('qa_role_overrides') || '{}');
+
+function saveRoleOverrides() {
+  localStorage.setItem('qa_role_overrides', JSON.stringify(roleOverrides));
+}
+
+// Merge localStorage overrides INTO ROLE_MAP_EMAIL at runtime
+function applyStoredOverrides() {
+  Object.entries(roleOverrides).forEach(([email, role]) => {
+    if (role === 'none') delete ROLE_MAP_EMAIL[email.toLowerCase()];
+    else ROLE_MAP_EMAIL[email.toLowerCase()] = role;
   });
 }
 
-function addBuiltinQuestion(key) {
-  const container = document.getElementById('qeditor-' + key);
-  if (!container) return;
-  const isFatal = key === 'fatal';
-  const idx = container.children.length;
-  const q = { id: key+'_new_'+idx, num: (idx+1)+'.0', q:'', wt:3, type:'yn' };
-  renderQEditor(key, [...collectQEditorData(key), q], isFatal);
+// Resolve role with stored overrides taking highest priority
+function resolveRoleFull(name, email) {
+  // 1. LocalStorage override (set by admin in this session)
+  if (email && roleOverrides[email.toLowerCase()]) {
+    const r = roleOverrides[email.toLowerCase()];
+    return r === 'none' ? null : r;
+  }
+  // 2. Hardcoded email map
+  if (email && ROLE_MAP_EMAIL[email.toLowerCase()]) return ROLE_MAP_EMAIL[email.toLowerCase()];
+  // 3. Name map
+  if (name) {
+    const n = name.toLowerCase().trim();
+    if (ROLE_MAP_NAME[n]) return ROLE_MAP_NAME[n];
+    for (const [key, role] of Object.entries(ROLE_MAP_NAME)) {
+      if (n.startsWith(key) || key.startsWith(n)) return role;
+    }
+  }
+  return null;
 }
 
-function collectQEditorData(key) {
-  const container = document.getElementById('qeditor-' + key);
-  if (!container) return [];
-  const isFatal = key === 'fatal';
-  const rows = [...container.children];
-  return rows.map((row, i) => {
-    const qInput   = row.querySelector('[data-field="q"]')   || row.querySelector('input[placeholder]');
-    const wtInput  = row.querySelector('[data-field="wt"]');
-    const typeSel  = row.querySelector('[data-field="type"]');
-    const q = qInput?.value?.trim() || '';
-    if (!q) return null;
-    if (isFatal) return { id:'f'+(i+1), q };
-    return {
-      id:   key + '_' + (i+1),
-      num:  (i+1) + '.' + (i+1),
-      q,
-      wt:   parseInt(wtInput?.value || '3'),
-      type: typeSel?.value || 'yn'
-    };
-  }).filter(Boolean);
+function adminUpdatePassingMark() {
+  const val = document.getElementById('rmPassingMarkInput')?.value;
+  if (setPassingMark(val)) {
+    document.getElementById('rmPassingMarkDisplay').textContent = parseFloat(val) + '%';
+  }
 }
 
-// Global error catcher -- shows any crash on screen
-window.onerror = function(msg, src, line, col, err) {
-  console.error('[QA CRASH]', msg, 'at', src, line+':'+col, err);
-  var el = document.getElementById('loginErr');
-  var wrap = document.getElementById('loginWrap');
-  var overlay = document.getElementById('loadingOverlay');
-  if (overlay) overlay.classList.add('hidden');
-  if (wrap) wrap.style.display = 'flex';
-  if (el) { el.textContent = 'App error: ' + msg + ' (line ' + line + ')'; el.style.display = 'block'; }
-  return false;
-};
-window.onunhandledrejection = function(e) {
-  console.error('[QA PROMISE]', e.reason);
-};
+function adminSetPassingMark(val) {
+  if (setPassingMark(val)) {
+    document.getElementById('rmPassingMarkDisplay').textContent = val + '%';
+    document.getElementById('rmPassingMarkInput').value = val;
+  }
+}
 
+async function loadRoleManagement() {
+  // Sync passing mark display
+  const pm = getPassingMark();
+  const pmDisp = document.getElementById('rmPassingMarkDisplay');
+  if (pmDisp) pmDisp.textContent = pm + '%';
+  const pmInput = document.getElementById('rmPassingMarkInput');
+  if (pmInput) pmInput.value = pm;
+  const tbody = document.getElementById('rmBody');
+  if (tbody) tbody.innerHTML = '<tr><td colspan="7"><div class="empty-state"><div class="icon">⏳</div><p>Loading...</p></div></td></tr>';
 
+  // Build rows from allStaff ONLY (no phantom email-only rows)
+  // For each staff member, try to find their email from:
+  // 1. staff table _raw.email
+  // 2. match their name against ROLE_MAP_NAME keys to find a mapped email
+  const rows = [];
+
+  allStaff.forEach(s => {
+    // Get email from staff table if available
+    let email = (s._raw?.email || '').toLowerCase().trim();
+
+    // If no email in staff table, try to find it by matching name to ROLE_MAP_EMAIL
+    if (!email) {
+      for (const [mapEmail, mapRole] of Object.entries(ROLE_MAP_EMAIL)) {
+        // Check if this email's role matches what the name would resolve to
+        const nameRole = ROLE_MAP_NAME[s.name.toLowerCase().trim()];
+        if (nameRole && nameRole === mapRole) {
+          // Likely match — but only assign if name keywords match email prefix
+          const nameParts = s.name.toLowerCase().split(' ');
+          const emailPrefix = mapEmail.split('@')[0].toLowerCase();
+          if (nameParts.some(p => p.length > 2 && emailPrefix.includes(p))) {
+            email = mapEmail;
+            break;
+          }
+        }
+      }
+    }
+
+    const resolvedRole = resolveRoleFull(s.name, email);
+    const isOverride   = !!(email && roleOverrides[email]);
+    const source = isOverride                              ? 'Admin Override'
+                 : email && ROLE_MAP_EMAIL[email]         ? 'Email Map'
+                 : ROLE_MAP_NAME[s.name.toLowerCase().trim()] ? 'Name Map'
+                 : 'Staff Table';
+
+    rows.push({
+      id: s.id,
+      name: s.name,
+      email,
+      role: resolvedRole || s.role || 'agent',
+      source,
+      team: s.team || '',
+      isOverride
+    });
+  });
+
+  // Sort: admins first, then managers, TLs, QA, agents
+  const roleOrder = {admin:0, manager:1, tl:2, qa:3, agent:4};
+  rows.sort((a,b) => (roleOrder[a.role]??5) - (roleOrder[b.role]??5) || a.name.localeCompare(b.name));
+
+  window._rmRows = rows;
+  updateRmStats(rows);
+  renderRoleTable();
+}
+
+function updateRmStats(rows) {
+  document.getElementById('rm-total').textContent   = rows.length;
+  document.getElementById('rm-admin').textContent   = rows.filter(r=>r.role==='admin').length;
+  document.getElementById('rm-tl').textContent      = rows.filter(r=>r.role==='tl').length;
+  document.getElementById('rm-manager').textContent = rows.filter(r=>r.role==='manager').length;
+  document.getElementById('rm-qa').textContent      = rows.filter(r=>r.role==='qa').length;
+}
+
+function renderRoleTable() {
+  const rows = window._rmRows || [];
+  const search = (document.getElementById('rmSearch')?.value || '').toLowerCase();
+  const roleF  = document.getElementById('rmRoleFilter')?.value || '';
+  const tbody  = document.getElementById('rmBody');
+  if (!tbody) return;
+
+  let filtered = rows.filter(r => {
+    const matchSearch = !search || r.name.toLowerCase().includes(search) || r.email.toLowerCase().includes(search);
+    const matchRole   = !roleF || r.role === roleF;
+    return matchSearch && matchRole;
+  });
+
+  if (!filtered.length) {
+    tbody.innerHTML = '<tr><td colspan="7"><div class="empty-state"><div class="icon">🔍</div><p>No users match.</p></div></td></tr>';
+    return;
+  }
+
+  const roleColors = {admin:'rm-admin',manager:'rm-manager',tl:'rm-tl',qa:'rm-qa',agent:'rm-agent'};
+  const roleLabels = {admin:'Admin',manager:'Manager',tl:'Team Leader',qa:'QA Evaluator',agent:'Agent'};
+  const avatarColors = {admin:'#f59e0b',manager:'#22c55e',tl:'#a855f7',qa:'#4f8ef7',agent:'#5c6480'};
+
+  tbody.innerHTML = filtered.map(r => {
+    const initials = r.name ? r.name.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase() : '?';
+    const color = avatarColors[r.role] || '#5c6480';
+    const cls   = roleColors[r.role]  || 'rm-agent';
+    const lbl   = roleLabels[r.role]  || r.role;
+    return `<tr class="${r.isOverride?'rm-override':''}">
+      <td><div style="width:32px;height:32px;border-radius:50%;background:${color}22;border:2px solid ${color};display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:${color}">${initials}</div></td>
+      <td><div style="font-weight:500">${r.name||'<span style="color:var(--text3);font-style:italic">Unknown</span>'}</div></td>
+      <td style="font-size:12px;color:var(--text3)">${r.email||'--'}</td>
+      <td><span class="rm-role-badge ${cls}">${lbl}</span>${r.isOverride?'<span style="font-size:10px;color:var(--accent);margin-left:6px">overridden</span>':''}</td>
+      <td><span style="font-size:11px;color:var(--text3)">${r.source}</span></td>
+      <td style="font-size:12px;color:var(--text3)">${r.team||'--'}</td>
+      <td style="display:flex;gap:6px">
+        <button class="btn btn-ghost btn-sm" onclick="openEditRoleModal(${JSON.stringify(r).replace(/"/g,'&quot;')})">Edit</button>
+        ${r.isOverride?`<button class="btn btn-danger btn-sm" onclick="removeRoleOverride('${r.email}')">Remove</button>`:''}
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+function openAddRoleModal() {
+  document.getElementById('rmStaffName').value = '';
+  document.getElementById('rmStaffId').value = '';
+  document.getElementById('rmStaffEmail').value = '';
+  document.getElementById('rmSelectedRole').value = '';
+  document.querySelectorAll('.role-pick-card').forEach(c => c.classList.remove('selected'));
+  document.getElementById('roleModalTitle').textContent = 'Add / Update User Role';
+  document.getElementById('roleModal').classList.remove('hidden');
+}
+
+function openEditRoleModal(r) {
+  document.getElementById('rmStaffName').value  = r.name || '';
+  document.getElementById('rmStaffId').value    = r.id   || '';
+  document.getElementById('rmStaffEmail').value = r.email|| '';
+  document.getElementById('rmSelectedRole').value = r.role || '';
+  document.querySelectorAll('.role-pick-card').forEach(c => {
+    c.classList.toggle('selected', c.dataset.role === r.role);
+  });
+  document.getElementById('roleModalTitle').textContent = 'Edit Role: ' + (r.name || r.email);
+  document.getElementById('roleModal').classList.remove('hidden');
+}
+
+function selectRolePick(card) {
+  document.querySelectorAll('.role-pick-card').forEach(c => c.classList.remove('selected'));
+  card.classList.add('selected');
+  document.getElementById('rmSelectedRole').value = card.dataset.role;
+}
+
+function saveRoleOverride() {
+  const email = document.getElementById('rmStaffEmail').value.trim().toLowerCase();
+  const name  = document.getElementById('rmStaffName').value.trim();
+  const role  = document.getElementById('rmSelectedRole').value;
+
+  if (!email && !name) { alert('Please select a staff member or enter an email.'); return; }
+  if (!role)           { alert('Please select a role.'); return; }
+
+  const key = email || name.toLowerCase();
+  if (role === 'none') {
+    delete roleOverrides[key];
+    if (email) delete ROLE_MAP_EMAIL[email];
+  } else {
+    roleOverrides[key] = role;
+    if (email) ROLE_MAP_EMAIL[email] = role;
+    if (name)  ROLE_MAP_NAME[name.toLowerCase()] = role;
+  }
+
+  saveRoleOverrides();
+  closeModal('roleModal');
+  loadRoleManagement();
+  alert('Role saved! Changes apply on next login for this user.');
+}
+
+function removeRoleOverride(email) {
+  if (!confirm('Remove role override for ' + email + '? They will revert to their staff table role.')) return;
+  delete roleOverrides[email.toLowerCase()];
+  delete ROLE_MAP_EMAIL[email.toLowerCase()];
+  saveRoleOverrides();
+  loadRoleManagement();
+}
+
+function filterRmStaff(val) {
+  const query = val.toLowerCase();
+  const list  = document.getElementById('rmStaffList');
+  if (!allStaff.length) { list.classList.remove('open'); return; }
+  const filtered = allStaff.filter(s => s.name.toLowerCase().includes(query)).slice(0, 12);
+  if (!filtered.length) { list.classList.remove('open'); return; }
+  list.innerHTML = '';
+  filtered.forEach(s => {
+    const div = document.createElement('div');
+    div.className = 'autocomplete-item';
+    const email = s._raw?.email || '';
+    const currentRole = resolveRoleFull(s.name, email) || s.role || 'agent';
+    div.innerHTML = `<span class="ai-name">${s.name}</span><span class="ai-meta">${email} -- ${currentRole}</span>`;
+    div.addEventListener('mousedown', e => {
+      e.preventDefault();
+      document.getElementById('rmStaffName').value  = s.name;
+      document.getElementById('rmStaffId').value    = s.id;
+      document.getElementById('rmStaffEmail').value = email;
+      // Pre-select current role
+      const r = currentRole;
+      document.querySelectorAll('.role-pick-card').forEach(c => c.classList.toggle('selected', c.dataset.role===r));
+      document.getElementById('rmSelectedRole').value = r;
+      list.classList.remove('open');
+    });
+    list.appendChild(div);
+  });
+  list.classList.add('open');
+}
+
+function switchPwTab(tab) {
+  ['direct','email'].forEach(t => {
+    document.getElementById('pwTab-'+t)?.classList.toggle('active', t===tab);
+    const el = document.getElementById('pwSection-'+t);
+    if (el) el.style.display = t===tab ? '' : 'none';
+  });
+}
+
+// Admin can force a user to change their password on next login
+// by clearing their localStorage key (note: only works on same browser)
+// Real enforcement: the SQL-reset password approach + this flag
+
+function adminForcePasswordChange(email) {
+  const pwKey = 'qa_pw_changed_' + (email||'').toLowerCase().replace(/[^a-z0-9]/g,'_');
+  localStorage.removeItem(pwKey);
+  alert('Done. ' + email + ' will be prompted to change password on next login (same browser).');
+}
+
+async function adminSetPassword() {
+  const email   = document.getElementById('pwDirectEmail')?.value.trim();
+  const pw      = document.getElementById('pwDirectPw')?.value;
+  const confirm = document.getElementById('pwDirectConfirm')?.value;
+  const result  = document.getElementById('pwDirectResult');
+  result.style.display = 'none';
+
+  if (!email) { result.innerHTML = '<span style="color:var(--red)">Please enter an email address.</span>'; result.style.display='block'; return; }
+  if (!pw || pw.length < 8) { result.innerHTML = '<span style="color:var(--red)">Password must be at least 8 characters.</span>'; result.style.display='block'; return; }
+  if (pw !== confirm) { result.innerHTML = '<span style="color:var(--red)">Passwords do not match.</span>'; result.style.display='block'; return; }
+
+  // Use Supabase Admin API via SQL — generate the SQL for the admin to run
+  // Since we only have anon key, we can only reset password for the currently logged-in user
+  // For other users, show the SQL they need to run
+  if (email.toLowerCase() === (currentUser?.email||'').toLowerCase()) {
+    // Same user — use updateUser
+    const { error } = await supa.auth.updateUser({ password: pw });
+    if (error) {
+      result.innerHTML = '<span style="color:var(--red)">Error: ' + (error.message||'Unknown') + '</span>';
+    } else {
+      result.innerHTML = '<span style="color:var(--green)">Password updated for ' + email + '</span>';
+      document.getElementById('pwDirectPw').value = '';
+      document.getElementById('pwDirectConfirm').value = '';
+    }
+  } else {
+    // Different user — show SQL to run
+    result.innerHTML = '<span style="color:var(--amber)">To set password for another user, run this SQL in Supabase:</span>'
+      + '<pre style="margin-top:8px;padding:10px;background:var(--surface3);border-radius:6px;font-size:11px;color:var(--accent);white-space:pre-wrap">'
+      + "UPDATE auth.users SET encrypted_password = crypt('" + pw + "', gen_salt('bf')), confirmation_token = COALESCE(confirmation_token,''), recovery_token = COALESCE(recovery_token,''), email_confirmed_at = COALESCE(email_confirmed_at, NOW()), updated_at = NOW() WHERE email = '" + email + "';"
+      + '</pre>';
+  }
+  result.style.display = 'block';
+}
+
+async function sendPasswordReset() {
+  const email = document.getElementById('pwResetEmail').value.trim();
+  const result = document.getElementById('pwResetResult');
+  if (!email) { alert('Enter an email address first.'); return; }
+
+  result.style.display = 'none';
+
+  const { error } = await supa.auth.resetPasswordForEmail(email, {
+    redirectTo: window.location.href
+  });
+
+  result.style.display = 'block';
+  if (error) {
+    result.innerHTML = '<span style="color:var(--red)">Error: ' + (error.message||'Unknown error') + '</span>';
+  } else {
+    result.innerHTML = '<span style="color:var(--green)">Password reset email sent to <strong>' + email + '</strong>. Ask them to check their inbox.</span>';
+    document.getElementById('pwResetEmail').value = '';
+  }
+}
+
+// ===============================================
+//  BOOT -- safe startup with timeout + CDN fallback
+// ===============================================
+
+function supabaseLoadFailed() {
+  document.getElementById('loadingMsg').textContent = 'Network error loading Supabase library. Check your connection.';
+  setTimeout(() => {
+    document.getElementById('loadingOverlay').classList.add('hidden');
+    document.getElementById('loginWrap').style.display = 'flex';
+    showLoginError('Could not load Supabase library. Check your internet connection and refresh.');
+  }, 2000);
+}
+
+// Wait for DOM + Supabase CDN to be ready before calling init
+function safeInit() {
+  initTheme(); // Apply theme immediately before anything renders
+  if (typeof supabase === 'undefined' || typeof supabase.createClient !== 'function') {
+    document.getElementById('loadingMsg').textContent = 'Waiting for Supabase library...';
+    setTimeout(safeInit, 300);
+    return;
+  }
+  // Library ready -- boot with a hard timeout so we never hang forever
+  // Show "skip" button after 3s so user isn't stuck forever
+  const skipTimer = setTimeout(() => {
+    const skipBtn = document.getElementById('skipLoadBtn');
+    if (skipBtn) skipBtn.style.display = 'block';
+  }, 3000);
+
+  const timeout = setTimeout(() => {
+    clearTimeout(skipTimer);
+    console.warn('[QA App] init() timed out -- showing login screen');
+    forceShowLogin();
+  }, 8000);
+
+  init().finally(() => { clearTimeout(timeout); clearTimeout(skipTimer); });
+}
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', safeInit);
+} else {
+  safeInit();
+}
+</script>
+</body>
+</html>
+</body>
+</html>
