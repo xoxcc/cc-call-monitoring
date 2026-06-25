@@ -1430,12 +1430,15 @@ window.onunhandledrejection = function(e) {
   console.error('[QA PROMISE]', e.reason);
 };
 
-// ── START APP ──
+// ── START APP — must be last, after all functions defined ──
 initTheme();
-loadBuiltinOverrides();
 if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', init);
+  document.addEventListener('DOMContentLoaded', function() {
+    loadBuiltinOverrides();
+    init();
+  });
 } else {
+  loadBuiltinOverrides();
   init();
 }
 
