@@ -1628,7 +1628,7 @@ async function init() {
     // Race getSession against a 6s timeout
     const sessionResult = await Promise.race([
       supa.auth.getSession(),
-      new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 6000))
+      new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 3000))
     ]);
     const session = sessionResult?.data?.session;
     if (session?.user) {
@@ -1834,10 +1834,22 @@ async function onLoggedIn(user) {
 
   // Staff table is known — hardcoded for performance
   const staffTable = 'staff';
-  const tlCol = null; // TL relationship handled via team column (agent.team = TL first name)
+  const tlCol = null;
 
-  // Load all staff
-  const { data: fullStaff, error: staffErr } = await supa.from(staffTable).select('*').order('name');
+  // Load all staff with 5s timeout
+  let fullStaff = [], staffErr = null;
+  try {
+    const staffResult = await Promise.race([
+      supa.from(staffTable).select('*').order('name'),
+      new Promise((_, r) => setTimeout(() => r(new Error('staff_timeout')), 5000))
+    ]);
+    fullStaff = staffResult.data || [];
+    staffErr  = staffResult.error;
+  } catch(e) {
+    console.warn('[QA App] Staff load timeout/error:', e.message);
+    fullStaff = [];
+  }
+  const _unused = staffErr;
     if (staffErr) {
       console.error('[QA App] Staff load error:', staffErr);
     } else {
@@ -1860,17 +1872,10 @@ async function onLoggedIn(user) {
 
     // Find current user's staff record -- try multiple column strategies
     let myRow = null;
-    // Try by email
-    const { data: byEmail } = await supa.from(staffTable).select('*')
-      .eq('email', user.email).limit(1);
-    if (byEmail && byEmail.length) { myRow = byEmail[0]; }
-
-    // Try by user_id / auth_id columns if email didn't match
-    if (!myRow) {
-      const { data: byUid } = await supa.from(staffTable).select('*')
-        .or(`user_id.eq.${user.id},auth_id.eq.${user.id}`).limit(1);
-      if (byUid && byUid.length) myRow = byUid[0];
-    }
+    // Find staff record by email match from already-loaded allStaff
+    myRow = allStaff.find(s => (s._raw?.email||'').toLowerCase() === user.email.toLowerCase())
+         || allStaff.find(s => s.name.toLowerCase().includes(user.email.split('@')[0].toLowerCase()))
+         || null;
 
     if (myRow) {
       const rawName = myRow.name || myRow.full_name || myRow.staff_name || user.email.split('@')[0];
