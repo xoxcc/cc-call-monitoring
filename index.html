@@ -637,6 +637,18 @@
           </div>
         </div>
 
+        <!-- Export bar -->
+        <div style="display:flex;gap:8px;margin-bottom:10px;align-items:center">
+          <span style="font-size:12px;color:var(--text3);font-weight:600">EXPORT:</span>
+          <button class="btn btn-ghost" onclick="exportEvals('csv')" style="display:flex;align-items:center;gap:6px;font-weight:600">
+            <span style="font-size:16px">📄</span> Download CSV
+          </button>
+          <button class="btn btn-ghost" onclick="exportEvals('excel')" style="display:flex;align-items:center;gap:6px;font-weight:600">
+            <span style="font-size:16px">📊</span> Download Excel
+          </button>
+          <span style="font-size:11px;color:var(--text3)">Exports apply current filters below</span>
+        </div>
+
         <!-- Filter bar -->
         <div class="card" style="padding:14px 16px;margin-bottom:12px">
           <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
@@ -1826,41 +1838,12 @@ async function onLoggedIn(user) {
   currentUser = user;
   setLoading(true, 'Loading staff data...');
 
-  // ── Try to detect the correct staff table name ──
-  const TABLE_CANDIDATES = ['staff', 'employees', 'users', 'cc_staff', 'agents'];
-  let staffTable = null;
-  let allStaffData = [];
+  // Staff table is known — hardcoded for performance
+  const staffTable = 'staff';
+  const tlCol = null; // TL relationship handled via team column (agent.team = TL first name)
 
-  for (const tbl of TABLE_CANDIDATES) {
-    try {
-      const { data, error } = await Promise.race([
-        supa.from(tbl).select('*').limit(3),
-        new Promise((_, r) => setTimeout(() => r(new Error('timeout')), 5000))
-      ]);
-      if (!error && data) {
-        staffTable = tbl;
-        console.log(`[QA App] Staff table found: "${tbl}", sample:`, data);
-        break;
-      } else {
-        console.log(`[QA App] Table "${tbl}" not usable:`, error?.message);
-      }
-    } catch(e) {
-      console.log(`[QA App] Table "${tbl}" timed out or errored`);
-    }
-  }
-
-  if (staffTable) {
-    // Detect TL column: try team_leader_id, tl_id, supervisor_id
-    const TL_COL_CANDIDATES = ['team_leader_id', 'tl_id', 'supervisor_id', 'manager_id'];
-    let { data: sample } = await supa.from(staffTable).select('*').limit(1);
-    let tlCol = null;
-    if (sample && sample[0]) {
-      tlCol = TL_COL_CANDIDATES.find(c => c in sample[0]) || null;
-      console.log('[QA App] Columns in row:', Object.keys(sample[0]));
-      console.log('[QA App] TL column detected:', tlCol);
-    }
-
-    // Load all staff - select all columns so we can map whatever is there
+  {
+    // Load all staff
     const { data: fullStaff, error: staffErr } = await supa.from(staffTable).select('*').order('name');
     if (staffErr) {
       console.error('[QA App] Staff load error:', staffErr);
@@ -1923,10 +1906,7 @@ async function onLoggedIn(user) {
       currentStaff = { id: user.id, name: user.email.split('@')[0], role: 'qa' };
       console.warn('[QA App] Could not find staff record for', user.email, '-- using fallback');
     }
-  } else {
-    console.error('[QA App] No staff table found! Tried:', TABLE_CANDIDATES);
-    currentStaff = { id: user.id, name: user.email.split('@')[0], role: 'qa' };
-  }
+
 
   window._staffTable = staffTable; // expose for debugging
   applyStoredOverrides(); // merge any admin-set overrides into live maps
@@ -3959,11 +3939,14 @@ function forceShowLogin() {
 //  EXPORT TO CSV / EXCEL
 // ===============================================
 
-async function exportEvals(format) {
+function exportEvals(format) {
+  // Force hide any loading overlay immediately
+  setLoading(false);
+
   // Use ONLY cached evaluations — never trigger a new Supabase call
   const all = evaluations && evaluations.length > 0 ? evaluations : null;
   if (!all) {
-    alert('Please visit the Dashboard or All Evaluations page first to load data, then export.');
+    alert('No data loaded yet. The dashboard loads automatically — please wait a moment then try again.');
     return;
   }
 
@@ -5432,28 +5415,7 @@ let _editableTemplates = {};
 
 const TEMPLATE_STORAGE_KEY = 'qa_templates_builtin';
 
-async function loadBuiltinOverrides() {
-  // Load any saved overrides from Supabase qa_templates table
-  try {
-    const { data } = await supa.from('qa_templates')
-      .select('*').eq('type','builtin');
-    if (data && data.length) {
-      data.forEach(t => {
-        _editableTemplates[t.name] = t.questions || [];
-      });
-      console.log('[QA] Loaded builtin overrides:', Object.keys(_editableTemplates));
-    }
-  } catch(e) {
-    console.log('[QA] No builtin overrides found, using defaults');
-  }
 
-  // Apply overrides to runtime arrays
-  if (_editableTemplates['STD_QS'])       window.STD_QS       = _editableTemplates['STD_QS'];
-  if (_editableTemplates['GEN_QS'])       window.GEN_QS       = _editableTemplates['GEN_QS'];
-  if (_editableTemplates['FATALS'])       window.FATALS       = _editableTemplates['FATALS'];
-  if (_editableTemplates['STD_CSAT'])     window.STD_CSAT     = _editableTemplates['STD_CSAT']?.[0] || STD_CSAT;
-  if (_editableTemplates['GEN_CSAT'])     window.GEN_CSAT     = _editableTemplates['GEN_CSAT']?.[0] || GEN_CSAT;
-}
 
 function switchTplTab(tab) {
   ['builtin','editor','custom'].forEach(t => {
