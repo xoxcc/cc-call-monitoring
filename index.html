@@ -408,6 +408,7 @@
       <div class="sidebar-label" id="sb-admin-label" style="display:none">Admin</div>
       <div class="sidebar-item" onclick="showPage('role-mgmt')" id="nav-role-mgmt" style="display:none"><span class="icon">🔐</span>Role Management</div>
       <div class="sidebar-item" onclick="showPage('calibration')" id="nav-calibration"><span class="icon">🎯</span>Calibration</div>
+      <div class="sidebar-item" onclick="showPage('audit-log')" id="nav-audit-log"><span class="icon">📜</span>Audit Log</div>
       <div class="sidebar-item" onclick="showPage('tpl-mgmt')" id="nav-tpl-mgmt" style="display:none"><span class="icon">📝</span>Template Manager</div>
       <div class="sidebar-divider" id="sb-admin-divider" style="display:none"></div>
       <div class="sidebar-label">Workflow</div>
@@ -574,9 +575,13 @@
           </div>
           <div class="form-row">
             <div class="form-group">
-              <label class="form-label">Calling Number</label>
+              <label class="form-label">Calling Number <span class="req">*</span></label>
               <input class="form-input" id="fCallingNum" placeholder="601x-xxxxxxxx" oninput="clearFieldError(this)">
             </div>
+              <div class="form-group">
+                <label class="form-label">Subscriber MSISDN <span class="req">*</span> <span style="color:var(--text3);font-size:11px">(customer number)</span></label>
+                <input class="form-input" id="fMSISDN" placeholder="601x-xxxxxxxx" oninput="clearFieldError(this)">
+              </div>
             <div class="form-group">
               <label class="form-label">Contact ID / Case ID</label>
               <input class="form-input" id="fContactID" placeholder="e.g. CX-12345" oninput="clearFieldError(this)">
@@ -765,6 +770,44 @@
             </thead>
             <tbody id="meListBody">
               <tr><td colspan="10"><div class="empty-state"><div class="icon">📋</div><p>Loading...</p></div></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- AUDIT LOG PAGE -->
+      <div class="page" id="page-audit-log">
+        <div class="page-header">
+          <div class="page-header-row">
+            <div><h1>📜 Audit Log</h1><p>Full record of every action taken in the system — timestamped and traceable</p></div>
+            <div style="display:flex;gap:8px;align-items:center">
+              <select class="form-select" id="alAction" onchange="loadAuditLog()" style="width:160px;padding:7px 10px">
+                <option value="">All Actions</option>
+                <option value="submitted">Submitted</option>
+                <option value="approved">Approved</option>
+                <option value="disputed">Disputed</option>
+                <option value="resolved">Resolved</option>
+                <option value="acknowledged">Acknowledged</option>
+                <option value="closed">Closed</option>
+              </select>
+              <input class="form-input" id="alSearch" placeholder="Search name or ref..." oninput="loadAuditLog()" style="width:180px;padding:7px 12px">
+            </div>
+          </div>
+        </div>
+        <div class="card" style="padding:0;overflow:hidden">
+          <table class="eval-table">
+            <thead>
+              <tr>
+                <th>Time</th>
+                <th>Eval Ref</th>
+                <th>Agent</th>
+                <th>Action</th>
+                <th>By</th>
+                <th>Notes</th>
+              </tr>
+            </thead>
+            <tbody id="auditLogBody">
+              <tr><td colspan="6"><div class="empty-state"><div class="icon">📜</div><p>Loading...</p></div></td></tr>
             </tbody>
           </table>
         </div>
@@ -1096,6 +1139,34 @@
                 </div>
               </div>
             </div>
+          </div>
+        </div>
+
+        <!-- Feature Permissions -->
+        <div class="card" style="margin-bottom:16px">
+          <div class="card-header" style="margin-bottom:16px">
+            <div><div class="card-title">🔧 Feature Permissions</div><div class="card-subtitle">Enable or disable features per role — changes apply immediately</div></div>
+            <button class="btn btn-ghost btn-sm" onclick="resetPermissions()">↺ Reset to Default</button>
+          </div>
+
+          <!-- Permission grid -->
+          <div style="overflow-x:auto">
+            <table class="eval-table" id="permTable">
+              <thead>
+                <tr>
+                  <th style="min-width:200px">Feature</th>
+                  <th style="text-align:center">Admin</th>
+                  <th style="text-align:center">Manager</th>
+                  <th style="text-align:center">QA</th>
+                  <th style="text-align:center">Team Leader</th>
+                  <th style="text-align:center">Agent</th>
+                </tr>
+              </thead>
+              <tbody id="permTableBody"></tbody>
+            </table>
+          </div>
+          <div style="margin-top:10px;font-size:11px;color:var(--text3)">
+            🔒 Admin always has full access. Some features are locked by role logic and cannot be changed.
           </div>
         </div>
 
@@ -2017,6 +2088,10 @@ function updateNavVisibility() {
   var navCal2 = document.getElementById('nav-calibration');
   if (navCal2) navCal2.style.display = (isAdmin || isManager) ? '' : 'none';
 
+  // Audit Log: Admin, Manager, QA
+  var navAudit = document.getElementById('nav-audit-log');
+  if (navAudit) navAudit.style.display = (isAdmin || isManager || isQA) ? '' : 'none';
+
   // New Evaluation: QA and Admin only
   const navNew = document.getElementById('nav-new-eval');
   if (navNew) navNew.style.display = (isAdmin || isQA) ? '' : 'none';
@@ -2114,6 +2189,7 @@ function showPage(id) {
   if (id === 'role-mgmt') loadRoleManagement();
   if (id === 'tpl-mgmt') loadTplMgmt();
   if (id === 'calibration') loadCalibration();
+  if (id === 'audit-log')   loadAuditLog();
   if (id === 'my-evals') loadMyEvals();
   if (id === 'pipeline') loadPipeline();
   if (id === 'fail-analysis') loadFailAnalysis();
@@ -2290,7 +2366,7 @@ function resetNewEval() {
   document.getElementById('fDate').value = new Date().toLocaleDateString('en-CA');
   document.querySelectorAll('.eval-tag-btn').forEach(b=>b.classList.remove('selected'));
   const tagHidden = document.getElementById('fEvalTag'); if(tagHidden) tagHidden.value='';
-  ['fAgentName','fAgentId','fTLName','fTLId','fTimestamp','fDuration','fCallingNum','fContactID','fRemarks','fCallRemarks'].forEach(id => {
+  ['fAgentName','fAgentId','fTLName','fTLId','fTimestamp','fDuration','fCallingNum','fMSISDN','fContactID','fRemarks','fCallRemarks'].forEach(id => {
     const el = document.getElementById(id); if (el) el.value = '';
   });
 }
@@ -2473,6 +2549,8 @@ async function saveEval(status) {
   if (!timestamp)  missing.push('Timestamp');
   if (!duration)   missing.push('Duration');
   if (!callingNum) missing.push('Calling Number');
+  const msisdn = document.getElementById('fMSISDN')?.value.trim()||'';
+  if (!msisdn)     missing.push('Subscriber MSISDN');
   if (!contactID)  missing.push('Contact ID / Case ID');
 
   if (missing.length) {
@@ -2485,6 +2563,7 @@ async function saveEval(status) {
       'Duration':             'fDuration',
       'Calling Number':       'fCallingNum',
       'Contact ID / Case ID': 'fContactID',
+      'Subscriber MSISDN':     'fMSISDN',
     };
     // Reset all borders first
     Object.values(fieldMap).forEach(id => {
@@ -2506,7 +2585,7 @@ async function saveEval(status) {
   }
 
   // Clear any error styles
-  ['fAgentName','fTLName','fDate','fTimestamp','fDuration','fCallingNum','fContactID'].forEach(id => {
+  ['fAgentName','fTLName','fDate','fTimestamp','fDuration','fCallingNum','fMSISDN','fContactID'].forEach(id => {
     const el = document.getElementById(id);
     if (el) { el.style.borderColor = ''; el.style.boxShadow = ''; }
   });
@@ -2530,6 +2609,7 @@ async function saveEval(status) {
     timestamp: document.getElementById('fTimestamp').value || null,
     duration: document.getElementById('fDuration').value || null,
     calling_num: document.getElementById('fCallingNum').value || null,
+    msisdn:     document.getElementById('fMSISDN')?.value || null,
     contact_id: document.getElementById('fContactID').value || null,
     remarks: document.getElementById('fRemarks').value || null,
     call_remarks: document.getElementById('fCallRemarks').value || null,
@@ -3572,6 +3652,7 @@ async function viewEval(id) {
       ${e.eval_tag ? tagBadge(e.eval_tag) : ''}
       <span class="pill">⏱ ${e.timestamp||'--'}</span>
       <span class="pill">📞 ${e.calling_num||'--'}</span>
+      ${e.msisdn?`<span class="pill">📱 Subscriber: ${e.msisdn}</span>`:''}
       <span class="pill">🗂 ${e.contact_id||'--'}</span>
     </div>
     ${e.call_remarks?`<div class="alert alert-info" style="margin-bottom:12px"><strong>QA Notes:</strong> ${e.call_remarks}</div>`:''}
@@ -4060,16 +4141,119 @@ const BUILTIN_TEMPLATES = [
   { id:'complaint', name:'Complaint Evaluation',   type:'complaint',  csat:'no',  description:'Complaint-based evaluation with chronology', builtin:true },
 ];
 
+function editBuiltinTemplate(tplId) {
+  var tpl = BUILTIN_TEMPLATES.find(function(t){return t.id===tplId;});
+  if (!tpl) return;
+  var isGen = ['hist-csat','hist-no','live-csat','live-no'].includes(tplId);
+
+  document.getElementById('actionModalTitle').textContent = 'Edit: ' + tpl.name;
+  var body = document.getElementById('actionModalBody');
+
+  function makeSection(qs, id, label, isFatal) {
+    var color = isFatal ? 'var(--red)' : 'var(--text3)';
+    var h = '<div style="margin-bottom:14px">'
+      + '<div style="font-size:11px;font-weight:700;text-transform:uppercase;color:' + color + ';margin-bottom:6px;display:flex;justify-content:space-between;align-items:center">'
+      + '<span>' + label + '</span>'
+      + '<button type="button" class="btn btn-ghost btn-sm" id="addBtn_' + id + '">+ Add</button></div>'
+      + '<div id="' + id + '" style="max-height:200px;overflow-y:auto;border:1px solid var(--border);border-radius:6px;padding:6px">';
+    qs.forEach(function(q, i) {
+      h += isFatal
+        ? '<div class="tpl-q-row" style="display:grid;grid-template-columns:28px 1fr 24px;gap:5px;align-items:center;padding:3px 0;border-bottom:1px solid var(--border)">'
+          + '<span style="font-size:11px;color:var(--text3);text-align:center">' + (i+1) + '</span>'
+          + '<input class="form-input" value="' + q.q.replace(/"/g, '&quot;') + '" style="padding:4px 6px;font-size:11px">'
+          + '<button type="button" class="del-row-btn" style="background:none;border:none;color:var(--red);cursor:pointer;font-size:18px;padding:0">x</button></div>'
+        : '<div class="tpl-q-row" style="display:grid;grid-template-columns:28px 1fr 55px 85px 24px;gap:5px;align-items:center;padding:3px 0;border-bottom:1px solid var(--border)">'
+          + '<span style="font-size:11px;color:var(--text3);text-align:center">' + (i+1) + '</span>'
+          + '<input class="form-input" value="' + q.q.replace(/"/g, '&quot;') + '" style="padding:4px 6px;font-size:11px">'
+          + '<input class="form-input" type="number" value="' + q.wt + '" min="1" max="20" style="padding:4px 6px;font-size:11px;text-align:center">'
+          + '<select class="form-select" style="padding:4px 6px;font-size:11px">'
+          + '<option value="yn"' + (q.type==='yn'?' selected':'') + '>Yes/No</option>'
+          + '<option value="012"' + (q.type==='012'?' selected':'') + '>0/1/2</option>'
+          + '</select>'
+          + '<button type="button" class="del-row-btn" style="background:none;border:none;color:var(--red);cursor:pointer;font-size:18px;padding:0">x</button></div>';
+    });
+    h += '</div></div>';
+    return h;
+  }
+
+  body.innerHTML = '<div style="font-size:12px;color:var(--amber);background:rgba(245,158,11,.1);border-radius:6px;padding:8px 12px;margin-bottom:12px">Changes apply to all new evaluations only.</div>'
+    + makeSection(STD_QS, 'editStd', 'Standard Questions (' + STD_QS.length + ')', false)
+    + (isGen ? makeSection(GEN_QS, 'editGen', 'General Enquiry Questions (' + GEN_QS.length + ')', false) : '')
+    + makeSection(FATALS, 'editFatals', 'Fatal Errors (' + FATALS.length + ')', true);
+
+  // Wire up buttons via event delegation
+  body.addEventListener('click', function(ev) {
+    if (ev.target.classList.contains('del-row-btn')) {
+      ev.target.closest('.tpl-q-row').remove();
+    }
+    var addBtn = ev.target.closest('[id^="addBtn_"]');
+    if (addBtn) {
+      var targetId = addBtn.id.replace('addBtn_', '');
+      var isFatalSection = targetId === 'editFatals';
+      addTplRow(targetId, isFatalSection);
+    }
+  });
+
+  var footer = document.getElementById('actionModalFooter');
+  footer.innerHTML = '';
+  var resetBtn = document.createElement('button'); resetBtn.className='btn btn-ghost'; resetBtn.textContent='Reset to Default'; resetBtn.style.color='var(--red)';
+  resetBtn.onclick = async function(){ if(confirm('Reset to factory default? Your changes will be lost.')){ await supa.from('qa_templates').delete().eq('id','builtin_'+tplId); closeModal('actionModal'); location.reload(); } };
+  var cancelBtn = document.createElement('button'); cancelBtn.className='btn btn-ghost'; cancelBtn.textContent='Cancel'; cancelBtn.onclick=function(){closeModal('actionModal');};
+  var saveBtn = document.createElement('button'); saveBtn.className='btn btn-primary'; saveBtn.textContent='Save Changes'; saveBtn.onclick=function(){saveBuiltinTemplate(tplId,isGen);};
+  footer.appendChild(resetBtn); footer.appendChild(cancelBtn); footer.appendChild(saveBtn);
+  document.getElementById('actionModal').classList.remove('hidden');
+}
+
+
+async function saveBuiltinTemplate(tplId, isGen) {
+  const newStd    = collectRows('editStd', false);
+  const newGen    = isGen ? collectRows('editGen', false) : null;
+  const newFatals = collectRows('editFatals', true);
+
+  if (!newStd.length) { alert('Standard questions cannot be empty.'); return; }
+
+  // Apply immediately to memory
+  STD_QS  = newStd;
+  if (newGen)    GEN_QS = newGen;
+  if (newFatals) FATALS = newFatals;
+
+  // Save to Supabase as override
+  const payload = {
+    id:          'builtin_' + tplId,
+    name:        (BUILTIN_TEMPLATES.find(t=>t.id===tplId)||{}).name || tplId,
+    type:        'builtin_override',
+    questions:   newStd,
+    description: 'Admin override for ' + tplId,
+    created_by:  currentStaff?.name || currentUser?.email,
+    updated_at:  new Date().toISOString()
+  };
+  if (newGen)    payload.gen_questions = newGen;
+  if (newFatals) payload.fatals        = newFatals;
+
+  try {
+    const { error } = await supa.from('qa_templates').upsert(payload, { onConflict: 'id' });
+    if (error) throw error;
+    closeModal('actionModal');
+    loadTplMgmt();
+    alert('Template saved! Changes apply to all new evaluations.');
+  } catch(e) {
+    alert('Error saving: ' + (e.message || 'Unknown error'));
+  }
+}
+
 async function loadTplMgmt() {
   const builtinEl = document.getElementById('builtinTplList');
   if (builtinEl) {
     builtinEl.innerHTML = BUILTIN_TEMPLATES.map(t =>
       '<div class="tpl-card tpl-builtin">'
-      + '<div style="display:flex;justify-content:space-between;align-items:start">'
+      + '<div style="display:flex;justify-content:space-between;align-items:start;gap:10px">'
       + '<div><div style="font-weight:600;font-size:13px;margin-bottom:3px">' + t.name + '</div>'
       + '<div style="font-size:11px;color:var(--text3)">' + t.description + '</div></div>'
-      + '<span class="pill" style="font-size:10px;flex-shrink:0;margin-left:8px">' + t.type + '</span>'
-      + '</div><div style="margin-top:6px;font-size:11px;color:var(--text3)">Built-in - read only</div>'
+      + '<div style="display:flex;gap:6px;align-items:center;flex-shrink:0">'
+      + '<span class="pill" style="font-size:10px">' + t.type + '</span>'
+      + '<button class="btn btn-ghost btn-sm" style="font-size:11px" data-tid="' + t.id + '" onclick="editBuiltinTemplate(this.dataset.tid)">Edit</button>'
+      + '</div></div>'
+      + '<div style="margin-top:6px;font-size:11px;color:var(--text3)">Built-in — editable by Admin</div>'
       + '</div>'
     ).join('');
   }
@@ -5245,7 +5429,116 @@ function adminSetPassingMark(val) {
   }
 }
 
+// ===============================================
+//  FEATURE PERMISSIONS
+// ===============================================
+
+const DEFAULT_PERMISSIONS = {
+  'new_eval':          { label:'Create New Evaluation',        admin:true,  manager:false, qa:true,  tl:false, agent:false, locked:['admin','qa'] },
+  'view_all_evals':    { label:'View All Evaluations',         admin:true,  manager:true,  qa:true,  tl:true,  agent:false, locked:['admin'] },
+  'approve_dispute':   { label:'Approve / Dispute Evaluations',admin:true,  manager:true,  qa:false, tl:true,  agent:false, locked:['admin'] },
+  'acknowledge':       { label:'Acknowledge Evaluations',      admin:true,  manager:false, qa:false, tl:false, agent:true,  locked:['admin','agent'] },
+  'resolve_dispute':   { label:'Resolve Disputes',             admin:true,  manager:true,  qa:true,  tl:false, agent:false, locked:['admin'] },
+  'pipeline':          { label:'View Pipeline Tracker',        admin:true,  manager:true,  qa:true,  tl:true,  agent:false, locked:['admin'] },
+  'failure_analysis':  { label:'View Failure Analysis',        admin:true,  manager:true,  qa:true,  tl:true,  agent:false, locked:['admin'] },
+  'monthly_perf':      { label:'View Monthly Performance',     admin:true,  manager:true,  qa:true,  tl:true,  agent:false, locked:['admin'] },
+  'my_performance':    { label:'View My Performance',          admin:true,  manager:false, qa:false, tl:false, agent:true,  locked:['admin','agent'] },
+  'calibration':       { label:'Calibration Sessions',         admin:true,  manager:true,  qa:false, tl:false, agent:false, locked:['admin'] },
+  'export':            { label:'Export CSV / Excel',           admin:true,  manager:true,  qa:true,  tl:false, agent:false, locked:['admin'] },
+  'template_mgmt':     { label:'Template Manager',             admin:true,  manager:false, qa:false, tl:false, agent:false, locked:['admin'] },
+  'role_mgmt':         { label:'Role Management',              admin:true,  manager:false, qa:false, tl:false, agent:false, locked:['admin'] },
+  'qa_consistency':    { label:'QA Consistency Report',        admin:true,  manager:true,  qa:true,  tl:false, agent:false, locked:['admin'] },
+  'audit_log':         { label:'Audit Log',                    admin:true,  manager:true,  qa:false, tl:false, agent:false, locked:['admin'] },
+};
+
+function getPermissions() {
+  const saved = localStorage.getItem('qa_permissions');
+  if (saved) {
+    try { return JSON.parse(saved); } catch(e) {}
+  }
+  // Deep copy defaults
+  const perms = {};
+  Object.keys(DEFAULT_PERMISSIONS).forEach(k => { perms[k] = { ...DEFAULT_PERMISSIONS[k] }; });
+  return perms;
+}
+
+function savePermissions(perms) {
+  localStorage.setItem('qa_permissions', JSON.stringify(perms));
+}
+
+function hasPermission(feature) {
+  const base  = (currentStaff?.role||'').toLowerCase();
+  const email = (currentUser?.email||'').toLowerCase();
+  const isAdmin = base==='admin'||ROLE_MAP_EMAIL[email]==='admin'||roleOverrides[email]==='admin';
+  if (isAdmin) return true;
+
+  const perms = getPermissions();
+  const perm  = perms[feature];
+  if (!perm) return false;
+
+  const roleMap = { 'manager':'manager', 'mgr':'manager', 'qa':'qa', 'tl':'tl', 'agent':'agent' };
+  const role = roleMap[base] || base;
+  return perm[role] === true;
+}
+
+function renderPermissionsTable() {
+  const tbody = document.getElementById('permTableBody');
+  if (!tbody) return;
+  const perms = getPermissions();
+  const roles = ['admin','manager','qa','tl','agent'];
+
+  tbody.innerHTML = Object.keys(perms).map(key => {
+    const p = perms[key];
+    const cells = roles.map(role => {
+      const isLocked  = (p.locked||[]).includes(role);
+      const isChecked = p[role] ? 'checked' : '';
+      if (isLocked) {
+        return `<td style="text-align:center"><span style="font-size:16px">${p[role]?'✅':'🚫'}</span></td>`;
+      }
+      return `<td style="text-align:center">
+        <label class="toggle-switch" style="display:inline-flex;align-items:center;cursor:pointer">
+          <input type="checkbox" ${isChecked} onchange="togglePermission('${key}','${role}',this.checked)"
+            style="width:0;height:0;opacity:0;position:absolute">
+          <span style="width:36px;height:20px;background:${p[role]?'var(--green)':'var(--surface3)'};border-radius:10px;position:relative;transition:background .2s;display:inline-block">
+            <span style="position:absolute;top:3px;left:${p[role]?'17px':'3px'};width:14px;height:14px;background:#fff;border-radius:50%;transition:left .2s;display:inline-block"></span>
+          </span>
+        </label>
+      </td>`;
+    }).join('');
+    return `<tr>
+      <td style="font-size:12px;font-weight:500">${p.label}</td>
+      ${cells}
+    </tr>`;
+  }).join('');
+}
+
+function togglePermission(feature, role, enabled) {
+  const perms = getPermissions();
+  if (perms[feature]) {
+    perms[feature][role] = enabled;
+    savePermissions(perms);
+    renderPermissionsTable(); // re-render to update toggle visuals
+    // Show save confirmation
+    const btn = event.target;
+    const msg = document.createElement('span');
+    msg.textContent = ' Saved';
+    msg.style.cssText = 'font-size:11px;color:var(--green);margin-left:4px';
+    btn.parentElement.appendChild(msg);
+    setTimeout(() => msg.remove(), 1500);
+  }
+}
+
+function resetPermissions() {
+  if (!confirm('Reset all permissions to default? This cannot be undone.')) return;
+  localStorage.removeItem('qa_permissions');
+  renderPermissionsTable();
+  alert('Permissions reset to default.');
+}
+
 async function loadRoleManagement() {
+  // Render permissions table
+  renderPermissionsTable();
+
   // Sync passing mark display
   const pm = getPassingMark();
   const pmDisp = document.getElementById('rmPassingMarkDisplay');
@@ -5586,6 +5879,10 @@ async function exportEvals(fmt) {
       'TL':e.tl_name||'',
       'QA':e.qa_user_name||'',
       'Call Date':e.date||'',
+      'Calling Number':e.calling_num||'',
+      'Subscriber MSISDN':e.msisdn||'',
+      'Contact ID':e.contact_id||'',
+      'Duration':e.duration||'',
       'Score (%)':e.score!==null?Number(e.score).toFixed(2):'',
       'Fatal':e.has_fatal?'YES':'No',
       'Pass/Fail':Number(e.score)>=pm?'PASS':'FAIL',
@@ -5627,6 +5924,52 @@ function dlXLSX(rows,fname){
 // ==============================================
 //  CALIBRATION
 // ==============================================
+
+// ===============================================
+//  AUDIT LOG
+// ===============================================
+
+async function loadAuditLog() {
+  const all = evaluations && evaluations.length > 0 ? evaluations : await loadEvals();
+  evaluations = all;
+
+  const filterAction = (document.getElementById('alAction')?.value || '').toLowerCase();
+  const search       = (document.getElementById('alSearch')?.value || '').toLowerCase();
+
+  const entries = [];
+  all.forEach(e => {
+    if (e.created_at) entries.push({ ts:e.created_at, ref:e.ref, evalId:e.id, agent:e.agent_name||'--', action:'Submitted', by:e.qa_user_name||'--', note:'' });
+    (e.workflow||[]).forEach(w => entries.push({ ts:w.ts||'', ref:e.ref, evalId:e.id, agent:e.agent_name||'--', action:w.action||'', by:w.by||'--', note:w.note||'' }));
+  });
+
+  entries.sort((a,b) => new Date(b.ts) - new Date(a.ts));
+
+  const filtered = entries.filter(e => {
+    const mA = !filterAction || e.action.toLowerCase().includes(filterAction);
+    const mS = !search || e.agent.toLowerCase().includes(search) || e.by.toLowerCase().includes(search) || String(e.ref).includes(search);
+    return mA && mS;
+  });
+
+  const tbody = document.getElementById('auditLogBody');
+  if (!tbody) return;
+
+  if (!filtered.length) { tbody.innerHTML='<tr><td colspan="6"><div class="empty-state"><div class="icon">📜</div><p>No entries found.</p></div></td></tr>'; return; }
+
+  const ac = (a) => {
+    const l=a.toLowerCase();
+    if(l.includes('approv')||l.includes('closed')||l.includes('acknowledged')) return 'var(--green)';
+    if(l.includes('disput')) return 'var(--amber)';
+    if(l.includes('resolv')) return 'var(--cyan)';
+    if(l.includes('submit')) return 'var(--accent)';
+    return 'var(--text2)';
+  };
+
+  tbody.innerHTML = filtered.slice(0,300).map(e => {
+    const dt = e.ts ? new Date(e.ts).toLocaleString('en-MY',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit',hour12:true}) : '--';
+    return '<tr style="cursor:pointer" onclick="viewEval(\''+e.evalId+'\')"><td style="font-size:11px;color:var(--text3);white-space:nowrap">'+dt+'</td><td><span style="font-family:\'JetBrains Mono\',monospace;color:var(--accent);font-size:12px">#'+e.ref+'</span></td><td style="font-size:12px;font-weight:500">'+e.agent+'</td><td><span style="font-size:12px;font-weight:600;color:'+ac(e.action)+'">'+e.action+'</span></td><td style="font-size:12px;color:var(--text2)">'+e.by+'</td><td style="font-size:11px;color:var(--text3);max-width:250px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="'+e.note+'">'+( e.note||'--')+'</td></tr>';
+  }).join('');
+}
+
 async function loadCalibration(){
   var el=document.getElementById('calibrationContent');
   if(!el) return;
