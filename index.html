@@ -4,8 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>XOX CC — Call Monitoring Evaluation</title>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" onerror="supabaseLoadFailed()"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" onerror="supabaseLoadFailed()"></script>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
   :root {
@@ -66,16 +66,7 @@
   .role-tl{background:rgba(168,85,247,.15);color:var(--purple);border:1px solid rgba(168,85,247,.3)}
   .role-agent{background:rgba(34,197,94,.15);color:var(--green);border:1px solid rgba(34,197,94,.3)}
   .role-mgr{background:rgba(245,158,11,.15);color:var(--amber);border:1px solid rgba(245,158,11,.3)}
-  .user-chip{display:flex;align-items:center;gap:8px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:5px 10px;font-size:13px;cursor:pointer;position:relative;user-select:none}
-  .user-chip:hover{border-color:var(--accent);background:var(--surface3)}
-  .user-dropdown{display:none;position:absolute;top:calc(100% + 8px);right:0;min-width:200px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);box-shadow:0 8px 24px rgba(0,0,0,.3);z-index:1000;overflow:hidden}
-  .user-dropdown.open{display:block}
-  .user-dropdown-header{padding:12px 16px;border-bottom:1px solid var(--border);background:var(--surface2)}
-  .user-dropdown-item{display:flex;align-items:center;gap:10px;padding:10px 16px;font-size:13px;cursor:pointer;transition:background .15s;color:var(--text)}
-  .user-dropdown-item:hover{background:var(--surface2)}
-  .user-dropdown-item.danger{color:var(--red)}
-  .user-dropdown-item.danger:hover{background:rgba(239,68,68,.08)}
-  .user-dropdown-divider{height:1px;background:var(--border);margin:4px 0}
+  .user-chip{display:flex;align-items:center;gap:8px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:5px 10px;font-size:13px}
   .user-avatar{width:24px;height:24px;border-radius:50%;background:var(--accent2);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff}
 
   /* ── LAYOUT ── */
@@ -322,7 +313,6 @@
   .autocomplete-item .ai-name{font-weight:500}
   .autocomplete-item .ai-meta{font-size:11px;color:var(--text3)}
 </style>
-
 </head>
 <body>
 
@@ -363,18 +353,6 @@
   </div>
 </div>
 
-<!-- SLA Alert Banner -->
-<div id="slaBanner" style="display:none;background:rgba(239,68,68,.12);border-bottom:1px solid rgba(239,68,68,.3);padding:8px 20px;align-items:center;justify-content:space-between;gap:12px;position:sticky;top:0;z-index:999">
-  <div style="display:flex;align-items:center;gap:8px">
-    <span style="font-size:16px">🚨</span>
-    <span id="slaBannerText" style="font-size:13px;font-weight:600;color:var(--red)"></span>
-  </div>
-  <div style="display:flex;gap:8px;align-items:center">
-    <button class="btn btn-ghost btn-sm" onclick="showPage('pipeline')" style="color:var(--red);border-color:var(--red)">View Pipeline</button>
-    <button onclick="document.getElementById('slaBanner').style.display='none'" style="background:none;border:none;color:var(--text3);cursor:pointer;font-size:18px">✕</button>
-  </div>
-</div>
-
 <!-- MAIN APP -->
 <div id="appWrap" style="display:none">
   <nav class="topbar">
@@ -384,61 +362,14 @@
     </div>
     <div class="topbar-right">
       <span class="role-badge" id="topRoleBadge">—</span>
-      <!-- Notification Bell -->
-      <div style="position:relative">
-        <button id="notifBell" onclick="toggleNotifPanel()"
-          style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;
-                 width:36px;height:36px;cursor:pointer;font-size:16px;display:flex;
-                 align-items:center;justify-content:center;position:relative"
-          title="Notifications">
-          🔔
-          <span id="notifBadge" style="display:none;position:absolute;top:-4px;right:-4px;
-            background:var(--red);color:#fff;font-size:9px;font-weight:700;
-            border-radius:50%;width:16px;height:16px;display:flex;align-items:center;justify-content:center">0</span>
-        </button>
-        <!-- Notification Panel -->
-        <div id="notifPanel" style="display:none;position:absolute;right:0;top:44px;width:340px;
-          background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);
-          box-shadow:0 8px 24px rgba(0,0,0,.3);z-index:1000;overflow:hidden">
-          <div style="padding:12px 16px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center">
-            <div style="font-weight:600;font-size:13px">Notifications</div>
-            <button onclick="clearAllNotifs()" style="background:none;border:none;color:var(--text3);cursor:pointer;font-size:11px">Clear all</button>
-          </div>
-          <div id="notifList" style="max-height:360px;overflow-y:auto"></div>
-        </div>
-      </div>
-
       <button id="themeToggleBtn" onclick="toggleTheme()"
         style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;
                width:36px;height:36px;cursor:pointer;font-size:16px;display:flex;
-               align-items:center;justify-content:center;transition:all .2s;display:none"
+               align-items:center;justify-content:center;transition:all .2s"
         title="Toggle dark/light mode">🌙</button>
-      <div class="user-chip" onclick="toggleUserDropdown()" id="userChip">
+      <div class="user-chip">
         <div class="user-avatar" id="topAvatar">?</div>
         <span id="topUserName" style="font-size:13px">—</span>
-        <span style="font-size:10px;color:var(--text3);margin-left:2px">▾</span>
-
-        <!-- Dropdown menu -->
-        <div class="user-dropdown" id="userDropdown" onclick="event.stopPropagation()">
-          <div class="user-dropdown-header">
-            <div style="font-weight:600;font-size:13px" id="dropdownName">—</div>
-            <div style="font-size:11px;color:var(--text3);margin-top:2px" id="dropdownEmail">—</div>
-            <div style="margin-top:4px" id="dropdownRoleBadge"></div>
-          </div>
-          <div class="user-dropdown-item" onclick="openChangePassword()">
-            <span style="font-size:16px">🔑</span>
-            <span>Change Password</span>
-          </div>
-          <div class="user-dropdown-item" onclick="toggleTheme()">
-            <span style="font-size:16px" id="dropdownThemeIcon">🌙</span>
-            <span id="dropdownThemeLabel">Toggle Theme</span>
-          </div>
-          <div class="user-dropdown-divider"></div>
-          <div class="user-dropdown-item danger" onclick="doLogout()">
-            <span style="font-size:16px">⏻</span>
-            <span>Sign Out</span>
-          </div>
-        </div>
       </div>
     </div>
   </nav>
@@ -448,6 +379,8 @@
       <div class="sidebar-user">
         <div class="su-name" id="sbUserName">—</div>
         <div class="su-role" id="sbUserRole">—</div>
+        <button class="su-logout" onclick="doLogout()">⏻ Sign out</button>
+        <button class="su-logout" onclick="openChangePassword()" style="margin-top:4px;color:var(--accent);border-color:rgba(79,142,247,.3)">🔑 Change Password</button>
         <div id="sbStaffCount" style="font-size:10px;color:var(--text3);margin-top:6px;padding-top:6px;border-top:1px solid var(--border)">Loading staff…</div>
       </div>
 
@@ -466,19 +399,16 @@
       <div class="sidebar-item active" onclick="showPage('dashboard')" id="nav-dashboard"><span class="icon">📊</span>Dashboard</div>
       <div class="sidebar-item" onclick="showPage('new-eval')" id="nav-new-eval"><span class="icon">✏️</span>New Evaluation</div>
       <div class="sidebar-item" onclick="showPage('evaluations')" id="nav-evaluations"><span class="icon">📋</span>Evaluations<span class="badge" id="sbEvalCount">0</span></div>
-      <div class="sidebar-item" onclick="showPage('agent-dashboard')" id="nav-agent-dashboard"><span class="icon">📈</span>My Performance</div>
       <div class="sidebar-item" onclick="showPage('my-evals')" id="nav-my-evals"><span class="icon">📊</span>My Evaluations</div>
       <div class="sidebar-item" onclick="showPage('pipeline')" id="nav-pipeline"><span class="icon">🔄</span>Pipeline Tracker</div>
       <div class="sidebar-item" onclick="showPage('fail-analysis')" id="nav-fail-analysis"><span class="icon">📉</span>Failure Analysis</div>
       <div class="sidebar-item" onclick="showPage('monthly-perf')" id="nav-monthly-perf"><span class="icon">📅</span>Monthly Performance</div>
-      <div class="sidebar-item" onclick="showPage('qa-consistency')" id="nav-qa-consistency"><span class="icon">⚖️</span>QA Consistency</div>
-      <div class="sidebar-item" onclick="showPage('audit-log')" id="nav-audit-log"><span class="icon">📜</span>Audit Log</div>
 
       <div class="sidebar-divider"></div>
       <div class="sidebar-label" id="sb-admin-label" style="display:none">Admin</div>
       <div class="sidebar-item" onclick="showPage('role-mgmt')" id="nav-role-mgmt" style="display:none"><span class="icon">🔐</span>Role Management</div>
-      <div class="sidebar-item" onclick="showPage('tpl-mgmt')" id="nav-tpl-mgmt" style="display:none"><span class="icon">📝</span>Template Manager</div>
       <div class="sidebar-item" onclick="showPage('calibration')" id="nav-calibration"><span class="icon">🎯</span>Calibration</div>
+      <div class="sidebar-item" onclick="showPage('tpl-mgmt')" id="nav-tpl-mgmt" style="display:none"><span class="icon">📝</span>Template Manager</div>
       <div class="sidebar-divider" id="sb-admin-divider" style="display:none"></div>
       <div class="sidebar-label">Workflow</div>
       <div class="sidebar-item" onclick="showPage('my-team')" id="nav-my-team"><span class="icon">👥</span>My Team<span class="badge" id="sbMyTeam">0</span></div>
@@ -509,22 +439,6 @@
           <div class="stat-card red"><div class="stat-num" id="st-disputed">—</div><div class="stat-label">Disputed</div></div>
           <div class="stat-card green"><div class="stat-num" id="st-closed">—</div><div class="stat-label">Closed</div></div>
         </div>
-        <!-- Pass/Fail summary strip -->
-        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:16px" id="passFailStrip">
-          <div class="card" style="margin-bottom:0;text-align:center;padding:14px">
-            <div style="font-size:28px;font-weight:700;font-family:'JetBrains Mono',monospace;color:var(--green)" id="pf-pass">--</div>
-            <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:var(--text3);margin-top:4px">Pass</div>
-          </div>
-          <div class="card" style="margin-bottom:0;text-align:center;padding:14px">
-            <div style="font-size:28px;font-weight:700;font-family:'JetBrains Mono',monospace;color:var(--red)" id="pf-fail">--</div>
-            <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:var(--text3);margin-top:4px">Fail</div>
-          </div>
-          <div class="card" style="margin-bottom:0;text-align:center;padding:14px">
-            <div style="font-size:28px;font-weight:700;font-family:'JetBrains Mono',monospace;color:var(--accent)" id="pf-rate">--</div>
-            <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:var(--text3);margin-top:4px">Pass Rate</div>
-          </div>
-        </div>
-
         <!-- QA Performance + Score Overview -->
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">
           <div class="card" style="margin-bottom:0">
@@ -715,7 +629,11 @@
         <div class="page-header">
           <div class="page-header-row">
             <div><h1>All Evaluations</h1><p>Full evaluation history</p></div>
-            <button class="btn btn-primary" onclick="showPage('new-eval')" id="evalsNewBtn">+ New</button>
+            <div style="display:flex;gap:8px">
+              <button class="btn btn-ghost" onclick="exportEvals('csv')">📄 Export CSV</button>
+              <button class="btn btn-ghost" onclick="exportEvals('excel')" style="color:var(--green);border-color:var(--green)">📊 Export Excel</button>
+              <button class="btn btn-primary" onclick="showPage('new-eval')" id="evalsNewBtn">+ New</button>
+            </div>
           </div>
         </div>
 
@@ -800,62 +718,6 @@
         </div>
       </div>
 
-      <!-- AGENT SELF-VIEW DASHBOARD -->
-      <div class="page" id="page-agent-dashboard">
-        <div class="page-header">
-          <div class="page-header-row">
-            <div><h1>📈 My Performance</h1><p id="agentDashSubtitle">Your evaluation history and score trend</p></div>
-            <select class="form-select" id="agentDashMonth" onchange="loadAgentDashboard()" style="width:170px;padding:7px 10px">
-              <option value="">All Time</option>
-            </select>
-          </div>
-        </div>
-
-        <!-- Stats -->
-        <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:20px">
-          <div class="stat-card blue"><div class="stat-num" id="ad-total" style="font-size:22px">--</div><div class="stat-label">Total Evals</div></div>
-          <div class="stat-card green"><div class="stat-num" id="ad-avg" style="font-size:22px">--</div><div class="stat-label">Avg Score</div></div>
-          <div class="stat-card green"><div class="stat-num" id="ad-pass" style="font-size:22px">--</div><div class="stat-label">Pass</div></div>
-          <div class="stat-card red"><div class="stat-num" id="ad-fail" style="font-size:22px">--</div><div class="stat-label">Fail</div></div>
-          <div class="stat-card amber"><div class="stat-num" id="ad-pending" style="font-size:22px">--</div><div class="stat-label">Pending Ack</div></div>
-        </div>
-
-        <!-- Score trend -->
-        <div class="card" style="margin-bottom:16px">
-          <div class="card-header" style="margin-bottom:16px">
-            <div><div class="card-title">📊 Score Trend</div><div class="card-subtitle">Your scores across evaluations over time</div></div>
-          </div>
-          <div id="agentTrendChart" style="display:flex;flex-direction:column;gap:6px;padding:8px 0"></div>
-        </div>
-
-        <!-- Common failures -->
-        <div class="card" style="margin-bottom:16px">
-          <div class="card-header" style="margin-bottom:12px">
-            <div><div class="card-title">⚠️ Areas to Improve</div><div class="card-subtitle">Questions you most commonly score low on</div></div>
-          </div>
-          <div id="agentFailList"></div>
-        </div>
-
-        <!-- Coaching notes from TL -->
-        <div class="card" style="margin-bottom:16px">
-          <div class="card-header" style="margin-bottom:12px">
-            <div><div class="card-title">🎯 Coaching Notes from Team Leader</div><div class="card-subtitle">Feedback received during evaluations</div></div>
-          </div>
-          <div id="agentCoachingNotes"></div>
-        </div>
-
-        <!-- Eval history -->
-        <div class="card">
-          <div class="card-header" style="margin-bottom:12px">
-            <div><div class="card-title">📋 Evaluation History</div></div>
-          </div>
-          <table class="eval-table">
-            <thead><tr><th>Ref</th><th>Template</th><th>Score</th><th>Pass/Fail</th><th>Fatal</th><th>Status</th><th>Call Date</th><th>TL Notes</th><th></th></tr></thead>
-            <tbody id="agentEvalHistory"></tbody>
-          </table>
-        </div>
-      </div>
-
       <!-- MY EVALUATIONS PAGE (QA) -->
       <div class="page" id="page-my-evals">
         <div class="page-header">
@@ -908,6 +770,22 @@
         </div>
       </div>
 
+      <!-- CALIBRATION PAGE -->
+      <div class="page" id="page-calibration">
+        <div class="page-header">
+          <div class="page-header-row">
+            <div><h1>🎯 Calibration</h1><p>Manager re-evaluates closed calls to compare with QA score</p></div>
+            <select class="form-select" id="calMonthFilter" onchange="loadCalibration()" style="width:170px;padding:7px 10px">
+              <option value="">All Time</option>
+            </select>
+          </div>
+        </div>
+        <div class="card" style="margin-bottom:12px;padding:12px 16px;background:rgba(79,142,247,.08);border-color:rgba(79,142,247,.3)">
+          <div style="font-size:12px;color:var(--text2)">🎯 <strong>How it works:</strong> Only <strong>closed</strong> evaluations appear here. Click <strong>Calibrate</strong> to independently re-score the call using the same form. Your score is compared with the QA score — the QA score remains final for the agent.</div>
+        </div>
+        <div id="calibrationContent"><div style="text-align:center;padding:40px;color:var(--text3)">Loading...</div></div>
+      </div>
+
       <!-- TEMPLATE MANAGER PAGE -->
       <div class="page" id="page-tpl-mgmt">
         <div class="page-header">
@@ -939,10 +817,10 @@
               <select class="form-select" id="mpTL" onchange="loadMonthlyPerf()" style="width:200px;padding:7px 10px">
                 <option value="">All Team Leaders</option>
               </select>
-              <select class="form-select" id="mpView" onchange="loadMonthlyPerf()" style="width:180px;padding:7px 10px">
-                <option value="both">All (TL + Agents)</option>
-                <option value="team">By Team Leader Only</option>
-                <option value="agent">By Agent Only</option>
+              <select class="form-select" id="mpView" onchange="loadMonthlyPerf()" style="width:160px;padding:7px 10px">
+                <option value="team">By Team Leader</option>
+                <option value="agent">By Agent</option>
+                <option value="both">Both</option>
               </select>
             </div>
           </div>
@@ -967,16 +845,6 @@
           </div>
         </div>
 
-        <!-- Team Comparison section -->
-        <div id="mp-team-compare-section" style="margin-bottom:16px">
-          <div class="card">
-            <div class="card-header" style="margin-bottom:16px">
-              <div><div class="card-title">🏆 Team Comparison</div><div class="card-subtitle">Side-by-side scores across all teams</div></div>
-            </div>
-            <div id="teamCompareInline"><div class="text-sm" style="text-align:center;padding:20px">Loading...</div></div>
-          </div>
-        </div>
-
         <!-- Agent performance -->
         <div id="mp-agent-section">
           <div class="card">
@@ -984,9 +852,6 @@
               <div><div class="card-title">👤 Agent Performance</div><div class="card-subtitle">Individual agent scores for the selected month</div></div>
               <div style="display:flex;gap:8px">
                 <input class="form-input" id="mpAgentSearch" placeholder="Search agent..." oninput="renderAgentTable()" style="width:180px;padding:7px 12px">
-                <button class="btn btn-ghost" onclick="exportAgentReports()" style="display:flex;align-items:center;gap:6px">
-                  📄 Export Agent Reports
-                </button>
                 <select class="form-select" id="mpAgentSort" onchange="renderAgentTable()" style="width:160px;padding:7px 10px">
                   <option value="score-desc">Score — High to Low</option>
                   <option value="score-asc">Score — Low to High</option>
@@ -1014,77 +879,6 @@
               </tbody>
             </table>
           </div>
-        </div>
-      </div>
-
-      <!-- CALIBRATION SESSION PAGE -->
-      <div class="page" id="page-calibration">
-        <div class="page-header">
-          <div class="page-header-row">
-            <div><h1>🎯 Calibration Session</h1><p>Compare how different QA evaluators score the same call — identify scoring gaps</p></div>
-            <button class="btn btn-primary" onclick="newCalibrationSession()">+ New Session</button>
-          </div>
-        </div>
-        <div id="calibrationContent">
-          <div class="card" style="text-align:center;padding:40px">
-            <div style="font-size:40px;margin-bottom:12px">🎯</div>
-            <div style="font-size:16px;font-weight:600;margin-bottom:8px">No Calibration Sessions Yet</div>
-            <div style="font-size:13px;color:var(--text3);margin-bottom:20px">Create a calibration session by selecting an evaluation and inviting QA evaluators to independently score it</div>
-            <button class="btn btn-primary" onclick="newCalibrationSession()">+ Start First Calibration Session</button>
-          </div>
-        </div>
-      </div>
-
-      <!-- TEAM COMPARISON PAGE -->
-      <div class="page" id="page-team-compare">
-        <div class="page-header">
-          <div class="page-header-row">
-            <div><h1>🏆 Team Comparison</h1><p>Side-by-side comparison of all teams' average scores</p></div>
-            <select class="form-select" id="tcMonth" onchange="loadTeamComparison()" style="width:170px;padding:7px 10px">
-              <option value="">All Time</option>
-            </select>
-          </div>
-        </div>
-        <div id="teamCompareContent"><div class="text-sm" style="text-align:center;padding:40px">Loading...</div></div>
-      </div>
-
-      <!-- QA CONSISTENCY PAGE -->
-      <div class="page" id="page-qa-consistency">
-        <div class="page-header">
-          <div class="page-header-row">
-            <div><h1>⚖️ QA Consistency Report</h1><p>Compare scoring patterns across QA evaluators — identifies calibration gaps</p></div>
-            <select class="form-select" id="qcMonth" onchange="loadQAConsistency()" style="width:170px;padding:7px 10px">
-              <option value="">All Time</option>
-            </select>
-          </div>
-        </div>
-        <div id="qaConsistencyContent"><div class="text-sm" style="text-align:center;padding:40px">Loading...</div></div>
-      </div>
-
-      <!-- AUDIT LOG PAGE -->
-      <div class="page" id="page-audit-log">
-        <div class="page-header">
-          <div class="page-header-row">
-            <div><h1>📜 Audit Log</h1><p>Full record of every action taken in the system</p></div>
-            <div style="display:flex;gap:8px">
-              <select class="form-select" id="alFilter" onchange="loadAuditLog()" style="width:160px;padding:7px 10px">
-                <option value="">All Actions</option>
-                <option value="submitted">Submitted</option>
-                <option value="approved">Approved</option>
-                <option value="disputed">Disputed</option>
-                <option value="resolved">Resolved</option>
-                <option value="acknowledged">Acknowledged</option>
-                <option value="closed">Closed</option>
-              </select>
-              <input class="form-input" id="alSearch" placeholder="Search name..." oninput="loadAuditLog()" style="width:180px;padding:7px 12px">
-            </div>
-          </div>
-        </div>
-        <div class="card">
-          <table class="eval-table">
-            <thead><tr><th>Time</th><th>Eval Ref</th><th>Agent</th><th>Action</th><th>By</th><th>Notes</th></tr></thead>
-            <tbody id="auditLogBody"><tr><td colspan="6"><div class="empty-state"><div class="icon">📜</div><p>Loading...</p></div></td></tr></tbody>
-          </table>
         </div>
       </div>
 
@@ -2096,20 +1890,12 @@ async function onLoggedIn(user) {
 
   // Check if this user has ever set their own password
   // We track this in localStorage keyed by user email
-  // Password change check — use both email and user ID as keys
-  const pwEmail = (currentUser?.email||'').toLowerCase();
-  const pwId    = (currentUser?.id||'');
-  const pwKey1  = 'qa_pw_changed_' + pwEmail.replace(/[^a-z0-9]/g,'_');
-  const pwKey2  = 'qa_pw_changed_' + pwId.replace(/[^a-z0-9]/g,'_');
-  const hasPwKey1 = localStorage.getItem(pwKey1);
-  const hasPwKey2 = localStorage.getItem(pwKey2);
-  const anyPwKey  = Object.keys(localStorage).some(k => k.startsWith('qa_pw_changed_'));
-  if (!hasPwKey1 && !hasPwKey2 && !anyPwKey) {
+  const userEmailForPw = (currentUser?.email||'').toLowerCase();
+  const pwKeyFinal = 'qa_pw_changed_' + userEmailForPw.replace(/[^a-z0-9]/g,'_');
+  const hasChangedPw = localStorage.getItem(pwKeyFinal);
+  console.log('[QA] PW check | changed:', !!hasChangedPw);
+  if (!hasChangedPw) {
     setTimeout(() => showForcedPasswordChange(), 800);
-  } else {
-    // Ensure both key formats are set for future logins
-    if (!hasPwKey1) localStorage.setItem(pwKey1, hasPwKey2 || new Date().toISOString());
-    if (!hasPwKey2) localStorage.setItem(pwKey2, hasPwKey1 || new Date().toISOString());
   }
 }
 
@@ -2227,9 +2013,9 @@ function updateNavVisibility() {
   const navMyEvals = document.getElementById('nav-my-evals');
   if (navMyEvals) navMyEvals.style.display = (isAdmin || isQA) ? '' : 'none';
 
-  // My Performance: Agent only (and admin for testing)
-  const navAgentDash = document.getElementById('nav-agent-dashboard');
-  if (navAgentDash) navAgentDash.style.display = (isAgent || isAdmin) ? '' : 'none';
+  // Calibration: Manager and Admin only
+  var navCal2 = document.getElementById('nav-calibration');
+  if (navCal2) navCal2.style.display = (isAdmin || isManager) ? '' : 'none';
 
   // New Evaluation: QA and Admin only
   const navNew = document.getElementById('nav-new-eval');
@@ -2265,12 +2051,6 @@ function updateNavVisibility() {
   // Monthly Performance: QA, Manager, Admin, TL
   const navMonthly = document.getElementById('nav-monthly-perf');
   if (navMonthly) navMonthly.style.display = (isAdmin || isManager || isQA || isTL) ? '' : 'none';
-
-  // Team Comparison, QA Consistency, Audit Log: Manager, Admin, QA
-  ['nav-qa-consistency','nav-audit-log','nav-calibration'].forEach(id => {
-    const el = document.getElementById(id);
-    if (el) el.style.display = (isAdmin || isManager || isQA) ? '' : 'none';
-  });
 
   // My Team: TL, Manager, Admin only
   const navTeam = document.getElementById('nav-my-team');
@@ -2333,12 +2113,8 @@ function showPage(id) {
   if (id === 'disputes') loadDisputes();
   if (id === 'role-mgmt') loadRoleManagement();
   if (id === 'tpl-mgmt') loadTplMgmt();
+  if (id === 'calibration') loadCalibration();
   if (id === 'my-evals') loadMyEvals();
-  if (id === 'agent-dashboard') loadAgentDashboard();
-  if (id === 'team-compare')    loadTeamComparison();
-  if (id === 'qa-consistency')  loadQAConsistency();
-  if (id === 'audit-log')       loadAuditLog();
-  if (id === 'calibration')     loadCalibration();
   if (id === 'pipeline') loadPipeline();
   if (id === 'fail-analysis') loadFailAnalysis();
   if (id === 'monthly-perf') initMonthlyPerf();
@@ -2922,18 +2698,6 @@ async function loadDashboard() {
   renderQAPerformance(filtered);
   renderScoreOverview(filtered);
 
-  // ── Pass/Fail strip ──
-  const pm = getPassingMark();
-  const scored2 = filtered.filter(e => e.score !== null && e.score !== undefined && e.status !== 'draft');
-  const passCount = scored2.filter(e => !e.has_fatal && Number(e.score) >= pm).length;
-  const failCount = scored2.length - passCount;
-  const passRate  = scored2.length > 0 ? Math.round(passCount/scored2.length*100) : 0;
-  ['pf-pass','pf-fail','pf-rate'].forEach(id => { const el=document.getElementById(id); if(!el) return;
-    if(id==='pf-pass') el.textContent=passCount;
-    if(id==='pf-fail') el.textContent=failCount;
-    if(id==='pf-rate') { el.textContent=passRate+'%'; el.style.color=passRate>=80?'var(--green)':passRate>=60?'var(--amber)':'var(--red)'; }
-  });
-
   // Recent evals table
   const tbody = document.getElementById('dashRecentBody');
   const recent = filtered.slice(0, 8);
@@ -2957,9 +2721,7 @@ async function loadDashboard() {
     <td style="font-size:12px;color:var(--accent)">${e.qa_user_name||'--'}</td>
     <td><button class="btn btn-ghost btn-sm" onclick="viewEval('${e.id}')">View</button></td>
   </tr>`;}).join('');
-  updateSidebarBadges(all);
-  checkSLAAlerts(all);
-  generateNotifsFromEvals(all);
+  updateSidebarBadges(all); // badges always show all, not filtered
 }
 
 function renderQAPerformance(all) {
@@ -3663,9 +3425,8 @@ function agentAction(id, action) {
     '✓ Acknowledge Evaluation',
     `<div class="alert alert-success">You are acknowledging this evaluation. This will close the record.</div>`,
     `<div class="form-group">
-      <label class="form-label">Your Reflection / Comment <span style="color:var(--text3);font-size:11px">(optional — recorded for coaching purposes)</span></label>
-      <textarea class="form-textarea" id="actionNote" rows="3"
-        placeholder="e.g. I understand the feedback and will work on improving my hold time management..."></textarea>
+      <label class="form-label">Comments (optional)</label>
+      <textarea class="form-textarea" id="actionNote" rows="3" placeholder="Any comments for the record..."></textarea>
     </div>`,
     async () => {
       const note = document.getElementById('actionNote').value;
@@ -3966,23 +3727,6 @@ function statusBadge(status) {
   const [cls,label] = m[status]||['status-draft',status];
   return `<span class="status ${cls}">${label}</span>`;
 }
-function checkSLAAlerts(evals) {
-  const breaches = evals.filter(e => getSLAStatus(e)?.level === 'breach');
-  const warnings = evals.filter(e => getSLAStatus(e)?.level === 'warning');
-  const banner   = document.getElementById('slaBanner');
-  const txt      = document.getElementById('slaBannerText');
-  if (!banner) return;
-  if (breaches.length) {
-    banner.style.display = 'flex';
-    if(txt){ txt.textContent = breaches.length + ' evaluation' + (breaches.length>1?'s':'') + ' breached SLA — immediate action required!'; txt.style.color='var(--red)'; }
-  } else if (warnings.length) {
-    banner.style.display = 'flex';
-    if(txt){ txt.textContent = warnings.length + ' evaluation' + (warnings.length>1?'s':'') + ' approaching SLA deadline.'; txt.style.color='var(--amber)'; }
-  } else {
-    banner.style.display = 'none';
-  }
-}
-
 function updateSidebarBadges(all) {
   const a = all || evaluations;
   document.getElementById('sbEvalCount').textContent = a.length;
@@ -4018,34 +3762,6 @@ async function runConfirm() {
   else { btn.disabled = false; btn.innerHTML = btn.textContent; }
 }
 function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
-
-function toggleUserDropdown() {
-  const dd = document.getElementById('userDropdown');
-  if (!dd) return;
-  dd.classList.toggle('open');
-
-  // Sync dropdown content with current user
-  const name  = currentStaff?.name || currentUser?.email?.split('@')[0] || '—';
-  const email = currentUser?.email || '—';
-  const role  = currentStaff?.role || '—';
-  const el    = (id) => document.getElementById(id);
-  if (el('dropdownName'))  el('dropdownName').textContent  = name;
-  if (el('dropdownEmail')) el('dropdownEmail').textContent = email;
-  if (el('dropdownRoleBadge')) el('dropdownRoleBadge').innerHTML = `<span class="role-badge" style="font-size:10px">${role.toUpperCase()}</span>`;
-
-  // Sync theme icon
-  const theme = document.documentElement.getAttribute('data-theme') || 'dark';
-  if (el('dropdownThemeIcon'))  el('dropdownThemeIcon').textContent  = theme==='dark'?'☀️':'🌙';
-  if (el('dropdownThemeLabel')) el('dropdownThemeLabel').textContent = theme==='dark'?'Switch to Light':'Switch to Dark';
-}
-
-// Close dropdown when clicking outside
-document.addEventListener('click', function(e) {
-  const chip = document.getElementById('userChip');
-  if (chip && !chip.contains(e.target)) {
-    document.getElementById('userDropdown')?.classList.remove('open');
-  }
-});
 
 function openChangePassword() {
   // Reset form
@@ -4140,10 +3856,9 @@ async function doChangePassword() {
     btn.textContent = 'Done';
     // Mark as changed in localStorage — do this FIRST before anything else
     const userEmail2 = (currentUser?.email || '').toLowerCase();
-    const pwKeyMark1 = 'qa_pw_changed_' + userEmail2.replace(/[^a-z0-9]/g,'_');
-    const pwKeyMark2 = 'qa_pw_changed_' + (currentUser?.id||'').replace(/[^a-z0-9]/g,'_');
-    localStorage.setItem(pwKeyMark1, new Date().toISOString());
-    localStorage.setItem(pwKeyMark2, new Date().toISOString());
+    const pwKeyMark = 'qa_pw_changed_' + userEmail2.replace(/[^a-z0-9]/g,'_');
+    localStorage.setItem(pwKeyMark, new Date().toISOString());
+    console.log('[QA] Password change marked for:', userEmail2);
     // Restore close button if it was hidden
     const closeBtn = document.getElementById('changePwModal').querySelector('.modal-close');
     if (closeBtn) closeBtn.style.display = '';
@@ -4170,19 +3885,6 @@ function forceShowLogin() {
 // ===============================================
 
 const DEFAULT_PASSING_MARK = 90;
-const SLA_DAYS = { submitted: 2, 'tl-approved': 2, 'tl-disputed': 3, 'agent-disputed': 3, 'qa-review': 2 };
-
-function getSLAStatus(e) {
-  if (e.status === 'closed' || e.status === 'draft') return null;
-  const sla = SLA_DAYS[e.status];
-  if (!sla) return null;
-  const wf = (e.workflow||[]).slice(-1)[0];
-  const since = new Date(wf?.ts || e.created_at);
-  const diffDays = (Date.now() - since) / 86400000;
-  if (diffDays >= sla)     return { level: 'breach',  days: Math.floor(diffDays), sla };
-  if (diffDays >= sla*0.7) return { level: 'warning', days: Math.floor(diffDays), sla };
-  return { level: 'ok', days: Math.floor(diffDays), sla };
-}
 
 function getPassingMark() {
   const stored = localStorage.getItem('qa_passing_mark');
@@ -4691,9 +4393,8 @@ function loadMonthlyPerf() {
   document.getElementById('mp-st-avg').style.color     = avg>=80?'var(--green)':avg>=60?'var(--amber)':'var(--red)';
 
   // Show/hide sections
-  document.getElementById('mp-tl-section').style.display           = (view==='team'||view==='both') ? '' : 'none';
-  document.getElementById('mp-agent-section').style.display        = (view==='agent'||view==='both') ? '' : 'none';
-  document.getElementById('mp-team-compare-section').style.display = (view==='both'||view==='team') ? '' : 'none';
+  document.getElementById('mp-tl-section').style.display    = (view==='team'||view==='both') ? '' : 'none';
+  document.getElementById('mp-agent-section').style.display = (view==='agent'||view==='both') ? '' : 'none';
 
   // ── TL performance ──
   if (view === 'team' || view === 'both') renderTLTable(rows, month);
@@ -4703,53 +4404,6 @@ function loadMonthlyPerf() {
     buildAgentData(rows, month);
     renderAgentTable();
   }
-
-  // ── Team Comparison inline ──
-  if (view === 'both' || view === 'team') renderTeamCompareInline(rows);
-}
-
-function renderTeamCompareInline(rows) {
-  const el = document.getElementById('teamCompareInline');
-  if (!el) return;
-  const pm = getPassingMark();
-
-  // Group by TL
-  const tlMap = {};
-  rows.forEach(e => {
-    const tl = e.tl_name || 'Unknown';
-    if (!tlMap[tl]) tlMap[tl] = { tl, scores:[], agents:new Set(), fatal:0, evals:0 };
-    tlMap[tl].scores.push(Number(e.score));
-    tlMap[tl].evals++;
-    if (e.agent_name) tlMap[tl].agents.add(e.agent_name);
-    if (e.has_fatal) tlMap[tl].fatal++;
-  });
-
-  const tlArr = Object.values(tlMap).map(t => {
-    const avg      = t.scores.length ? Math.round(t.scores.reduce((a,b)=>a+b,0)/t.scores.length*100)/100 : 0;
-    const pass     = t.scores.filter(s=>s>=pm).length;
-    const passRate = t.evals ? Math.round(pass/t.evals*100) : 0;
-    return { ...t, avg, pass, passRate };
-  }).sort((a,b) => b.avg - a.avg);
-
-  if (!tlArr.length) { el.innerHTML='<div class="text-sm" style="text-align:center;padding:20px;color:var(--text3)">No data for this period.</div>'; return; }
-
-  const medals = ['🥇','🥈','🥉'];
-  el.innerHTML = '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px">'
-    + tlArr.map((t, i) => {
-        const color  = t.avg>=pm?'var(--green)':t.avg>=(pm*0.75)?'var(--amber)':'var(--red)';
-        const initials = t.tl.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
-        return `<div style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:14px;text-align:center">
-          <div style="width:36px;height:36px;border-radius:50%;background:rgba(79,142,247,.15);border:2px solid var(--accent);
-            display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:var(--accent);margin:0 auto 8px">${initials}</div>
-          <div style="font-size:11px;font-weight:600;margin-bottom:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${medals[i]||''} ${t.tl.split(' ')[0]}</div>
-          <div style="font-family:'JetBrains Mono',monospace;font-size:26px;font-weight:700;color:${color}">${t.avg.toFixed(2)}%</div>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;margin-top:8px">
-            <div style="background:var(--surface3);border-radius:4px;padding:4px"><div style="font-size:12px;font-weight:700;color:var(--green)">${t.passRate}%</div><div style="font-size:9px;color:var(--text3)">Pass Rate</div></div>
-            <div style="background:var(--surface3);border-radius:4px;padding:4px"><div style="font-size:12px;font-weight:700;color:${t.fatal>0?'var(--red)':'var(--green)'}">${t.fatal}</div><div style="font-size:9px;color:var(--text3)">Fatal</div></div>
-          </div>
-          <div style="font-size:10px;color:var(--text3);margin-top:6px">${t.agents.size} agents · ${t.evals} evals</div>
-        </div>`;
-      }).join('') + '</div>';
 }
 
 function renderTLTable(rows, month) {
@@ -4904,7 +4558,6 @@ function renderAgentTable() {
       <td style="font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--red);text-align:center">${a.lowest.toFixed(2)}%</td>
       <td style="text-align:center">${a.fatal>0?`<span style="color:var(--red);font-weight:700">⛔ ${a.fatal}</span>`:'<span style="color:var(--green)">✅ 0</span>'}</td>
       <td style="font-size:12px">${trendStr}</td>
-      <td><button class="btn btn-ghost btn-sm" onclick="generateAgentReport('${a.name}')">📄 Report</button></td>
     </tr>`;
   }).join('');
 }
@@ -5088,731 +4741,6 @@ async function loadFailAnalysis() {
           <div style="text-align:right;font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:700;color:${color}">${f.count}x</div>
         </div>`;
       }).join('');
-}
-
-// ===============================================
-//  AGENT REPORT GENERATOR
-// ===============================================
-
-function generateAgentReport(agentName) {
-  const month    = document.getElementById('mpMonth')?.value || '';
-  const allEvs   = mpAllEvals || evaluations || [];
-  const agentEvs = allEvs.filter(e => e.agent_name === agentName);
-  const filtered = month ? agentEvs.filter(e => {
-    const d = e.date||(e.created_at||'').slice(0,10);
-    if(!d) return false; const dt=new Date(d); if(isNaN(dt)) return false;
-    return `${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,'0')}` === month;
-  }) : agentEvs;
-
-  if (!filtered.length) { alert('No evaluations found for ' + agentName + ' in the selected period.'); return; }
-
-  const pm      = getPassingMark();
-  const scores  = filtered.map(e=>Number(e.score)).filter(s=>!isNaN(s));
-  const avg     = scores.length ? Math.round(scores.reduce((a,b)=>a+b,0)/scores.length*100)/100 : 0;
-  const pass    = filtered.filter(e=>!e.has_fatal&&Number(e.score)>=pm).length;
-  const fail    = filtered.length - pass;
-  const fatal   = filtered.filter(e=>e.has_fatal).length;
-  const passRate= filtered.length ? Math.round(pass/filtered.length*100) : 0;
-  const tl      = filtered[0]?.tl_name || '--';
-  const period  = month ? (() => { const [yr,mo]=month.split('-'); return new Date(yr,mo-1,1).toLocaleDateString('en-MY',{month:'long',year:'numeric'}); })() : 'All Time';
-
-  // Collect coaching notes
-  const coachingNotes = filtered.flatMap(e =>
-    (e.workflow||[]).filter(w=>w.action&&w.action.toLowerCase().includes('approv')&&w.note)
-    .map(w=>({ ref:e.ref, date:e.date||'', note:w.note, by:w.by||'' }))
-  );
-
-  // Aggregate question failures
-  const failMap = {};
-  filtered.forEach(e => {
-    (e.questions||[]).forEach(q => {
-      const ans = (e.answers||{})[q.id];
-      if(!ans) return;
-      if(!failMap[q.q]) failMap[q.q] = { num:q.num, q:q.q, fail:0, total:0 };
-      failMap[q.q].total++;
-      if(Number(ans.score||0)===0) failMap[q.q].fail++;
-    });
-  });
-  const topFails = Object.values(failMap).filter(f=>f.fail>0).sort((a,b)=>b.fail-a.fail).slice(0,5);
-
-  const avgColor  = avg>=pm?'#16a34a':avg>=(pm*0.75)?'#d97706':'#dc2626';
-  const pfColor   = passRate>=80?'#16a34a':passRate>=60?'#d97706':'#dc2626';
-  const now       = new Date().toLocaleDateString('en-MY',{day:'2-digit',month:'long',year:'numeric'});
-
-  const html = `<html><head><meta charset="UTF-8">
-  <style>
-    body{font-family:Arial,sans-serif;margin:0;padding:30px;color:#1f2937;background:#fff}
-    .header{background:#1a2540;color:#fff;padding:20px 30px;border-radius:8px;margin-bottom:24px;display:flex;justify-content:space-between;align-items:center}
-    .header h1{margin:0;font-size:20px} .header p{margin:4px 0;font-size:12px;opacity:.8}
-    .logo{font-size:28px;font-weight:900;letter-spacing:-1px}
-    .stats{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:24px}
-    .stat{background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:14px;text-align:center}
-    .stat-num{font-size:28px;font-weight:700;font-family:monospace}
-    .stat-lbl{font-size:11px;color:#6b7280;margin-top:4px;text-transform:uppercase;letter-spacing:.4px}
-    .section{margin-bottom:24px}
-    .section-title{font-size:14px;font-weight:700;color:#1a2540;border-bottom:2px solid #1a2540;padding-bottom:6px;margin-bottom:12px}
-    table{width:100%;border-collapse:collapse;font-size:12px}
-    th{background:#1a2540;color:#fff;padding:8px 10px;text-align:left;font-weight:600}
-    td{padding:7px 10px;border-bottom:1px solid #e2e8f0}
-    tr:nth-child(even) td{background:#f8fafc}
-    .pass{color:#16a34a;font-weight:700} .fail{color:#dc2626;font-weight:700} .fatal{color:#dc2626;font-weight:700}
-    .score{font-family:monospace;font-weight:700}
-    .coaching{background:#fffbeb;border-left:4px solid #f59e0b;padding:10px 14px;margin-bottom:8px;border-radius:0 6px 6px 0;font-size:12px}
-    .footer{margin-top:30px;padding-top:12px;border-top:1px solid #e2e8f0;font-size:11px;color:#9ca3af;text-align:center}
-    @media print{body{padding:15px}.header{-webkit-print-color-adjust:exact;print-color-adjust:exact}}
-  </style></head><body>
-  <div class="header">
-    <div>
-      <div class="logo">XOX</div>
-      <h1>Agent Performance Report</h1>
-      <p>${agentName} &nbsp;·&nbsp; Team Leader: ${tl} &nbsp;·&nbsp; Period: ${period}</p>
-    </div>
-    <div style="text-align:right;font-size:12px;opacity:.8">
-      <div>Generated: ${now}</div>
-      <div>Passing Mark: ${pm}%</div>
-    </div>
-  </div>
-
-  <div class="stats">
-    <div class="stat"><div class="stat-num" style="color:#3b82f6">${filtered.length}</div><div class="stat-lbl">Total Evals</div></div>
-    <div class="stat"><div class="stat-num" style="color:${avgColor}">${avg.toFixed(2)}%</div><div class="stat-lbl">Avg Score</div></div>
-    <div class="stat"><div class="stat-num" style="color:#16a34a">${pass}</div><div class="stat-lbl">Pass</div></div>
-    <div class="stat"><div class="stat-num" style="color:#dc2626">${fail}</div><div class="stat-lbl">Fail</div></div>
-    <div class="stat"><div class="stat-num" style="color:${pfColor}">${passRate}%</div><div class="stat-lbl">Pass Rate</div></div>
-  </div>
-
-  ${topFails.length ? `<div class="section">
-    <div class="section-title">⚠️ Areas Requiring Improvement</div>
-    <table><thead><tr><th>#</th><th>Question</th><th>Failed</th><th>Total</th><th>Fail Rate</th></tr></thead><tbody>
-    ${topFails.map((f,i)=>`<tr><td>${f.num}</td><td>${f.q}</td><td style="color:#dc2626;font-weight:700">${f.fail}</td><td>${f.total}</td><td class="fail">${Math.round(f.fail/f.total*100)}%</td></tr>`).join('')}
-    </tbody></table></div>` : ''}
-
-  ${coachingNotes.length ? `<div class="section">
-    <div class="section-title">🎯 Coaching Notes from Team Leader</div>
-    ${coachingNotes.map(n=>`<div class="coaching"><strong>Eval #${n.ref}</strong> (${n.date}) — <em>${n.by}</em><br>${n.note}</div>`).join('')}
-  </div>` : ''}
-
-  <div class="section">
-    <div class="section-title">📋 Evaluation History</div>
-    <table><thead><tr><th>Ref</th><th>Call Date</th><th>Template</th><th>Score</th><th>Result</th><th>Fatal</th><th>Status</th></tr></thead><tbody>
-    ${[...filtered].sort((a,b)=>new Date(b.created_at)-new Date(a.created_at)).map(e=>{
-      const sc=Number(e.score); const pf=e.has_fatal?'FATAL':sc>=pm?'PASS':'FAIL';
-      return `<tr><td>#${e.ref}</td><td>${e.date||'--'}</td><td>${tplLabel(e)}</td>
-        <td class="score" style="color:${sc>=pm?'#16a34a':sc>=(pm*0.75)?'#d97706':'#dc2626'}">${sc.toFixed(2)}%</td>
-        <td class="${pf.toLowerCase()}">${pf}</td>
-        <td>${e.has_fatal?'YES':'No'}</td>
-        <td>${e.status}</td></tr>`;
-    }).join('')}
-    </tbody></table>
-  </div>
-
-  <div class="footer">XOX Contact Centre — Call Monitoring Evaluation System &nbsp;·&nbsp; Confidential &nbsp;·&nbsp; ${now}</div>
-  </body></html>`;
-
-  const win = window.open('', '_blank');
-  win.document.write(html);
-  win.document.close();
-  setTimeout(() => win.print(), 500);
-}
-
-function exportAgentReports() {
-  const data = mpAgentData || [];
-  if (!data.length) { alert('Please load Monthly Performance data first.'); return; }
-  // Generate reports for all agents one by one
-  if (!confirm(`Generate reports for all ${data.length} agents? This will open ${data.length} print windows.`)) return;
-  data.forEach((a, i) => setTimeout(() => generateAgentReport(a.name), i * 800));
-}
-
-// ===============================================
-//  IN-APP NOTIFICATIONS
-// ===============================================
-
-let _notifications = [];
-
-function addNotification(type, title, message, evalId) {
-  const n = { id: Date.now(), type, title, message, evalId, ts: new Date(), read: false };
-  _notifications.unshift(n);
-  renderNotifications();
-}
-
-function renderNotifications() {
-  const list  = document.getElementById('notifList');
-  const badge = document.getElementById('notifBadge');
-  const unread = _notifications.filter(n=>!n.read).length;
-
-  if (badge) {
-    badge.style.display = unread > 0 ? 'flex' : 'none';
-    badge.textContent = unread > 9 ? '9+' : unread;
-  }
-
-  if (!list) return;
-  if (!_notifications.length) {
-    list.innerHTML = '<div style="padding:30px;text-align:center;color:var(--text3);font-size:13px">No notifications</div>';
-    return;
-  }
-
-  const icons = { info:'ℹ️', success:'✅', warning:'⚠️', error:'🔴', pending:'⏳' };
-  list.innerHTML = _notifications.slice(0,20).map(n => `
-    <div onclick="notifClick('${n.id}')" style="padding:12px 16px;border-bottom:1px solid var(--border);cursor:pointer;
-      background:${n.read?'transparent':'rgba(79,142,247,.05)'};transition:background .15s"
-      onmouseenter="this.style.background='var(--surface2)'" onmouseleave="this.style.background='${n.read?'transparent':'rgba(79,142,247,.05)'}'">
-      <div style="display:flex;gap:10px;align-items:flex-start">
-        <span style="font-size:16px;flex-shrink:0">${icons[n.type]||'🔔'}</span>
-        <div style="flex:1;min-width:0">
-          <div style="font-size:12px;font-weight:600;color:var(--text)">${n.title}</div>
-          <div style="font-size:11px;color:var(--text3);margin-top:2px">${n.message}</div>
-          <div style="font-size:10px;color:var(--text3);margin-top:4px">${n.ts.toLocaleTimeString('en-MY',{hour:'2-digit',minute:'2-digit',hour12:true})}</div>
-        </div>
-        ${!n.read?'<div style="width:8px;height:8px;border-radius:50%;background:var(--accent);flex-shrink:0;margin-top:4px"></div>':''}
-      </div>
-    </div>`).join('');
-}
-
-function notifClick(id) {
-  const n = _notifications.find(x=>x.id==id);
-  if (!n) return;
-  n.read = true;
-  renderNotifications();
-  document.getElementById('notifPanel').style.display = 'none';
-  if (n.evalId) viewEval(n.evalId);
-}
-
-function toggleNotifPanel() {
-  const panel = document.getElementById('notifPanel');
-  if (!panel) return;
-  const isOpen = panel.style.display !== 'none';
-  panel.style.display = isOpen ? 'none' : 'block';
-  if (!isOpen) {
-    // Mark all as read when opening
-    _notifications.forEach(n => n.read = true);
-    renderNotifications();
-  }
-}
-
-function clearAllNotifs() {
-  _notifications = [];
-  renderNotifications();
-  document.getElementById('notifPanel').style.display = 'none';
-}
-
-// Close notif panel when clicking outside
-document.addEventListener('click', function(e) {
-  const panel = document.getElementById('notifPanel');
-  const bell  = document.getElementById('notifBell');
-  if (panel && bell && !panel.contains(e.target) && !bell.contains(e.target)) {
-    panel.style.display = 'none';
-  }
-});
-
-// Generate notifications from eval workflow
-function generateNotifsFromEvals(evals) {
-  _notifications = [];
-  const base  = (currentStaff?.role||'').toLowerCase();
-  const myName= (currentStaff?.name||'').toLowerCase();
-  const pm    = getPassingMark();
-
-  evals.forEach(e => {
-    // Notify TL: new eval submitted for their team
-    if (base==='tl' && e.status==='submitted' && (e.tl_name||'').toLowerCase()===myName) {
-      addNotification('pending', 'Eval Pending Your Review', `#${e.ref} — ${e.agent_name} scored ${fmtScore(e.score)}`, e.id);
-    }
-    // Notify Agent: eval approved and needs acknowledgement
-    if (base==='agent' && e.status==='tl-approved' && (e.agent_name||'').toLowerCase()===myName) {
-      addNotification('success', 'Evaluation Approved — Action Required', `#${e.ref} scored ${fmtScore(e.score)} — Please acknowledge`, e.id);
-    }
-    // Notify QA: eval disputed
-    if ((base==='qa'||base==='admin'||base==='manager') && e.status==='tl-disputed') {
-      addNotification('warning', 'TL Disputed Evaluation', `#${e.ref} — ${e.agent_name} — TL has raised a dispute`, e.id);
-    }
-    if ((base==='qa'||base==='admin'||base==='manager') && e.status==='agent-disputed') {
-      addNotification('error', 'Agent Disputed Evaluation', `#${e.ref} — ${e.agent_name} — Agent has raised a dispute`, e.id);
-    }
-    if ((base==='qa'||base==='admin'||base==='manager') && e.status==='qa-review') {
-      addNotification('warning', 'QA Review Required', `#${e.ref} — ${e.agent_name} — Please re-evaluate`, e.id);
-    }
-    // SLA breach notification
-    const sla = getSLAStatus(e);
-    if (sla?.level==='breach') {
-      addNotification('error', 'SLA Breached!', `#${e.ref} — ${e.agent_name} has been at "${e.status}" for ${sla.days} days (SLA: ${sla.sla} days)`, e.id);
-    }
-    // Fatal error notification for manager/admin
-    if ((base==='manager'||base==='admin') && e.has_fatal && e.status!=='closed') {
-      addNotification('error', 'Fatal Error Evaluation', `#${e.ref} — ${e.agent_name} has a fatal error — still open`, e.id);
-    }
-  });
-}
-
-// ===============================================
-//  CALIBRATION SESSION
-// ===============================================
-
-async function loadCalibration() {
-  // Load from Supabase
-  let sessions = [];
-  try {
-    const { data } = await supa.from('qa_calibrations').select('*').order('created_at', { ascending: false });
-    sessions = data || [];
-  } catch(e) {
-    console.warn('Calibration table not found, using localStorage fallback');
-    sessions = JSON.parse(localStorage.getItem('qa_calibrations')||'[]');
-  }
-  const el = document.getElementById('calibrationContent');
-  if (!el) return;
-
-  if (!sessions.length) {
-    el.innerHTML = '<div class="card" style="text-align:center;padding:40px"><div style="font-size:40px;margin-bottom:12px">🎯</div><div style="font-size:16px;font-weight:600;margin-bottom:8px">No Calibration Sessions Yet</div><div style="font-size:13px;color:var(--text3);margin-bottom:20px">Create a session by selecting an evaluation and letting multiple QAs score it independently</div><button class="btn btn-primary" onclick="newCalibrationSession()">+ Start First Session</button></div>';
-    return;
-  }
-
-  el.innerHTML = '<div style="display:flex;flex-direction:column;gap:12px">'
-    + sessions.map(s => `
-      <div class="card" style="padding:16px">
-        <div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:10px">
-          <div>
-            <div style="font-weight:600;font-size:14px">${s.name}</div>
-            <div style="font-size:12px;color:var(--text3)">Eval #${s.evalRef} · ${s.date} · ${s.scores.length} evaluators participated</div>
-          </div>
-          <button class="btn btn-ghost btn-sm" onclick="viewCalibrationResult('${s.id}')">View Results</button>
-        </div>
-        <div style="display:flex;gap:8px;flex-wrap:wrap">
-          ${s.scores.map(sc=>`<div style="background:var(--surface2);border-radius:6px;padding:6px 10px;text-align:center">
-            <div style="font-family:'JetBrains Mono',monospace;font-size:14px;font-weight:700;color:${Number(sc.score)>=getPassingMark()?'var(--green)':'var(--red)'}">${sc.score}%</div>
-            <div style="font-size:10px;color:var(--text3)">${sc.qa}</div>
-          </div>`).join('')}
-          ${s.scores.length>1?`<div style="background:var(--surface3);border-radius:6px;padding:6px 10px;text-align:center;border:1px dashed var(--accent)">
-            <div style="font-size:10px;color:var(--text3)">Variance</div>
-            <div style="font-family:'JetBrains Mono',monospace;font-size:14px;font-weight:700;color:var(--accent)">${Math.round(Math.sqrt(s.scores.reduce((a,sc)=>{const avg=s.scores.reduce((x,y)=>x+Number(y.score),0)/s.scores.length;return a+(Number(sc.score)-avg)**2;},0)/s.scores.length)*100)/100}</div>
-          </div>`:''}
-        </div>
-      </div>`).join('') + '</div>';
-}
-
-function newCalibrationSession() {
-  const evs = evaluations || [];
-  if (!evs.length) { alert('No evaluations loaded. Visit Dashboard first.'); return; }
-
-  document.getElementById('actionModalTitle').textContent = '🎯 New Calibration Session';
-  const body = document.getElementById('actionModalBody');
-  body.innerHTML = '';
-
-  const g1 = document.createElement('div'); g1.className='form-group';
-  const l1 = document.createElement('label'); l1.className='form-label'; l1.textContent='Session Name';
-  const i1 = document.createElement('input'); i1.className='form-input'; i1.id='calName'; i1.placeholder='e.g. June 2026 Calibration #1';
-  g1.appendChild(l1); g1.appendChild(i1); body.appendChild(g1);
-
-  const g2 = document.createElement('div'); g2.className='form-group';
-  const l2 = document.createElement('label'); l2.className='form-label'; l2.textContent='Select Evaluation to Calibrate';
-  const sel = document.createElement('select'); sel.className='form-select'; sel.id='calEvalSel';
-  const opt0 = document.createElement('option'); opt0.value=''; opt0.textContent='-- Select evaluation --'; sel.appendChild(opt0);
-  evs.forEach(e => { const o=document.createElement('option'); o.value=e.id; o.textContent=`#${e.ref} — ${e.agent_name} — ${fmtScore(e.score)} — ${e.date||''}`;sel.appendChild(o); });
-  g2.appendChild(l2); g2.appendChild(sel); body.appendChild(g2);
-
-  const g3 = document.createElement('div'); g3.className='form-group';
-  const l3 = document.createElement('label'); l3.className='form-label'; l3.textContent='Your Score for This Call (%)';
-  const i3 = document.createElement('input'); i3.className='form-input'; i3.id='calScore'; i3.type='number'; i3.min=0; i3.max=100; i3.step=0.01; i3.placeholder='e.g. 87.50';
-  g3.appendChild(l3); g3.appendChild(i3); body.appendChild(g3);
-
-  const footer = document.getElementById('actionModalFooter');
-  footer.innerHTML = '';
-  const cancelBtn = document.createElement('button'); cancelBtn.className='btn btn-ghost'; cancelBtn.textContent='Cancel';
-  cancelBtn.addEventListener('click',()=>closeModal('actionModal'));
-  const saveBtn = document.createElement('button'); saveBtn.className='btn btn-primary'; saveBtn.textContent='Create Session';
-  saveBtn.addEventListener('click', saveCalibrationSession);
-  footer.appendChild(cancelBtn); footer.appendChild(saveBtn);
-  document.getElementById('actionModal').classList.remove('hidden');
-}
-
-async function saveCalibrationSession() {
-  const name    = document.getElementById('calName')?.value.trim();
-  const evalId  = document.getElementById('calEvalSel')?.value;
-  const score   = document.getElementById('calScore')?.value;
-  if (!name||!evalId||!score) { alert('Please fill in all fields.'); return; }
-
-  const ev = (evaluations||[]).find(e=>e.id===evalId);
-  const newSession = {
-    name,
-    eval_id:   evalId,
-    eval_ref:  ev?.ref||'--',
-    created_by: currentStaff?.name||currentUser?.email,
-    created_at: new Date().toISOString(),
-    scores: [{ qa: currentStaff?.name||currentUser?.email, score: parseFloat(score).toFixed(2), ts: new Date().toISOString() }]
-  };
-
-  try {
-    const { error } = await supa.from('qa_calibrations').insert(newSession);
-    if (error) throw error;
-  } catch(e) {
-    // Fallback to localStorage
-    const sessions = JSON.parse(localStorage.getItem('qa_calibrations')||'[]');
-    newSession.id = Date.now().toString();
-    sessions.unshift(newSession);
-    localStorage.setItem('qa_calibrations', JSON.stringify(sessions));
-  }
-  closeModal('actionModal');
-  loadCalibration();
-  alert('Session created! Other QA evaluators can now add their scores from any device.');
-}
-
-async function viewCalibrationResult(sessionId) {
-  let s = null;
-  try {
-    const { data } = await supa.from('qa_calibrations').select('*').eq('id', sessionId).single();
-    s = data;
-  } catch(e) {
-    const sessions = JSON.parse(localStorage.getItem('qa_calibrations')||'[]');
-    s = sessions.find(x => String(x.id) === String(sessionId));
-  }
-  if (!s) { alert('Session not found.'); return; }
-
-  const myName = currentStaff?.name || currentUser?.email;
-  const alreadyScored = (s.scores||[]).find(sc => sc.qa === myName);
-  if (!alreadyScored && (currentStaff?.role==='qa'||currentStaff?.role==='admin')) {
-        const existing = (s.scores||[]).map(sc=>sc.qa+': '+sc.score+'%').join(', ');
-    const addScore = confirm('Add your score to this calibration? Existing: ' + existing);
-        if (addScore) {
-      const myScore = prompt('Enter your score for Eval #'+(s.eval_ref||s.evalRef||'--')+' (0-100):');
-      if (myScore && !isNaN(myScore)) {
-        const updated = [...(s.scores||[]), { qa: myName, score: parseFloat(myScore).toFixed(2), ts: new Date().toISOString() }];
-        try { await supa.from('qa_calibrations').update({ scores: updated }).eq('id', sessionId); } catch(e) {}
-        s.scores = updated;
-      }
-    }
-  }
-
-  const scores = s.scores || [];
-  const avg = scores.length ? scores.reduce((a,sc)=>a+Number(sc.score),0)/scores.length : 0;
-  const variance = scores.length>1 ? Math.sqrt(scores.reduce((a,sc)=>a+(Number(sc.score)-avg)**2,0)/scores.length) : 0;
-    const lines = scores.map(sc=>sc.qa+': '+sc.score+'%').join(', ');
-  const msg = variance>5?'HIGH variance — calibration needed!':variance>2?'Moderate variance':'Good consistency';
-    alert('Calibration: '+s.name+' | Eval #'+(s.eval_ref||s.evalRef||'--')+' | Scores: '+lines+' | Avg: '+avg.toFixed(2)+'% | Variance: '+variance.toFixed(2)+' | '+msg);
-  loadCalibration();
-}
-
-// ===============================================
-//  TEAM COMPARISON
-// ===============================================
-
-async function loadTeamComparison() {
-  const all = evaluations && evaluations.length > 0 ? evaluations : await loadEvals();
-  evaluations = all;
-
-  // Populate month filter
-  const months = new Set();
-  all.forEach(e => { const d=e.date||(e.created_at||'').slice(0,10); if(d){const dt=new Date(d);if(!isNaN(dt))months.add(`${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,'0')}`);} });
-  const tcSel = document.getElementById('tcMonth');
-  if(tcSel && tcSel.options.length<=1) { [...months].sort().reverse().forEach(m=>{const[yr,mo]=m.split('-');const o=document.createElement('option');o.value=m;o.textContent=new Date(yr,mo-1,1).toLocaleDateString('en-MY',{month:'long',year:'numeric'});tcSel.appendChild(o);}); }
-
-  const selMonth = tcSel?.value||'';
-  const filtered = selMonth ? all.filter(e=>{const d=e.date||(e.created_at||'').slice(0,10);if(!d)return false;const dt=new Date(d);if(isNaN(dt))return false;return `${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,'0')}`===selMonth;}) : all;
-
-  // Group by TL
-  const tlMap = {};
-  filtered.forEach(e => {
-    const tl = e.tl_name || 'Unknown';
-    if(!tlMap[tl]) tlMap[tl] = { tl, evals:[], agents:new Set() };
-    tlMap[tl].evals.push(e);
-    if(e.agent_name) tlMap[tl].agents.add(e.agent_name);
-  });
-
-  const pm = getPassingMark();
-  const tlArr = Object.values(tlMap).map(t => {
-    const scores = t.evals.map(e=>Number(e.score)).filter(s=>!isNaN(s));
-    const avg    = scores.length ? Math.round(scores.reduce((a,b)=>a+b,0)/scores.length*100)/100 : 0;
-    const pass   = t.evals.filter(e=>!e.has_fatal&&Number(e.score)>=pm).length;
-    const fatal  = t.evals.filter(e=>e.has_fatal).length;
-    const passRate = t.evals.length ? Math.round(pass/t.evals.length*100) : 0;
-    return { ...t, avg, pass, fatal, passRate, count:t.evals.length };
-  }).sort((a,b) => b.avg - a.avg);
-
-  const maxAvg = Math.max(...tlArr.map(t=>t.avg), 1);
-  const el = document.getElementById('teamCompareContent');
-  if(!el) return;
-
-  if(!tlArr.length) { el.innerHTML='<div class="empty-state"><div class="icon">📊</div><p>No data available.</p></div>'; return; }
-
-  const medals = ['🥇','🥈','🥉'];
-  el.innerHTML = '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:16px">'
-    + tlArr.map((t,i) => {
-      const color = t.avg>=pm?'var(--green)':t.avg>=(pm*0.75)?'var(--amber)':'var(--red)';
-      const barW  = Math.round(t.avg/maxAvg*100);
-      return `<div class="card" style="margin-bottom:0;padding:16px">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
-          <div><div style="font-weight:700;font-size:14px">${medals[i]||'  '} ${t.tl}</div>
-          <div style="font-size:11px;color:var(--text3)">${t.agents.size} agents · ${t.count} evals</div></div>
-          <div style="font-family:'JetBrains Mono',monospace;font-size:32px;font-weight:700;color:${color}">${t.avg.toFixed(2)}%</div>
-        </div>
-        <div style="height:8px;background:var(--surface3);border-radius:4px;overflow:hidden;margin-bottom:12px">
-          <div style="height:100%;width:${barW}%;background:${color};border-radius:4px"></div>
-        </div>
-        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;text-align:center">
-          <div style="background:var(--surface2);border-radius:6px;padding:8px">
-            <div style="font-size:16px;font-weight:700;color:var(--green)">${t.pass}</div>
-            <div style="font-size:10px;color:var(--text3)">Pass</div>
-          </div>
-          <div style="background:var(--surface2);border-radius:6px;padding:8px">
-            <div style="font-size:16px;font-weight:700;color:${t.passRate>=80?'var(--green)':t.passRate>=60?'var(--amber)':'var(--red)'}">${t.passRate}%</div>
-            <div style="font-size:10px;color:var(--text3)">Pass Rate</div>
-          </div>
-          <div style="background:var(--surface2);border-radius:6px;padding:8px">
-            <div style="font-size:16px;font-weight:700;color:${t.fatal>0?'var(--red)':'var(--green)'}">${t.fatal}</div>
-            <div style="font-size:10px;color:var(--text3)">Fatal</div>
-          </div>
-        </div>
-      </div>`;
-    }).join('') + '</div>';
-}
-
-// ===============================================
-//  QA CONSISTENCY REPORT
-// ===============================================
-
-async function loadQAConsistency() {
-  const all = evaluations && evaluations.length > 0 ? evaluations : await loadEvals();
-  evaluations = all;
-
-  const qcSel = document.getElementById('qcMonth');
-  if(qcSel && qcSel.options.length<=1) {
-    const months=new Set(); all.forEach(e=>{const d=e.date||(e.created_at||'').slice(0,10);if(d){const dt=new Date(d);if(!isNaN(dt))months.add(`${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,'0')}`);} });
-    [...months].sort().reverse().forEach(m=>{const[yr,mo]=m.split('-');const o=document.createElement('option');o.value=m;o.textContent=new Date(yr,mo-1,1).toLocaleDateString('en-MY',{month:'long',year:'numeric'});qcSel.appendChild(o);});
-  }
-
-  const selMonth = qcSel?.value||'';
-  const filtered = selMonth ? all.filter(e=>{const d=e.date||(e.created_at||'').slice(0,10);if(!d)return false;const dt=new Date(d);if(isNaN(dt))return false;return `${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,'0')}`===selMonth;}) : all;
-
-  const qaMap = {};
-  filtered.forEach(e => {
-    const qa = e.qa_user_name||'Unknown';
-    if(!qaMap[qa]) qaMap[qa] = { qa, scores:[], fatal:0, count:0 };
-    qaMap[qa].count++;
-    qaMap[qa].scores.push(Number(e.score));
-    if(e.has_fatal) qaMap[qa].fatal++;
-  });
-
-  const qaArr = Object.values(qaMap).map(q => {
-    const avg = q.scores.length ? Math.round(q.scores.reduce((a,b)=>a+b,0)/q.scores.length*100)/100 : 0;
-    const min = Math.min(...q.scores);
-    const max = Math.max(...q.scores);
-    const variance = q.scores.length>1 ? Math.round(Math.sqrt(q.scores.reduce((a,b)=>a+(b-avg)**2,0)/q.scores.length)*100)/100 : 0;
-    return { ...q, avg, min, max, variance };
-  }).sort((a,b) => b.count - a.count);
-
-  const overallAvg = filtered.length ? Math.round(filtered.reduce((a,e)=>a+Number(e.score),0)/filtered.length*100)/100 : 0;
-
-  const el = document.getElementById('qaConsistencyContent');
-  if(!el) return;
-
-  if(!qaArr.length) { el.innerHTML='<div class="empty-state"><div class="icon">⚖️</div><p>No data available.</p></div>'; return; }
-
-  el.innerHTML = `<div class="card" style="margin-bottom:16px;padding:14px">
-    <div style="font-size:12px;color:var(--text3);margin-bottom:4px">Overall Average Score across all QA evaluators</div>
-    <div style="font-size:32px;font-weight:700;font-family:'JetBrains Mono',monospace;color:var(--accent)">${overallAvg.toFixed(2)}%</div>
-  </div>
-  <div class="card"><table class="eval-table">
-    <thead><tr><th>QA Evaluator</th><th>Evals</th><th>Avg Score</th><th>Lowest Given</th><th>Highest Given</th><th>Variance</th><th>vs Overall</th><th>Fatal Flags</th></tr></thead>
-    <tbody>${qaArr.map(q => {
-      const diff = Math.round((q.avg - overallAvg)*100)/100;
-      const diffColor = diff>2?'var(--amber)':diff<-2?'var(--amber)':'var(--green)';
-      const diffStr = diff>0?'+'+diff.toFixed(2)+'%':diff.toFixed(2)+'%';
-      const varColor = q.variance>5?'var(--red)':q.variance>2?'var(--amber)':'var(--green)';
-      return `<tr>
-        <td style="font-weight:600">${q.qa}</td>
-        <td style="text-align:center;font-family:'JetBrains Mono',monospace">${q.count}</td>
-        <td><span class="score-badge ${scoreClass(q.avg)}">${q.avg.toFixed(2)}%</span></td>
-        <td style="font-family:'JetBrains Mono',monospace;color:var(--red)">${q.min.toFixed(2)}%</td>
-        <td style="font-family:'JetBrains Mono',monospace;color:var(--green)">${q.max.toFixed(2)}%</td>
-        <td style="font-family:'JetBrains Mono',monospace;color:${varColor}">${q.variance.toFixed(2)}</td>
-        <td style="font-weight:700;color:${diffColor}">${diffStr}</td>
-        <td style="text-align:center;color:${q.fatal>0?'var(--red)':'var(--green)'}">${q.fatal}</td>
-      </tr>`;
-    }).join('')}</tbody>
-  </table>
-  <div style="padding:12px;background:var(--surface2);border-radius:var(--radius);margin-top:12px;font-size:12px;color:var(--text3)">
-    ℹ️ <strong>Variance</strong> measures consistency — lower is better. A QA with high variance scores very differently across calls.
-    <strong>vs Overall</strong> shows if a QA consistently scores higher or lower than the team average — useful for calibration sessions.
-  </div></div>`;
-}
-
-// ===============================================
-//  AUDIT LOG
-// ===============================================
-
-async function loadAuditLog() {
-  const all = evaluations && evaluations.length > 0 ? evaluations : await loadEvals();
-  evaluations = all;
-
-  const filterAction = (document.getElementById('alFilter')?.value||'').toLowerCase();
-  const search       = (document.getElementById('alSearch')?.value||'').toLowerCase();
-
-  // Flatten all workflow entries across all evals
-  const entries = [];
-  all.forEach(e => {
-    (e.workflow||[]).forEach(w => {
-      entries.push({
-        ts:    w.ts || '',
-        ref:   e.ref,
-        evalId:e.id,
-        agent: e.agent_name||'--',
-        action:w.action||'',
-        by:    w.by||'--',
-        note:  w.note||'',
-        role:  w.role||''
-      });
-    });
-    // Also add the initial submission
-    if(e.created_at) {
-      entries.push({
-        ts:    e.created_at,
-        ref:   e.ref,
-        evalId:e.id,
-        agent: e.agent_name||'--',
-        action:'Submitted',
-        by:    e.qa_user_name||'--',
-        note:  '',
-        role:  'qa'
-      });
-    }
-  });
-
-  // Sort by timestamp descending
-  entries.sort((a,b) => new Date(b.ts) - new Date(a.ts));
-
-  // Apply filters
-  const filtered = entries.filter(e => {
-    const matchAction = !filterAction || e.action.toLowerCase().includes(filterAction);
-    const matchSearch = !search || e.agent.toLowerCase().includes(search) || e.by.toLowerCase().includes(search) || e.action.toLowerCase().includes(search);
-    return matchAction && matchSearch;
-  });
-
-  const tbody = document.getElementById('auditLogBody');
-  if(!tbody) return;
-
-  if(!filtered.length) { tbody.innerHTML='<tr><td colspan="6"><div class="empty-state"><div class="icon">📜</div><p>No audit entries found.</p></div></td></tr>'; return; }
-
-  const actionColor = (action) => {
-    const a = action.toLowerCase();
-    if(a.includes('approv')||a.includes('closed')||a.includes('acknowledged')) return 'var(--green)';
-    if(a.includes('disput')) return 'var(--amber)';
-    if(a.includes('fatal')||a.includes('fail')) return 'var(--red)';
-    if(a.includes('submit')) return 'var(--accent)';
-    return 'var(--text2)';
-  };
-
-  tbody.innerHTML = filtered.slice(0, 200).map(e => {
-    const dt = e.ts ? new Date(e.ts).toLocaleString('en-MY',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit',hour12:true}) : '--';
-    return `<tr style="cursor:pointer" onclick="viewEval('${e.evalId}')">
-      <td style="font-size:11px;color:var(--text3);white-space:nowrap">${dt}</td>
-      <td><span style="font-family:'JetBrains Mono',monospace;color:var(--accent);font-size:12px">#${e.ref}</span></td>
-      <td style="font-size:12px">${e.agent}</td>
-      <td><span style="font-size:12px;font-weight:600;color:${actionColor(e.action)}">${e.action}</span></td>
-      <td style="font-size:12px;color:var(--text2)">${e.by}</td>
-      <td style="font-size:11px;color:var(--text3);max-width:250px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${e.note}">${e.note||'--'}</td>
-    </tr>`;
-  }).join('');
-}
-
-// ===============================================
-//  AGENT SELF-VIEW DASHBOARD
-// ===============================================
-
-async function loadAgentDashboard() {
-  const all = evaluations && evaluations.length > 0 ? evaluations : await loadEvals();
-  evaluations = all;
-
-  // Filter to this agent's evals only
-  const myName = (currentStaff?.name||'').toLowerCase().trim();
-  const myEvals = all.filter(e => (e.agent_name||'').toLowerCase().trim() === myName);
-
-  // Populate month filter
-  const months = new Set();
-  myEvals.forEach(e => {
-    const d = e.date||(e.created_at||'').slice(0,10);
-    if(d){ const dt=new Date(d); if(!isNaN(dt)) months.add(`${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,'0')}`); }
-  });
-  const moSel = document.getElementById('agentDashMonth');
-  if(moSel){ const cur=moSel.value; moSel.innerHTML='<option value="">All Time</option>'+[...months].sort().reverse().map(m=>{const[yr,mo]=m.split('-');return`<option value="${m}">${new Date(yr,mo-1,1).toLocaleDateString('en-MY',{month:'long',year:'numeric'})}</option>`;}).join(''); if(cur) moSel.value=cur; }
-
-  const selMonth = moSel?.value||'';
-  const filtered = selMonth ? myEvals.filter(e=>{ const d=e.date||(e.created_at||'').slice(0,10); if(!d) return false; const dt=new Date(d); if(isNaN(dt)) return false; return `${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,'0')}`===selMonth; }) : myEvals;
-
-  const pm = getPassingMark();
-  const scores = filtered.map(e=>Number(e.score)).filter(s=>!isNaN(s));
-  const avg    = scores.length ? Math.round(scores.reduce((a,b)=>a+b,0)/scores.length*100)/100 : 0;
-  const pass   = filtered.filter(e=>!e.has_fatal&&Number(e.score)>=pm).length;
-  const fail   = filtered.length - pass;
-  const pend   = filtered.filter(e=>e.status==='tl-approved').length;
-
-  document.getElementById('ad-total').textContent = filtered.length;
-  document.getElementById('ad-avg').textContent   = avg.toFixed(2)+'%';
-  document.getElementById('ad-avg').style.color   = avg>=pm?'var(--green)':avg>=(pm*0.75)?'var(--amber)':'var(--red)';
-  document.getElementById('ad-pass').textContent  = pass;
-  document.getElementById('ad-fail').textContent  = fail;
-  document.getElementById('ad-pending').textContent = pend;
-
-  // Score trend chart
-  const sorted = [...filtered].sort((a,b)=>new Date(a.created_at)-new Date(b.created_at));
-  const trendEl = document.getElementById('agentTrendChart');
-  if(trendEl){
-    if(!sorted.length){ trendEl.innerHTML='<div class="text-sm" style="text-align:center;padding:20px;color:var(--text3)">No evaluations yet.</div>'; }
-    else {
-      const maxScore=100;
-      trendEl.innerHTML = sorted.map((e,i)=>{
-        const sc=Number(e.score); const color=sc>=pm?'var(--green)':sc>=(pm*0.75)?'var(--amber)':'var(--red)';
-        const barW=Math.round(sc); const dt=e.date||e.created_at?.slice(0,10)||'--';
-        return `<div style="display:grid;grid-template-columns:60px 80px 1fr 70px;gap:10px;align-items:center;padding:4px 0">
-          <span style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--text3)">#${e.ref}</span>
-          <span style="font-size:11px;color:var(--text3)">${dt}</span>
-          <div style="height:16px;background:var(--surface3);border-radius:3px;overflow:hidden;position:relative">
-            <div style="height:100%;width:${barW}%;background:${color};border-radius:3px"></div>
-            <div style="position:absolute;right:4px;top:0;line-height:16px;font-size:10px;color:var(--text)">${e.has_fatal?'FATAL':''}</div>
-          </div>
-          <span style="font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:700;color:${color}">${sc.toFixed(2)}%</span>
-        </div>`;
-      }).join('');
-    }
-  }
-
-  // Areas to improve - aggregate question failures
-  const failMap = {};
-  filtered.forEach(e=>{
-    const qs=e.questions||[]; const ans=e.answers||{};
-    qs.forEach(q=>{ const a=ans[q.id]; if(!a) return; if(Number(a.score||0)===0){ if(!failMap[q.q]) failMap[q.q]={q:q.q,num:q.num,count:0,total:0}; failMap[q.q].count++; } failMap[q.q] = failMap[q.q]||{q:q.q,num:q.num,count:0,total:0}; failMap[q.q].total++; });
-  });
-  const failArr = Object.values(failMap).filter(f=>f.total>0).sort((a,b)=>b.count-a.count).slice(0,5);
-  const failEl = document.getElementById('agentFailList');
-  if(failEl){
-    if(!failArr.length){ failEl.innerHTML='<div class="text-sm" style="text-align:center;padding:20px;color:var(--green)">Great job! No recurring failures detected.</div>'; }
-    else{ failEl.innerHTML=failArr.map(f=>{ const rate=Math.round(f.count/f.total*100); const color=rate>=50?'var(--red)':rate>=25?'var(--amber)':'var(--green)'; return`<div style="display:flex;align-items:center;gap:12px;padding:8px 0;border-bottom:1px solid var(--border)"><span style="font-size:10px;color:var(--text3);width:40px">${f.num}</span><span style="flex:1;font-size:12px">${f.q}</span><span style="font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:700;color:${color}">${rate}%</span></div>`; }).join(''); }
-  }
-
-  // Coaching notes from TL
-  const coachEl = document.getElementById('agentCoachingNotes');
-  if(coachEl){
-    const notes = filtered.flatMap(e=>(e.workflow||[]).filter(w=>w.action&&w.action.toLowerCase().includes('approv')&&w.note).map(w=>({ref:e.ref,note:w.note,by:w.by,ts:w.ts,tags:e.coaching_tags||[]})));
-    if(!notes.length){ coachEl.innerHTML='<div class="text-sm" style="text-align:center;padding:20px;color:var(--text3)">No coaching notes yet.</div>'; }
-    else{ coachEl.innerHTML=notes.map(n=>`<div style="padding:12px;background:var(--surface2);border-radius:var(--radius);margin-bottom:8px;border-left:3px solid var(--accent)"><div style="display:flex;justify-content:space-between;margin-bottom:6px"><span style="font-size:11px;font-weight:600;color:var(--accent)">Eval #${n.ref} — ${n.by||'TL'}</span><span style="font-size:10px;color:var(--text3)">${n.ts?new Date(n.ts).toLocaleDateString('en-MY'):''}</span></div><div style="font-size:12px;color:var(--text2)">${n.note}</div></div>`).join(''); }
-  }
-
-  // Eval history table
-  const tbody = document.getElementById('agentEvalHistory');
-  if(tbody){
-    const sorted2=[...filtered].sort((a,b)=>new Date(b.created_at)-new Date(a.created_at));
-    if(!sorted2.length){ tbody.innerHTML='<tr><td colspan="9"><div class="empty-state"><div class="icon">📋</div><p>No evaluations yet.</p></div></td></tr>'; }
-    else{ tbody.innerHTML=sorted2.map(e=>{
-      const pm2=getPassingMark(); const pf=e.has_fatal?'FATAL':Number(e.score)>=pm2?'PASS':'FAIL'; const pfColor=pf==='PASS'?'var(--green)':pf==='FATAL'||pf==='FAIL'?'var(--red)':'var(--text3)';
-      const tlNote=(e.workflow||[]).find(w=>w.action&&w.action.toLowerCase().includes('approv')&&w.note)?.note||'';
-      return`<tr style="cursor:pointer" onclick="viewEval('${e.id}')">
-        <td><span style="font-family:'JetBrains Mono',monospace;color:var(--accent)">#${e.ref}</span></td>
-        <td><span class="pill" style="font-size:10px">${tplLabel(e)}</span></td>
-        <td><span class="score-badge ${scoreClass(e.score)}">${fmtScore(e.score)}</span></td>
-        <td><span style="font-weight:700;color:${pfColor}">${pf}</span></td>
-        <td>${e.has_fatal?'<span style="color:var(--red)">⛔</span>':'<span style="color:var(--green)">✅</span>'}</td>
-        <td>${statusBadge(e.status)}</td>
-        <td style="font-size:11px;color:var(--text3)">${e.date||'--'}</td>
-        <td style="font-size:11px;color:var(--text2);max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${tlNote}">${tlNote||'--'}</td>
-        <td><button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();viewEval('${e.id}')">View</button></td>
-      </tr>`;
-    }).join(''); }
-  }
 }
 
 // ===============================================
@@ -6249,10 +5177,7 @@ function renderPipeline() {
       </td>
       <td style="font-size:12px;color:${stage.color};font-weight:500">${isClosed?'--':stage.waitingOn}</td>
       <td style="font-size:11px;color:var(--text3)">${sinceStr}</td>
-      <td style="font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:700;color:${daysColor}">
-        ${isClosed?'--':daysLabel}
-        ${(() => { const s=getSLAStatus(e); if(!s||s.level==='ok') return ''; return s.level==='breach'?'<span style="font-size:10px;background:rgba(239,68,68,.15);color:var(--red);padding:1px 5px;border-radius:8px;margin-left:4px">SLA!</span>':'<span style="font-size:10px;background:rgba(245,158,11,.15);color:var(--amber);padding:1px 5px;border-radius:8px;margin-left:4px">Due</span>'; })()}
-      </td>
+      <td style="font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:700;color:${daysColor}">${isClosed?'--':daysLabel}</td>
       <td onclick="event.stopPropagation()" style="display:flex;gap:5px;flex-wrap:wrap">
         ${!isClosed && e.status==='submitted' && canActAs('tl') ? `
           <button class="btn btn-success btn-sm" onclick="event.stopPropagation();tlAction('${e.id}','approve')">✓</button>
@@ -6608,6 +5533,240 @@ function supabaseLoadFailed() {
   }, 2000);
 }
 
+
+// ==============================================
+//  EXPORT
+// ==============================================
+async function exportEvals(fmt) {
+  setLoading(false);
+  var all = evaluations && evaluations.length > 0 ? evaluations : null;
+  if (!all) { alert('Please load the Dashboard first, then export.'); return; }
+  var calMap = {};
+  try {
+    var cr = await supa.from('qa_calibrations').select('*');
+    (cr.data||[]).forEach(function(c){ calMap[c.eval_id]=c; });
+  } catch(e){}
+  var dateType = (document.getElementById('evFilter_dateType')||{}).value||'call';
+  var dateFrom = (document.getElementById('evFilter_dateFrom')||{}).value||'';
+  var dateTo   = (document.getElementById('evFilter_dateTo')||{}).value||'';
+  var status   = (document.getElementById('evFilter_status')||{}).value||'';
+  var fatal    = (document.getElementById('evFilter_fatal')||{}).value||'';
+  var tl       = (document.getElementById('evFilter_tl')||{}).value||'';
+  var qa       = (document.getElementById('evFilter_qa')||{}).value||'';
+  var search   = ((document.getElementById('evFilter_search')||{}).value||'').toLowerCase();
+  var hasF     = dateFrom||dateTo||status||fatal||tl||qa||search;
+  var pm       = getPassingMark();
+  var rows     = (hasF ? all.filter(function(e){
+    if(status && e.status!==status) return false;
+    if(fatal==='yes'&&!e.has_fatal) return false;
+    if(fatal==='no'&&e.has_fatal) return false;
+    if(tl && e.tl_name!==tl) return false;
+    if(qa && e.qa_user_name!==qa) return false;
+    if(search && !(e.agent_name||'').toLowerCase().includes(search)) return false;
+    if(dateFrom||dateTo){
+      var ds = dateType==='eval'?(e.created_at||'').slice(0,10):e.date||'';
+      if(!ds) return false;
+      var d = new Date(ds); if(isNaN(d)) return false;
+      if(dateFrom && d<new Date(dateFrom)) return false;
+      if(dateTo && d>new Date(dateTo+'T23:59:59')) return false;
+    }
+    return true;
+  }) : all).map(function(e){
+    var cal = calMap[e.id]||null;
+    var wf  = e.workflow||[];
+    var getWF = function(action,field){ var w=wf.find(function(x){return x.action&&x.action.toLowerCase().includes(action);}); return w?(field==='ts'?new Date(w.ts).toLocaleString('en-MY'):w[field]||''):''; };
+    var qA = {};
+    (e.questions||[]).forEach(function(q){ var a=(e.answers||{})[q.id]||{}; qA['Q'+q.num+' Answer']=a.val||''; qA['Q'+q.num+' Score']=a.score!==undefined?a.score:''; });
+    var complaint = e.complaint||{};
+    return Object.assign({
+      'Ref':'#'+(e.ref||''),
+      'Tag':e.eval_tag||'',
+      'Template':tplLabel(e),
+      'Agent':e.agent_name||'',
+      'TL':e.tl_name||'',
+      'QA':e.qa_user_name||'',
+      'Call Date':e.date||'',
+      'Score (%)':e.score!==null?Number(e.score).toFixed(2):'',
+      'Fatal':e.has_fatal?'YES':'No',
+      'Pass/Fail':Number(e.score)>=pm?'PASS':'FAIL',
+      'Status':e.status||'',
+      'QA Submitted':e.created_at?new Date(e.created_at).toLocaleString('en-MY'):'',
+      'TL Action':getWF('approv','ts')||getWF('disput','ts'),
+      'TL Notes':getWF('approv','note')||getWF('disput','note'),
+      'Agent Ack':getWF('acknowledged','ts'),
+      'Calibrated':cal?'Yes':'No',
+      'Manager Score':cal&&cal.manager_score!==undefined?Number(cal.manager_score).toFixed(2):'',
+      'Calibrated By':cal?cal.calibrated_by||'':'',
+      'Score Diff':cal&&cal.difference!==undefined?cal.difference:'',
+      'Cal Notes':cal?cal.notes||'':'',
+      'Complaint Ref':complaint.ref||'',
+      'Complaint Summary':complaint.summary||''
+    }, qA);
+  });
+  if(!rows.length){alert('No evaluations to export.');return;}
+  var fname='XOX_QA_'+new Date().toISOString().slice(0,10);
+  if(fmt==='csv') dlCSV(rows,fname+'.csv'); else dlXLSX(rows,fname+'.xlsx');
+}
+function dlCSV(rows,fname){
+  var h=Object.keys(rows[0]);
+  var esc=function(v){return '"'+String(v||'').replace(/"/g,'""')+'"';};
+  var lines=[h.map(esc).join(',')];
+  rows.forEach(function(r){lines.push(h.map(function(k){return esc(r[k]||'');}).join(','));});
+  var blob=new Blob(['\uFEFF'+lines.join('\r\n')],{type:'text/csv;charset=utf-8;'});
+  var a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=fname;a.click();
+}
+function dlXLSX(rows,fname){
+  if(typeof XLSX!=='undefined'){
+    var ws=XLSX.utils.json_to_sheet(rows);
+    var h=Object.keys(rows[0]);
+    ws['!cols']=h.map(function(k){return{wch:Math.min(50,Math.max(k.length+2,10))};});
+    var wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,'Evals');XLSX.writeFile(wb,fname);
+  } else { dlCSV(rows,fname.replace('.xlsx','.csv')); }
+}
+
+// ==============================================
+//  CALIBRATION
+// ==============================================
+async function loadCalibration(){
+  var el=document.getElementById('calibrationContent');
+  if(!el) return;
+  el.innerHTML='<div style="text-align:center;padding:30px;color:var(--text3)">Loading...</div>';
+  var all=evaluations&&evaluations.length>0?evaluations:await loadEvals();
+  evaluations=all;
+  var calResults=[];
+  try{ var cr=await supa.from('qa_calibrations').select('*'); calResults=cr.data||[]; }
+  catch(e){ calResults=JSON.parse(localStorage.getItem('qa_calibrations')||'[]'); }
+  var calMap={};
+  calResults.forEach(function(c){calMap[c.eval_id]=c;});
+  var closed=all.filter(function(e){return e.status==='closed';});
+  var sel=document.getElementById('calMonthFilter');
+  var months=new Set();
+  closed.forEach(function(e){var d=e.date||(e.created_at||'').slice(0,10);if(d){var dt=new Date(d);if(!isNaN(dt))months.add(dt.getFullYear()+'-'+String(dt.getMonth()+1).padStart(2,'0'));}});
+  if(sel&&sel.options.length<=1){[...months].sort().reverse().forEach(function(m){var p=m.split('-');var o=document.createElement('option');o.value=m;o.textContent=new Date(p[0],p[1]-1,1).toLocaleDateString('en-MY',{month:'long',year:'numeric'});sel.appendChild(o);});}
+  var selM=sel?sel.value:'';
+  var filtered=selM?closed.filter(function(e){var d=e.date||(e.created_at||'').slice(0,10);if(!d)return false;var dt=new Date(d);if(isNaN(dt))return false;return dt.getFullYear()+'-'+String(dt.getMonth()+1).padStart(2,'0')===selM;}):closed;
+  if(!filtered.length){el.innerHTML='<div class="card" style="text-align:center;padding:40px"><div style="font-size:40px">🎯</div><div style="font-size:14px;color:var(--text3);margin-top:8px">No closed evaluations found.</div></div>';return;}
+  var pm=getPassingMark();
+  el.innerHTML='<div style="display:flex;flex-direction:column;gap:10px">'+filtered.map(function(e){
+    var cal=calMap[e.id];
+    var calScore=cal&&cal.manager_score!==undefined?Number(cal.manager_score):null;
+    var diff=calScore!==null?Math.round((calScore-Number(e.score))*100)/100:null;
+    var dc=diff===null?'':Math.abs(diff)>5?'var(--red)':Math.abs(diff)>2?'var(--amber)':'var(--green)';
+    return '<div class="card" style="padding:14px;margin-bottom:0"><div style="display:grid;grid-template-columns:1fr auto;gap:12px;align-items:center">'
+      +'<div><div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;flex-wrap:wrap">'
+      +'<span style="font-family:\'JetBrains Mono\',monospace;color:var(--accent);font-size:12px">#'+e.ref+'</span>'
+      +'<span style="font-weight:600;font-size:13px">'+e.agent_name+'</span>'
+      +'<span class="pill" style="font-size:10px">'+tplLabel(e)+'</span>'
+      +'<span style="font-size:11px;color:var(--text3)">'+e.date+'</span></div>'
+      +'<div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap">'
+      +'<div><div style="font-size:10px;color:var(--text3)">QA: '+e.qa_user_name+'</div>'
+      +'<span class="score-badge '+scoreClass(e.score)+'">'+fmtScore(e.score)+'</span></div>'
+      +(calScore!==null?'<span style="color:var(--text3);font-size:18px">→</span>'
+        +'<div><div style="font-size:10px;color:var(--text3)">Manager: '+(cal.calibrated_by||'--')+'</div>'
+        +'<span class="score-badge '+scoreClass(calScore)+'">'+calScore.toFixed(2)+'%</span></div>'
+        +'<div style="background:var(--surface2);border-radius:6px;padding:4px 10px;text-align:center">'
+        +'<div style="font-size:10px;color:var(--text3)">Diff</div>'
+        +'<div style="font-family:\'JetBrains Mono\',monospace;font-size:14px;font-weight:700;color:'+dc+'">'+(diff>0?'+':'')+diff+'%</div></div>'
+        +(Math.abs(diff)>5?'<span style="font-size:11px;color:var(--red);font-weight:600">⚠️ Review needed</span>':'')
+        +(Math.abs(diff)<=2?'<span style="font-size:11px;color:var(--green)">✅ Consistent</span>':'')
+        :'<span style="font-size:12px;color:var(--text3)">Not yet calibrated</span>')
+      +'</div>'+(cal&&cal.notes?'<div style="margin-top:6px;font-size:11px;color:var(--text2);font-style:italic">'+cal.notes+'</div>':'')+'</div>'
+      +'<div style="display:flex;flex-direction:column;gap:6px;align-items:flex-end">'
+      +'<button class="btn btn-primary btn-sm" onclick="startCalibration(\''+e.id+'\')">'+( calScore!==null?'🔄 Re-evaluate':'🎯 Calibrate')+'</button>'
+      +'<button class="btn btn-ghost btn-sm" onclick="viewEval(\''+e.id+'\')">View</button>'
+      +'</div></div></div>';
+  }).join('')+'</div>';
+}
+
+async function startCalibration(evalId){
+  var ev=(evaluations||[]).find(function(e){return e.id===evalId;});
+  if(!ev){return;}
+  var isGen=(ev.call_category||'').toLowerCase().includes('gen');
+  var allQs=(STD_QS||[]).concat(isGen?(GEN_QS||[]):[]);
+  var fatals=FATALS||[];
+  var qaAnswers=ev.answers||{};
+  document.getElementById('actionModalTitle').textContent='🎯 Calibration — Eval #'+ev.ref+' ('+ev.agent_name+')';
+  var body=document.getElementById('actionModalBody');
+  var html='<div style="background:var(--surface2);border-radius:6px;padding:10px 14px;margin-bottom:12px;font-size:12px">'
+    +'<strong>Agent:</strong> '+ev.agent_name+' · <strong>Call Date:</strong> '+ev.date+' · <strong>Template:</strong> '+tplLabel(ev)+'<br>'
+    +'<strong>Original QA score:</strong> <span style="font-weight:700;color:var(--accent)">'+fmtScore(ev.score)+'</span> by '+ev.qa_user_name
+    +'<br><em style="color:var(--text3)">Score this call independently — your score will be compared with the QA score.</em></div>'
+    +'<div style="max-height:55vh;overflow-y:auto">';
+  allQs.forEach(function(q){
+    var qaAns=qaAnswers[q.id];
+    if(!qaAns){var mq=(ev.questions||[]).find(function(x){return x.num===q.num||x.q===q.q;});if(mq)qaAns=qaAnswers[mq.id];}
+    var qaVal=qaAns?qaAns.val:'--';
+    var qaSc=qaAns&&qaAns.score!==undefined?qaAns.score:'--';
+    var qaColor=qaVal==='--'?'var(--text3)':Number(qaSc)===0?'var(--red)':Number(qaSc)<q.wt?'var(--amber)':'var(--green)';
+    html+='<div style="margin-bottom:10px;padding:10px;background:var(--surface2);border-radius:6px">'
+      +'<div style="display:flex;justify-content:space-between;margin-bottom:6px">'
+      +'<span style="font-size:12px;font-weight:600">'+q.num+' '+q.q+' <span style="color:var(--text3)">('+q.wt+'pts)</span></span>'
+      +'<span style="font-size:11px;color:'+qaColor+'">QA: <strong>'+qaVal+'</strong> ('+qaSc+'pts)</span></div>'
+      +'<div style="display:flex;gap:8px;flex-wrap:wrap">'
+      +'<label style="display:flex;align-items:center;gap:4px;cursor:pointer;font-size:12px"><input type="radio" name="cal_q_'+q.id+'" value="full" data-wt="'+q.wt+'"> Yes/Full ('+q.wt+'pts)</label>'
+      +'<label style="display:flex;align-items:center;gap:4px;cursor:pointer;font-size:12px"><input type="radio" name="cal_q_'+q.id+'" value="zero" data-wt="'+q.wt+'"> No/Zero (0pts)</label>'
+      +(q.type==='012'?'<label style="display:flex;align-items:center;gap:4px;cursor:pointer;font-size:12px"><input type="radio" name="cal_q_'+q.id+'" value="partial" data-wt="'+q.wt+'"> Partial ('+Math.round(q.wt/2)+'pts)</label>':'')
+      +'</div></div>';
+  });
+  if(fatals.length){
+    html+='<div style="font-size:12px;font-weight:700;color:var(--red);margin:8px 0">⛔ Fatal Errors</div>';
+    fatals.forEach(function(f){
+      html+='<div style="margin-bottom:8px;padding:8px;background:rgba(239,68,68,.08);border-radius:6px">'
+        +'<div style="font-size:12px;font-weight:600;color:var(--red);margin-bottom:4px">'+f.q+'</div>'
+        +'<div style="display:flex;gap:12px">'
+        +'<label style="display:flex;align-items:center;gap:4px;font-size:12px;cursor:pointer"><input type="radio" name="cal_f_'+f.id+'" value="no"> No Fatal</label>'
+        +'<label style="display:flex;align-items:center;gap:4px;font-size:12px;cursor:pointer"><input type="radio" name="cal_f_'+f.id+'" value="yes"> ⛔ Fatal</label>'
+        +'</div></div>';
+    });
+  }
+  html+='<div class="form-group" style="margin-top:10px"><label class="form-label">Notes</label><textarea class="form-textarea" id="calNotes" rows="2" placeholder="Any observations..."></textarea></div></div>';
+  body.innerHTML=html;
+  window._calCtx={evalId:evalId,ev:ev,origScore:Number(ev.score),origQA:ev.qa_user_name,allQs:allQs,fatals:fatals};
+  var footer=document.getElementById('actionModalFooter');
+  footer.innerHTML='';
+  var cb=document.createElement('button');cb.className='btn btn-ghost';cb.textContent='Cancel';cb.onclick=function(){closeModal('actionModal');};
+  var sb=document.createElement('button');sb.className='btn btn-primary';sb.textContent='Submit Calibration';sb.onclick=submitCalibration;
+  footer.appendChild(cb);footer.appendChild(sb);
+  document.getElementById('actionModal').classList.remove('hidden');
+}
+
+async function submitCalibration(){
+  var ctx=window._calCtx; if(!ctx) return;
+  var earned=0,total=0,fatal=false;
+  ctx.allQs.forEach(function(q){
+    total+=q.wt;
+    var r=document.querySelector('input[name="cal_q_'+q.id+'"]:checked');
+    if(r){var sc=r.value==='full'?q.wt:r.value==='partial'?Math.round(q.wt/2):0;earned+=sc;}
+  });
+  ctx.fatals.forEach(function(f){var r=document.querySelector('input[name="cal_f_'+f.id+'"]:checked');if(r&&r.value==='yes')fatal=true;});
+  var score=fatal?0:total>0?Math.round(earned/total*10000)/100:0;
+  var diff=Math.round((score-ctx.origScore)*100)/100;
+  var notes=(document.getElementById('calNotes')||{}).value||'';
+  var myName=currentStaff&&currentStaff.name?currentStaff.name:currentUser&&currentUser.email?currentUser.email:'';
+  var calData={
+    eval_id:ctx.evalId, eval_ref:String(ctx.ev.ref),
+    name:'Calibration — Eval #'+ctx.ev.ref,
+    calibrated_by:myName, original_score:ctx.origScore,
+    manager_score:score, difference:diff, has_fatal:fatal,
+    notes:notes, created_at:new Date().toISOString(),
+    scores:[{qa:ctx.origQA,score:ctx.origScore.toFixed(2),role:'qa'},{qa:myName,score:score.toFixed(2),role:'manager'}]
+  };
+  try{
+    var ex=await supa.from('qa_calibrations').select('id').eq('eval_id',ctx.evalId).single().catch(function(){return{data:null};});
+    if(ex&&ex.data&&ex.data.id){await supa.from('qa_calibrations').update(calData).eq('id',ex.data.id);}
+    else{await supa.from('qa_calibrations').insert(calData);}
+  }catch(e){
+    var arr=JSON.parse(localStorage.getItem('qa_calibrations')||'[]');
+    var idx=arr.findIndex(function(x){return x.eval_id===ctx.evalId;});
+    if(idx>=0)arr[idx]=Object.assign(arr[idx],calData);else arr.unshift(Object.assign({id:Date.now().toString()},calData));
+    localStorage.setItem('qa_calibrations',JSON.stringify(arr));
+  }
+  closeModal('actionModal');
+  var msg=Math.abs(diff)<=2?'Scores consistent ✅':Math.abs(diff)<=5?'Minor difference — worth discussing':'Large gap ('+diff+'%) — calibration recommended!';
+  alert('Done! Your score: '+score.toFixed(2)+'% | QA: '+ctx.origScore+'% | '+msg);
+  loadCalibration();
+}
+
 // Wait for DOM + Supabase CDN to be ready before calling init
 function safeInit() {
   initTheme(); // Apply theme immediately before anything renders
@@ -6637,19 +5796,6 @@ if (document.readyState === 'loading') {
 } else {
   safeInit();
 }
-
-
-function downloadExcel(rows, filename) {
-  if (!rows.length) return;
-  if (typeof XLSX !== 'undefined') {
-    var ws = XLSX.utils.json_to_sheet(rows);
-    var hdrs = Object.keys(rows[0]);
-    ws['!cols'] = hdrs.map(function(h){ return { wch: Math.min(50, Math.max(h.length+2, 10)) }; });
-    var wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, 'Evaluations');
-    XLSX.writeFile(wb, filename);
-  } else {
-    downloadCSV(rows, filename.replace('.xlsx','.csv'));
-  }
-}
-
+</script>
+</body>
+</html>
