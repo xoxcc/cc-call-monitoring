@@ -1609,6 +1609,7 @@ function setViewRole(role) {
 //  AUTH
 // ===============================================
 async function init() {
+  await loadBuiltinOverrides(); // load template overrides after supa ready
   setLoading(true, 'Connecting to Supabase...');
   try {
     // Race getSession against a 6s timeout
@@ -4307,11 +4308,39 @@ async function saveBuiltinTemplate(tplId, isGen) {
       if (error) throw error;
     }
 
+    // Reload overrides into memory so new eval form uses updated questions immediately
+    await loadBuiltinOverrides();
     closeModal('actionModal');
     loadTplMgmt();
-    alert('Template saved! Changes apply to all new evaluations.');
+    alert('Template saved! All new evaluations will now use the updated questions.');
   } catch(e) {
     alert('Error saving: ' + (e.message || 'Unknown error'));
+  }
+}
+
+async function loadBuiltinOverrides() {
+  try {
+    const { data, error } = await supa.from('qa_templates')
+      .select('*')
+      .eq('type', 'builtin_override')
+      .order('updated_at', { ascending: false });
+    if (error || !data || !data.length) return;
+    // Take the most recently updated override for each field
+    var latestStd = null, latestGen = null, latestFatals = null, latestTs = null;
+    data.forEach(function(row) {
+      var ts = new Date(row.updated_at || 0);
+      if (!latestTs || ts >= latestTs) {
+        latestTs = ts;
+        if (row.questions     && row.questions.length)     latestStd    = row.questions;
+        if (row.gen_questions && row.gen_questions.length) latestGen    = row.gen_questions;
+        if (row.fatals        && row.fatals.length)        latestFatals = row.fatals;
+      }
+    });
+    if (latestStd)    { STD_QS = latestStd;    console.log('[QA] STD_QS overridden:', STD_QS.length, 'questions'); }
+    if (latestGen)    { GEN_QS = latestGen;     console.log('[QA] GEN_QS overridden:', GEN_QS.length, 'questions'); }
+    if (latestFatals) { FATALS = latestFatals;  console.log('[QA] FATALS overridden:', FATALS.length, 'fatals'); }
+  } catch(e) {
+    console.warn('[QA] Could not load builtin overrides:', e.message);
   }
 }
 
