@@ -4146,6 +4146,57 @@ const BUILTIN_TEMPLATES = [
   { id:'complaint', name:'Complaint Evaluation',   type:'complaint',  csat:'no',  description:'Complaint-based evaluation with chronology', builtin:true },
 ];
 
+function editFatalsOnly() {
+  document.getElementById('actionModalTitle').textContent = 'Edit Fatal Errors';
+  var body = document.getElementById('actionModalBody');
+
+  var html = '<div style="font-size:12px;color:var(--amber);background:rgba(245,158,11,.1);border-radius:6px;padding:8px 12px;margin-bottom:12px">Changes apply to all templates.</div>'
+    + '<div id="editFatals" style="border:1px solid rgba(239,68,68,.3);border-radius:6px;padding:6px;max-height:300px;overflow-y:auto">';
+  FATALS.forEach(function(f, i) {
+    html += '<div class="tpl-q-row" style="display:grid;grid-template-columns:28px 1fr 24px;gap:5px;align-items:center;padding:4px 0;border-bottom:1px solid var(--border)">'
+      + '<span style="font-size:11px;color:var(--text3);text-align:center">' + (i+1) + '</span>'
+      + '<input class="form-input" value="' + f.q.replace(/"/g,'&quot;') + '" style="padding:4px 6px;font-size:11px">'
+      + '<button type="button" class="del-row-btn" style="background:none;border:none;color:var(--red);cursor:pointer;font-size:18px;padding:0">x</button>'
+      + '</div>';
+  });
+  html += '</div>';
+  html += '<button type="button" id="addBtn_editFatals" style="margin-top:8px" class="btn btn-ghost btn-sm">+ Add Fatal Error</button>';
+  body.innerHTML = html;
+
+  body.addEventListener('click', function(ev) {
+    if (ev.target.classList.contains('del-row-btn')) ev.target.closest('.tpl-q-row').remove();
+    if (ev.target.id === 'addBtn_editFatals') addTplRow('editFatals', true);
+  });
+
+  var footer = document.getElementById('actionModalFooter');
+  footer.innerHTML = '';
+  var cancelBtn = document.createElement('button'); cancelBtn.className='btn btn-ghost'; cancelBtn.textContent='Cancel'; cancelBtn.onclick=function(){closeModal('actionModal');};
+  var saveBtn = document.createElement('button'); saveBtn.className='btn btn-primary'; saveBtn.textContent='Save Fatal Errors';
+  saveBtn.onclick = async function() {
+    var newFatals = collectRows('editFatals', true);
+    if (!newFatals.length) { alert('Fatal errors cannot be empty.'); return; }
+    FATALS = newFatals;
+    // Save to all template overrides
+    try {
+      var payload = { builtin_key:'builtin_fatals', name:'Fatal Errors Override', type:'builtin_override',
+        questions:STD_QS, fatals:newFatals, description:'Admin override for fatals',
+        created_by: currentStaff?.name||currentUser?.email, updated_at:new Date().toISOString() };
+      var checkRes = await supa.from('qa_templates').select('id').eq('builtin_key','builtin_fatals');
+      if (checkRes.data && checkRes.data.length > 0) {
+        await supa.from('qa_templates').update(payload).eq('id', checkRes.data[0].id);
+      } else {
+        await supa.from('qa_templates').insert(payload);
+      }
+      await loadBuiltinOverrides();
+      closeModal('actionModal');
+      loadTplMgmt();
+      alert('Fatal errors saved!');
+    } catch(e) { alert('Error: ' + e.message); }
+  };
+  footer.appendChild(cancelBtn); footer.appendChild(saveBtn);
+  document.getElementById('actionModal').classList.remove('hidden');
+}
+
 function editBuiltinTemplate(tplId) {
   var tpl = BUILTIN_TEMPLATES.find(function(t){return t.id===tplId;});
   if (!tpl) return;
@@ -4367,18 +4418,34 @@ function getTemplateQuestions(tplId) {
 async function loadTplMgmt() {
   const builtinEl = document.getElementById('builtinTplList');
   if (builtinEl) {
-    builtinEl.innerHTML = BUILTIN_TEMPLATES.map(t =>
-      '<div class="tpl-card tpl-builtin">'
-      + '<div style="display:flex;justify-content:space-between;align-items:start;gap:10px">'
-      + '<div><div style="font-weight:600;font-size:13px;margin-bottom:3px">' + t.name + '</div>'
-      + '<div style="font-size:11px;color:var(--text3)">' + t.description + '</div></div>'
-      + '<div style="display:flex;gap:6px;align-items:center;flex-shrink:0">'
-      + '<span class="pill" style="font-size:10px">' + t.type + '</span>'
-      + '<button class="btn btn-ghost btn-sm" style="font-size:11px" data-tid="' + t.id + '" onclick="editBuiltinTemplate(this.dataset.tid)">Edit</button>'
+    builtinEl.innerHTML = ''
+      + '<div style="background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.2);border-radius:8px;padding:12px 14px;margin-bottom:12px;font-size:12px;color:var(--text2)">'
+      + '<strong>ℹ️ How templates work:</strong> All Historical and Live templates share the same question bank. '
+      + 'Editing Standard Questions affects all Historical & Live templates. '
+      + 'The only difference between With CSAT / No CSAT is whether the CSAT question is included.</div>'
+
+      + '<div class="tpl-card tpl-builtin">'
+      + '<div style="display:flex;justify-content:space-between;align-items:center">'
+      + '<div><div style="font-weight:600;font-size:13px;margin-bottom:3px">📋 Standard & General Questions</div>'
+      + '<div style="font-size:11px;color:var(--text3)">Used by Historical No CSAT, Historical With CSAT, Live No CSAT, Live With CSAT</div>'
+      + '<div style="font-size:11px;color:var(--text3);margin-top:2px">STD: ' + STD_QS.length + ' questions · GEN: ' + GEN_QS.length + ' questions</div></div>'
+      + '<button class="btn btn-ghost btn-sm" style="font-size:11px;flex-shrink:0" data-etid="hist-no" onclick="editBuiltinTemplate(this.dataset.etid)">Edit Questions</button>'
       + '</div></div>'
-      + '<div style="margin-top:6px;font-size:11px;color:var(--text3)">Built-in — editable by Admin</div>'
-      + '</div>'
-    ).join('');
+
+      + '<div class="tpl-card tpl-builtin">'
+      + '<div style="display:flex;justify-content:space-between;align-items:center">'
+      + '<div><div style="font-weight:600;font-size:13px;margin-bottom:3px">⛔ Fatal Errors</div>'
+      + '<div style="font-size:11px;color:var(--text3)">Shared across all evaluation templates</div>'
+      + '<div style="font-size:11px;color:var(--text3);margin-top:2px">' + FATALS.length + ' fatal errors configured</div></div>'
+      + '<button class="btn btn-ghost btn-sm" style="font-size:11px;flex-shrink:0;color:var(--red);border-color:rgba(239,68,68,.3)" onclick="editFatalsOnly()">✏️ Edit Fatal Errors</button>'
+      + '</div></div>'
+
+      + '<div class="tpl-card tpl-builtin">'
+      + '<div style="display:flex;justify-content:space-between;align-items:center">'
+      + '<div><div style="font-weight:600;font-size:13px;margin-bottom:3px">⚠️ Complaint Evaluation</div>'
+      + '<div style="font-size:11px;color:var(--text3)">Uses Standard Questions + Complaint form (chronology, root cause)</div></div>'
+      + '<span class="pill" style="font-size:10px">complaint</span>'
+      + '</div></div>';
   }
   try {
     const { data, error } = await supa.from('qa_templates').select('*').order('created_at',{ascending:false});
