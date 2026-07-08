@@ -1426,6 +1426,7 @@ const supa = supabase.createClient(SUPA_URL, SUPA_KEY);
 // ===============================================
 //  QUESTION DATA
 // ===============================================
+var TPL_OVERRIDES = {}; // stores per-template question overrides
 let STD_QS = [
   {id:'s1',num:'1.1',q:'Opening script - Thank, company name, agent name, offer assistance (Must follow)',wt:3,type:'yn'},
   {id:'s2',num:'1.2',q:"Did agent's greeting was hearable?",wt:2,type:'yn'},
@@ -2382,7 +2383,8 @@ function renderEvalForm() {
   document.getElementById('callDetailsCard').style.display = 'block';
 
   const { csat } = selectedTemplate;
-  let questions = cat === 'standard' ? [...STD_QS] : [...GEN_QS];
+  var tplQsRender = getTemplateQuestions(selectedTemplate.id);
+  let questions = cat === 'standard' ? [...tplQsRender.std_qs] : [...tplQsRender.gen_qs];
   const csatQ = cat === 'standard' ? STD_CSAT : GEN_CSAT;
   if (csat === 'yes') {
     if (cat === 'standard') questions.splice(questions.findIndex(q=>q.id==='s34'), 0, csatQ);
@@ -2510,7 +2512,9 @@ function setFatalComment(id, val) { if (!currentFatalAnswers[id]) currentFatalAn
 function updateScore() {
   const cat = document.getElementById('fCallCategory')?.value;
   if (!cat || !selectedTemplate) return;
-  let questions = cat==='standard'?[...STD_QS]:[...GEN_QS];
+  // Use per-template override if available
+  var tplQsForEval = getTemplateQuestions(selectedTemplate.id);
+  let questions = cat==='standard'?[...tplQsForEval.std_qs]:[...tplQsForEval.gen_qs];
   if (selectedTemplate.csat==='yes') questions.push(cat==='standard'?STD_CSAT:GEN_CSAT);
   const totalWt = questions.reduce((a,q)=>a+q.wt,0);
   const earned = questions.reduce((a,q)=>a+(currentAnswers[q.id]?.score||0),0);
@@ -4147,6 +4151,12 @@ function editBuiltinTemplate(tplId) {
   if (!tpl) return;
   var isGen = ['hist-csat','hist-no','live-csat','live-no'].includes(tplId);
 
+  // Load this template's specific questions (not shared globals)
+  var tplQs = getTemplateQuestions(tplId);
+  var editStdQs  = tplQs.std_qs;
+  var editGenQs  = tplQs.gen_qs;
+  var editFatals = tplQs.fatals;
+
   document.getElementById('actionModalTitle').textContent = 'Edit: ' + tpl.name;
   var body = document.getElementById('actionModalBody');
 
@@ -4177,10 +4187,10 @@ function editBuiltinTemplate(tplId) {
     return h;
   }
 
-  body.innerHTML = '<div style="font-size:12px;color:var(--amber);background:rgba(245,158,11,.1);border-radius:6px;padding:8px 12px;margin-bottom:12px">Changes apply to all new evaluations only.</div>'
-    + makeSection(STD_QS, 'editStd', 'Standard Questions (' + STD_QS.length + ')', false)
-    + (isGen ? makeSection(GEN_QS, 'editGen', 'General Enquiry Questions (' + GEN_QS.length + ')', false) : '')
-    + makeSection(FATALS, 'editFatals', 'Fatal Errors (' + FATALS.length + ')', true);
+  body.innerHTML = '<div style="font-size:12px;color:var(--amber);background:rgba(245,158,11,.1);border-radius:6px;padding:8px 12px;margin-bottom:12px">Changes apply to this template only. Other templates are not affected.</div>'
+    + makeSection(editStdQs, 'editStd', 'Standard Questions (' + editStdQs.length + ')', false)
+    + (isGen ? makeSection(editGenQs, 'editGen', 'General Enquiry Questions (' + editGenQs.length + ')', false) : '')
+    + makeSection(editFatals, 'editFatals', 'Fatal Errors (' + editFatals.length + ')', true);
 
   // Wire up buttons via event delegation
   body.addEventListener('click', function(ev) {
@@ -4308,8 +4318,9 @@ async function saveBuiltinTemplate(tplId, isGen) {
       if (error) throw error;
     }
 
-    // Reload overrides into memory so new eval form uses updated questions immediately
+    // Reload overrides so new eval form uses updated questions immediately
     await loadBuiltinOverrides();
+    console.log('[QA] Template overrides reloaded after save');
     closeModal('actionModal');
     loadTplMgmt();
     alert('Template saved! All new evaluations will now use the updated questions.');
@@ -4322,26 +4333,35 @@ async function loadBuiltinOverrides() {
   try {
     const { data, error } = await supa.from('qa_templates')
       .select('*')
-      .eq('type', 'builtin_override')
-      .order('updated_at', { ascending: false });
+      .eq('type', 'builtin_override');
     if (error || !data || !data.length) return;
-    // Take the most recently updated override for each field
-    var latestStd = null, latestGen = null, latestFatals = null, latestTs = null;
+    // Store per-template overrides in map
     data.forEach(function(row) {
-      var ts = new Date(row.updated_at || 0);
-      if (!latestTs || ts >= latestTs) {
-        latestTs = ts;
-        if (row.questions     && row.questions.length)     latestStd    = row.questions;
-        if (row.gen_questions && row.gen_questions.length) latestGen    = row.gen_questions;
-        if (row.fatals        && row.fatals.length)        latestFatals = row.fatals;
-      }
+      if (!row.builtin_key) return;
+      var tplId = row.builtin_key.replace('builtin_', '');
+      TPL_OVERRIDES[tplId] = {
+        std_qs: row.questions     || null,
+        gen_qs: row.gen_questions || null,
+        fatals: row.fatals        || null
+      };
+      console.log('[QA] Loaded override for:', tplId);
     });
-    if (latestStd)    { STD_QS = latestStd;    console.log('[QA] STD_QS overridden:', STD_QS.length, 'questions'); }
-    if (latestGen)    { GEN_QS = latestGen;     console.log('[QA] GEN_QS overridden:', GEN_QS.length, 'questions'); }
-    if (latestFatals) { FATALS = latestFatals;  console.log('[QA] FATALS overridden:', FATALS.length, 'fatals'); }
+    // Apply fatals globally (shared across all templates)
+    var anyFatals = data.find(function(r){ return r.fatals && r.fatals.length; });
+    if (anyFatals) FATALS = anyFatals.fatals;
   } catch(e) {
     console.warn('[QA] Could not load builtin overrides:', e.message);
   }
+}
+
+// Get questions for a specific template (respects per-template overrides)
+function getTemplateQuestions(tplId) {
+  var override = TPL_OVERRIDES[tplId];
+  return {
+    std_qs: (override && override.std_qs) ? override.std_qs : STD_QS,
+    gen_qs: (override && override.gen_qs) ? override.gen_qs : GEN_QS,
+    fatals: FATALS
+  };
 }
 
 async function loadTplMgmt() {
