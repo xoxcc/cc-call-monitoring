@@ -1426,7 +1426,7 @@ const supa = supabase.createClient(SUPA_URL, SUPA_KEY);
 // ===============================================
 //  QUESTION DATA
 // ===============================================
-const STD_QS = [
+let STD_QS = [
   {id:'s1',num:'1.1',q:'Opening script - Thank, company name, agent name, offer assistance (Must follow)',wt:3,type:'yn'},
   {id:'s2',num:'1.2',q:"Did agent's greeting was hearable?",wt:2,type:'yn'},
   {id:'s3',num:'1.3',q:'Did agent alert on incoming calls? (2 Secs)',wt:2,type:'yn'},
@@ -1466,7 +1466,7 @@ const STD_QS = [
 ];
 const STD_CSAT = {id:'s_csat',num:'1.34c',q:'Did agent use the CSAT script before ending the call?',wt:4,type:'yn'};
 
-const GEN_QS = [
+let GEN_QS = [
   {id:'g1',num:'1.1',q:'Opening script - Thank, company name, agent name, offer assistance (Must follow)',wt:3,type:'yn'},
   {id:'g2',num:'1.2',q:"Did agent's greeting was hearable?",wt:2,type:'yn'},
   {id:'g3',num:'1.3',q:'Did agent alert on incoming calls? (2 Secs)',wt:3,type:'yn'},
@@ -1499,7 +1499,7 @@ const GEN_QS = [
 ];
 const GEN_CSAT = {id:'g_csat',num:'1.27c',q:'Did agent use the CSAT script before ending the call?',wt:4,type:'yn'};
 
-const FATALS = [
+let FATALS = [
   {id:'f1',q:'Drop call without insufficient reason'},
   {id:'f2',q:'Failure to answer call'},
   {id:'f3',q:'Failed to verify authorized user when required (PDPA)'},
@@ -4199,16 +4199,77 @@ function editBuiltinTemplate(tplId) {
   var resetBtn = document.createElement('button'); resetBtn.className='btn btn-ghost'; resetBtn.textContent='Reset to Default'; resetBtn.style.color='var(--red)';
   resetBtn.onclick = async function(){ if(confirm('Reset to factory default? Your changes will be lost.')){ await supa.from('qa_templates').delete().eq('id','builtin_'+tplId); closeModal('actionModal'); location.reload(); } };
   var cancelBtn = document.createElement('button'); cancelBtn.className='btn btn-ghost'; cancelBtn.textContent='Cancel'; cancelBtn.onclick=function(){closeModal('actionModal');};
-  var saveBtn = document.createElement('button'); saveBtn.className='btn btn-primary'; saveBtn.textContent='Save Changes'; saveBtn.onclick=function(){saveBuiltinTemplate(tplId,isGen);};
+  var saveBtn = document.createElement('button'); saveBtn.className='btn btn-primary'; saveBtn.textContent='Save Changes'; saveBtn.onclick=function(){ console.log('[TPL] Save button clicked, tplId='+tplId+' isGen='+isGen); saveBuiltinTemplate(tplId,isGen); };
   footer.appendChild(resetBtn); footer.appendChild(cancelBtn); footer.appendChild(saveBtn);
   document.getElementById('actionModal').classList.remove('hidden');
 }
 
 
+function collectRows(sectionId, isFatal) {
+  const container = document.getElementById(sectionId);
+  if (!container) return [];
+  return [...container.querySelectorAll('.tpl-q-row')].map((row, i) => {
+    const inputs  = row.querySelectorAll('input');
+    const selects = row.querySelectorAll('select');
+    const qText   = (inputs[0]?.value || '').trim();
+    if (!qText) return null;
+    if (isFatal) {
+      return { id: 'f' + (i+1), num: String(i+1), q: qText, type: 'fatal' };
+    }
+    return {
+      id:   's' + (i+1),
+      num:  '1.' + (i+1),
+      q:    qText,
+      wt:   parseInt(inputs[1]?.value || '3'),
+      type: selects[0]?.value || 'yn'
+    };
+  }).filter(Boolean);
+}
+
+function addTplRow(sectionId, isFatal) {
+  const container = document.getElementById(sectionId);
+  if (!container) return;
+  const i = container.querySelectorAll('.tpl-q-row').length + 1;
+  const row = document.createElement('div');
+  row.className = 'tpl-q-row';
+  row.style.cssText = 'display:grid;grid-template-columns:' + (isFatal ? '28px 1fr 24px' : '28px 1fr 55px 85px 24px') + ';gap:5px;align-items:center;padding:3px 0;border-bottom:1px solid var(--border)';
+  var numSpan = document.createElement('span');
+  numSpan.style.cssText = 'font-size:11px;color:var(--text3);text-align:center';
+  numSpan.textContent = i;
+  var qInput = document.createElement('input');
+  qInput.className = 'form-input';
+  qInput.style.cssText = 'padding:4px 6px;font-size:11px';
+  qInput.placeholder = isFatal ? 'Fatal error description' : 'Question text';
+  row.appendChild(numSpan);
+  row.appendChild(qInput);
+  if (!isFatal) {
+    var wtInput = document.createElement('input');
+    wtInput.className = 'form-input';
+    wtInput.type = 'number'; wtInput.value = '3'; wtInput.min = '1'; wtInput.max = '20';
+    wtInput.style.cssText = 'padding:4px 6px;font-size:11px;text-align:center';
+    var typeSel = document.createElement('select');
+    typeSel.className = 'form-select';
+    typeSel.style.cssText = 'padding:4px 6px;font-size:11px';
+    [['yn','Yes/No'],['012','0/1/2']].forEach(function(opt){
+      var o = document.createElement('option'); o.value=opt[0]; o.textContent=opt[1]; typeSel.appendChild(o);
+    });
+    row.appendChild(wtInput);
+    row.appendChild(typeSel);
+  }
+  var delBtn = document.createElement('button');
+  delBtn.type = 'button'; delBtn.textContent = 'x';
+  delBtn.style.cssText = 'background:none;border:none;color:var(--red);cursor:pointer;font-size:18px;padding:0';
+  delBtn.onclick = function(){ row.remove(); };
+  row.appendChild(delBtn);
+  container.appendChild(row);
+}
+
 async function saveBuiltinTemplate(tplId, isGen) {
+  console.log('[TPL] saveBuiltinTemplate called:', tplId, isGen);
   const newStd    = collectRows('editStd', false);
   const newGen    = isGen ? collectRows('editGen', false) : null;
   const newFatals = collectRows('editFatals', true);
+  console.log('[TPL] collected:', newStd.length, 'std,', newFatals.length, 'fatals');
 
   if (!newStd.length) { alert('Standard questions cannot be empty.'); return; }
 
@@ -4217,22 +4278,35 @@ async function saveBuiltinTemplate(tplId, isGen) {
   if (newGen)    GEN_QS = newGen;
   if (newFatals) FATALS = newFatals;
 
-  // Save to Supabase as override
-  const payload = {
-    id:          'builtin_' + tplId,
-    name:        (BUILTIN_TEMPLATES.find(t=>t.id===tplId)||{}).name || tplId,
-    type:        'builtin_override',
-    questions:   newStd,
-    description: 'Admin override for ' + tplId,
-    created_by:  currentStaff?.name || currentUser?.email,
-    updated_at:  new Date().toISOString()
-  };
-  if (newGen)    payload.gen_questions = newGen;
-  if (newFatals) payload.fatals        = newFatals;
+  // Save to Supabase as override using builtin_key column
+  const builtinKey = 'builtin_' + tplId;
+  const tplName    = (BUILTIN_TEMPLATES.find(t=>t.id===tplId)||{}).name || tplId;
 
   try {
-    const { error } = await supa.from('qa_templates').upsert(payload, { onConflict: 'id' });
-    if (error) throw error;
+    const payload = {
+      builtin_key:   builtinKey,
+      name:          tplName,
+      type:          'builtin_override',
+      questions:     newStd,
+      gen_questions: newGen || null,
+      fatals:        newFatals || null,
+      description:   'Admin override for ' + tplId,
+      created_by:    currentStaff?.name || currentUser?.email,
+      updated_at:    new Date().toISOString()
+    };
+
+    // Check if override already exists
+    const checkRes = await supa.from('qa_templates').select('id').eq('builtin_key', builtinKey);
+    const existing = checkRes.data && checkRes.data.length > 0 ? checkRes.data[0] : null;
+
+    if (existing) {
+      const { error } = await supa.from('qa_templates').update(payload).eq('id', existing.id);
+      if (error) throw error;
+    } else {
+      const { error } = await supa.from('qa_templates').insert(payload);
+      if (error) throw error;
+    }
+
     closeModal('actionModal');
     loadTplMgmt();
     alert('Template saved! Changes apply to all new evaluations.');
