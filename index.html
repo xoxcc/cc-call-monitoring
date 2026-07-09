@@ -316,6 +316,22 @@
 </head>
 <body>
 
+<!-- TOAST NOTIFICATION -->
+<div id="toastNotif" style="display:none;position:fixed;bottom:24px;right:24px;z-index:9999;
+  background:var(--surface);border:1px solid var(--border);border-radius:10px;
+  padding:12px 18px;box-shadow:0 8px 24px rgba(0,0,0,.3);
+  display:none;align-items:center;gap:10px;min-width:220px;max-width:320px;
+  animation:slideUp .2s ease">
+  <span id="toastIcon" style="font-size:18px">✅</span>
+  <div>
+    <div id="toastTitle" style="font-size:13px;font-weight:600;color:var(--text)"></div>
+    <div id="toastMsg" style="font-size:11px;color:var(--text3);margin-top:2px"></div>
+  </div>
+</div>
+<style>
+@keyframes slideUp { from { transform:translateY(20px);opacity:0; } to { transform:translateY(0);opacity:1; } }
+</style>
+
 <!-- LOADING OVERLAY -->
 <div class="loading-overlay" id="loadingOverlay">
   <div class="spinner" style="width:36px;height:36px;border-width:3px;border-color:rgba(79,142,247,.3);border-top-color:var(--accent)"></div>
@@ -1611,6 +1627,7 @@ function setViewRole(role) {
 // ===============================================
 async function init() {
   await loadBuiltinOverrides(); // load template overrides after supa ready
+  await loadPermissionsFromSupabase(); // load permissions from Supabase — nav applied after onLoggedIn
   setLoading(true, 'Connecting to Supabase...');
   try {
     // Race getSession against a 6s timeout
@@ -2071,6 +2088,26 @@ function syncRoleSwitcher() {
   updateNavVisibility();
 }
 
+function showToast(title, msg, type) {
+  var el    = document.getElementById('toastNotif');
+  var icon  = document.getElementById('toastIcon');
+  var ttl   = document.getElementById('toastTitle');
+  var body  = document.getElementById('toastMsg');
+  if (!el) return;
+  var icons = { success:'✅', error:'❌', warning:'⚠️', info:'ℹ️' };
+  var colors= { success:'var(--green)', error:'var(--red)', warning:'var(--amber)', info:'var(--accent)' };
+  icon.textContent  = icons[type||'success'] || '✅';
+  ttl.textContent   = title || '';
+  ttl.style.color   = colors[type||'success'] || 'var(--green)';
+  body.textContent  = msg || '';
+  el.style.display  = 'flex';
+  el.style.animation= 'none';
+  setTimeout(function(){ el.style.animation='slideUp .2s ease'; }, 10);
+  clearTimeout(window._toastTimer);
+  window._toastTimer = setTimeout(function(){ el.style.display='none'; }, 3000);
+}
+
+function applyNavVisibility() { updateNavVisibility(); }
 function updateNavVisibility() {
   const base  = (currentStaff?.role || '').toLowerCase();
   const email = (currentUser?.email || '').toLowerCase();
@@ -2086,60 +2123,67 @@ function updateNavVisibility() {
   const navMyEvals = document.getElementById('nav-my-evals');
   if (navMyEvals) navMyEvals.style.display = (isAdmin || isQA) ? '' : 'none';
 
-  // Calibration: Manager and Admin only
-  var navCal2 = document.getElementById('nav-calibration');
-  if (navCal2) navCal2.style.display = (isAdmin || isManager) ? '' : 'none';
+  // ── Nav visibility based on Feature Permissions ──
+  const showNav = function(id, feature, fallback) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.style.display = (isAdmin || (fallback && hasPermission(feature))) ? '' : 'none';
+  };
 
-  // Audit Log: Admin, Manager, QA
-  var navAudit = document.getElementById('nav-audit-log');
-  if (navAudit) navAudit.style.display = (isAdmin || isManager || isQA) ? '' : 'none';
-
-  // New Evaluation: QA and Admin only
+  // New Evaluation
   const navNew = document.getElementById('nav-new-eval');
-  if (navNew) navNew.style.display = (isAdmin || isQA) ? '' : 'none';
-  const canCreate = isAdmin || isQA;
-  ['dashNewBtn','evalsNewBtn'].forEach(id => {
-    const el = document.getElementById(id);
-    if (el) el.style.display = canCreate ? '' : 'none';
+  if (navNew) navNew.style.display = (isAdmin || hasPermission('new_eval')) ? '' : 'none';
+  const canCreate = isAdmin || hasPermission('new_eval');
+  ['dashNewBtn','evalsNewBtn'].forEach(function(id) {
+    const el = document.getElementById(id); if (el) el.style.display = canCreate ? '' : 'none';
   });
 
-  // QA sees pipeline, failure analysis, monthly perf, disputes — same as manager
-  // but NOT role management
-  const qaCanSee = isAdmin || isManager || isQA;
-  ['nav-pipeline','nav-fail-analysis','nav-monthly-perf'].forEach(id => {
-    const el = document.getElementById(id);
-    if (el) el.style.display = qaCanSee ? '' : 'none';
+  // All Evaluations
+  showNav('nav-evaluations',    'view_all_evals',   true);
+
+  // Pipeline Tracker
+  showNav('nav-pipeline',       'pipeline',         true);
+
+  // Failure Analysis
+  showNav('nav-fail-analysis',  'failure_analysis', true);
+
+  // Monthly Performance
+  showNav('nav-monthly-perf',   'monthly_perf',     true);
+
+  // Calibration
+  showNav('nav-calibration',    'calibration',      true);
+
+  // Audit Log
+  showNav('nav-audit-log',      'audit_log',        true);
+
+  // Export buttons
+  const canExport = isAdmin || hasPermission('export');
+  document.querySelectorAll('[onclick*="exportEvals"]').forEach(function(el) {
+    el.style.display = canExport ? '' : 'none';
   });
-  const navDisputesEl = document.getElementById('nav-disputes');
-  if (navDisputesEl) navDisputesEl.style.display = (isAgent) ? 'none' : '';
-
-  // Dashboard month filter: QA and Admin only
-  const dashFilter = document.getElementById('dashMonthFilter')?.closest('select')?.parentElement;
-  // (filter is always visible — it's useful for all roles)
-
-  // Pipeline Tracker: QA, Manager, Admin only
-  const navPipeline = document.getElementById('nav-pipeline');
-  if (navPipeline) navPipeline.style.display = (isAdmin || isManager || isQA) ? '' : 'none';
-
-  // Failure Analysis: QA, Manager, Admin only
-  const navFail = document.getElementById('nav-fail-analysis');
-  if (navFail) navFail.style.display = (isAdmin || isManager || isQA) ? '' : 'none';
-
-  // Monthly Performance: QA, Manager, Admin, TL
-  const navMonthly = document.getElementById('nav-monthly-perf');
-  if (navMonthly) navMonthly.style.display = (isAdmin || isManager || isQA || isTL) ? '' : 'none';
 
   // My Team: TL, Manager, Admin only
   const navTeam = document.getElementById('nav-my-team');
   if (navTeam) navTeam.style.display = (isAdmin || isManager || isTL) ? '' : 'none';
 
-  // Pending TL Review: hidden for agents
+  // Pending TL Review: not for agents
   const navPendingTL = document.getElementById('nav-pending-tl');
   if (navPendingTL) navPendingTL.style.display = isAgent ? 'none' : '';
 
-  // Disputes: hidden for agents
+  // Disputes: not for agents
   const navDisputes = document.getElementById('nav-disputes');
   if (navDisputes) navDisputes.style.display = isAgent ? 'none' : '';
+
+  // Resolve disputes: QA, Manager, Admin
+  showNav('nav-disputes', 'resolve_dispute', !isAgent);
+
+  // Calibration: Manager and Admin only (respect permissions)
+  var navCal2 = document.getElementById('nav-calibration');
+  if (navCal2) navCal2.style.display = (isAdmin || hasPermission('calibration')) ? '' : 'none';
+
+  // Audit Log
+  var navAudit = document.getElementById('nav-audit-log');
+  if (navAudit) navAudit.style.display = (isAdmin || hasPermission('audit_log')) ? '' : 'none';
 
   // Admin-only items
   ['sb-admin-label','nav-role-mgmt','nav-tpl-mgmt','sb-admin-divider'].forEach(id => {
@@ -2177,6 +2221,11 @@ function renderUserInfo() {
 //  NAVIGATION
 // ===============================================
 function showPage(id) {
+  // Refresh permissions every 2 mins so admin changes apply without full reload
+  if (!window._lastPermCheck || Date.now() - window._lastPermCheck > 120000) {
+    window._lastPermCheck = Date.now();
+    loadPermissionsFromSupabase().then(function() { updateNavVisibility(); });
+  }
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.sidebar-item').forEach(i => i.classList.remove('active'));
   document.getElementById('page-' + id)?.classList.add('active');
@@ -3656,6 +3705,7 @@ async function viewEval(id) {
       <span class="pill">📅 ${e.date||'--'}</span>
       ${e.eval_tag ? tagBadge(e.eval_tag) : ''}
       <span class="pill">⏱ ${e.timestamp||'--'}</span>
+      ${e.duration?`<span class="pill">🕐 Duration: ${e.duration}</span>`:''}
       <span class="pill">📞 ${e.calling_num||'--'}</span>
       ${e.msisdn?`<span class="pill">📱 Subscriber: ${e.msisdn}</span>`:''}
       <span class="pill">🗂 ${e.contact_id||'--'}</span>
@@ -3981,7 +4031,7 @@ function setPassingMark(val) {
   const n = parseFloat(val);
   if (isNaN(n) || n < 1 || n > 100) { alert('Please enter a valid passing mark between 1 and 100.'); return false; }
   localStorage.setItem('qa_passing_mark', n);
-  alert('Passing mark updated to ' + n + '%. This applies immediately to all displays.');
+  showToast('Passing Mark Updated', 'Set to ' + n + '% — applies immediately.', 'success');
   return true;
 }
 
@@ -4374,7 +4424,7 @@ async function saveBuiltinTemplate(tplId, isGen) {
     console.log('[QA] Template overrides reloaded after save');
     closeModal('actionModal');
     loadTplMgmt();
-    alert('Template saved! All new evaluations will now use the updated questions.');
+    showToast('Template Saved', 'All new evaluations will use updated questions.', 'success');
   } catch(e) {
     alert('Error saving: ' + (e.message || 'Unknown error'));
   }
@@ -5624,10 +5674,10 @@ function adminSetPassingMark(val) {
 // ===============================================
 
 const DEFAULT_PERMISSIONS = {
-  'new_eval':          { label:'Create New Evaluation',        admin:true,  manager:false, qa:true,  tl:false, agent:false, locked:['admin','qa'] },
+  'new_eval':          { label:'Create New Evaluation',        admin:true,  manager:false, qa:true,  tl:false, agent:false, locked:['admin'] },
   'view_all_evals':    { label:'View All Evaluations',         admin:true,  manager:true,  qa:true,  tl:true,  agent:false, locked:['admin'] },
   'approve_dispute':   { label:'Approve / Dispute Evaluations',admin:true,  manager:true,  qa:false, tl:true,  agent:false, locked:['admin'] },
-  'acknowledge':       { label:'Acknowledge Evaluations',      admin:true,  manager:false, qa:false, tl:false, agent:true,  locked:['admin','agent'] },
+  'acknowledge':       { label:'Acknowledge Evaluations',      admin:true,  manager:false, qa:false, tl:false, agent:true,  locked:['admin'] },
   'resolve_dispute':   { label:'Resolve Disputes',             admin:true,  manager:true,  qa:true,  tl:false, agent:false, locked:['admin'] },
   'pipeline':          { label:'View Pipeline Tracker',        admin:true,  manager:true,  qa:true,  tl:true,  agent:false, locked:['admin'] },
   'failure_analysis':  { label:'View Failure Analysis',        admin:true,  manager:true,  qa:true,  tl:true,  agent:false, locked:['admin'] },
@@ -5641,34 +5691,77 @@ const DEFAULT_PERMISSIONS = {
   'audit_log':         { label:'Audit Log',                    admin:true,  manager:true,  qa:false, tl:false, agent:false, locked:['admin'] },
 };
 
+// In-memory permissions cache
+var _permissionsCache = null;
+
 function getPermissions() {
+  if (_permissionsCache) return _permissionsCache;
+  // Fall back to localStorage while Supabase loads
   const saved = localStorage.getItem('qa_permissions');
   if (saved) {
     try { return JSON.parse(saved); } catch(e) {}
   }
-  // Deep copy defaults
   const perms = {};
-  Object.keys(DEFAULT_PERMISSIONS).forEach(k => { perms[k] = { ...DEFAULT_PERMISSIONS[k] }; });
+  Object.keys(DEFAULT_PERMISSIONS).forEach(k => { perms[k] = Object.assign({}, DEFAULT_PERMISSIONS[k]); });
   return perms;
 }
 
-function savePermissions(perms) {
+async function loadPermissionsFromSupabase() {
+  try {
+    const { data } = await supa.from('app_settings')
+      .select('value').eq('key', 'qa_permissions').single();
+    if (data && data.value) {
+      _permissionsCache = JSON.parse(data.value);
+      localStorage.setItem('qa_permissions', data.value);
+      console.log('[QA] Permissions loaded from Supabase');
+    }
+  } catch(e) {
+    console.warn('[QA] Could not load permissions from Supabase, using local:', e.message);
+    // Use localStorage fallback
+    const saved = localStorage.getItem('qa_permissions');
+    if (saved) { try { _permissionsCache = JSON.parse(saved); } catch(e2) {} }
+  }
+  if (!_permissionsCache) {
+    _permissionsCache = {};
+    Object.keys(DEFAULT_PERMISSIONS).forEach(k => { _permissionsCache[k] = Object.assign({}, DEFAULT_PERMISSIONS[k]); });
+  }
+}
+
+async function savePermissions(perms) {
+  _permissionsCache = perms;
   localStorage.setItem('qa_permissions', JSON.stringify(perms));
+  try {
+    // Check if row exists
+    const { data: existing } = await supa.from('app_settings').select('id').eq('key','qa_permissions');
+    if (existing && existing.length > 0) {
+      await supa.from('app_settings').update({ value: JSON.stringify(perms), updated_at: new Date().toISOString() }).eq('key','qa_permissions');
+    } else {
+      await supa.from('app_settings').insert({ key:'qa_permissions', value: JSON.stringify(perms), updated_at: new Date().toISOString() });
+    }
+    console.log('[QA] Permissions saved to Supabase');
+    // Toast shown by caller
+  } catch(e) {
+    console.warn('[QA] Could not save permissions to Supabase:', e.message);
+  }
 }
 
 function hasPermission(feature) {
   const base  = (currentStaff?.role||'').toLowerCase();
   const email = (currentUser?.email||'').toLowerCase();
-  const isAdmin = base==='admin'||ROLE_MAP_EMAIL[email]==='admin'||roleOverrides[email]==='admin';
+  const effRole = roleOverrides[email] || ROLE_MAP_EMAIL[email] || base;
+  const isAdmin = effRole === 'admin';
   if (isAdmin) return true;
 
   const perms = getPermissions();
   const perm  = perms[feature];
   if (!perm) return false;
 
-  const roleMap = { 'manager':'manager', 'mgr':'manager', 'qa':'qa', 'tl':'tl', 'agent':'agent' };
-  const role = roleMap[base] || base;
-  return perm[role] === true;
+  // Map effective role to permission key
+  const roleKey = effRole === 'mgr' ? 'manager'
+                : effRole === 'team leader' ? 'tl'
+                : effRole === 'qa evaluator' ? 'qa'
+                : effRole;
+  return perm[roleKey] === true;
 }
 
 function renderPermissionsTable() {
@@ -5702,27 +5795,28 @@ function renderPermissionsTable() {
   }).join('');
 }
 
-function togglePermission(feature, role, enabled) {
+async function togglePermission(feature, role, enabled) {
   const perms = getPermissions();
   if (perms[feature]) {
     perms[feature][role] = enabled;
-    savePermissions(perms);
-    renderPermissionsTable(); // re-render to update toggle visuals
-    // Show save confirmation
-    const btn = event.target;
-    const msg = document.createElement('span');
-    msg.textContent = ' Saved';
-    msg.style.cssText = 'font-size:11px;color:var(--green);margin-left:4px';
-    btn.parentElement.appendChild(msg);
-    setTimeout(() => msg.remove(), 1500);
+    showToast('Saving...', 'Syncing permission to Supabase...', 'info');
+    await savePermissions(perms);
+    renderPermissionsTable();
+    applyNavVisibility();
+    var label = perms[feature].label || feature;
+    showToast('Permission Saved ✓', label + ' — ' + role.toUpperCase() + ' → ' + (enabled ? 'ON' : 'OFF'), 'success');
   }
 }
 
-function resetPermissions() {
+async function resetPermissions() {
   if (!confirm('Reset all permissions to default? This cannot be undone.')) return;
+  _permissionsCache = null;
   localStorage.removeItem('qa_permissions');
+  const defPerms = {};
+  Object.keys(DEFAULT_PERMISSIONS).forEach(k => { defPerms[k] = Object.assign({}, DEFAULT_PERMISSIONS[k]); });
+  await savePermissions(defPerms);
   renderPermissionsTable();
-  alert('Permissions reset to default.');
+  alert('Permissions reset to default and synced to all users.');
 }
 
 async function loadRoleManagement() {
