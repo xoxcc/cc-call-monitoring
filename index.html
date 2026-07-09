@@ -2107,6 +2107,37 @@ function showToast(title, msg, type) {
   window._toastTimer = setTimeout(function(){ el.style.display='none'; }, 3000);
 }
 
+function renderPermissionsTable() {
+  var tbody = document.getElementById('permTableBody');
+  if (!tbody) return;
+  var perms = _permissionsCache || getPermissions();
+  var roles = ['admin','manager','qa','tl','agent'];
+  var roleLabels = { admin:'Admin', manager:'Manager', qa:'QA', tl:'Team Leader', agent:'Agent' };
+
+  tbody.innerHTML = Object.keys(perms).map(function(key) {
+    var p = perms[key];
+    var cells = roles.map(function(role) {
+      var isLocked = (p.locked||[]).includes(role);
+      if (isLocked) {
+        return '<td style="text-align:center"><span style="font-size:16px">'+(p[role]?'✅':'🚫')+'</span></td>';
+      }
+      var checked = p[role] ? true : false;
+      var bg = checked ? 'var(--green)' : 'var(--surface3)';
+      var left = checked ? '17px' : '3px';
+      return '<td style="text-align:center">'
+        +'<label style="display:inline-flex;align-items:center;cursor:pointer">'
+        +'<input type="checkbox" '+(checked?'checked':'')
+        +' data-feature="'+key+'" data-role="'+role+'"'
+        +' onchange="togglePermission(this.dataset.feature,this.dataset.role,this.checked)"'
+        +' style="position:absolute;opacity:0;width:0;height:0">'
+        +'<span style="width:36px;height:20px;background:'+bg+';border-radius:10px;position:relative;display:inline-block;transition:background .2s">'
+        +'<span style="position:absolute;top:3px;left:'+left+';width:14px;height:14px;background:#fff;border-radius:50%;transition:left .2s;display:inline-block"></span>'
+        +'</span></label></td>';
+    }).join('');
+    return '<tr><td style="font-size:12px;font-weight:500">'+p.label+'</td>'+cells+'</tr>';
+  }).join('');
+}
+
 function applyNavVisibility() { updateNavVisibility(); }
 function updateNavVisibility() {
   const base  = (currentStaff?.role || '').toLowerCase();
@@ -5674,7 +5705,7 @@ function adminSetPassingMark(val) {
 // ===============================================
 
 const DEFAULT_PERMISSIONS = {
-  'new_eval':          { label:'Create New Evaluation',        admin:true,  manager:false, qa:true,  tl:false, agent:false, locked:['admin'] },
+  'new_eval':          { label:'Create New Evaluation',        admin:true,  manager:false, qa:true,  tl:true,  agent:false, locked:['admin'] },
   'view_all_evals':    { label:'View All Evaluations',         admin:true,  manager:true,  qa:true,  tl:true,  agent:false, locked:['admin'] },
   'approve_dispute':   { label:'Approve / Dispute Evaluations',admin:true,  manager:true,  qa:false, tl:true,  agent:false, locked:['admin'] },
   'acknowledge':       { label:'Acknowledge Evaluations',      admin:true,  manager:false, qa:false, tl:false, agent:true,  locked:['admin'] },
@@ -5696,104 +5727,81 @@ var _permissionsCache = null;
 
 function getPermissions() {
   if (_permissionsCache) return _permissionsCache;
-  // Fall back to localStorage while Supabase loads
-  const saved = localStorage.getItem('qa_permissions');
-  if (saved) {
-    try { return JSON.parse(saved); } catch(e) {}
-  }
-  const perms = {};
-  Object.keys(DEFAULT_PERMISSIONS).forEach(k => { perms[k] = Object.assign({}, DEFAULT_PERMISSIONS[k]); });
+  var saved = localStorage.getItem('qa_feature_permissions') || localStorage.getItem('qa_permissions');
+  if (saved) { try { return JSON.parse(saved); } catch(e) {} }
+  var perms = {};
+  Object.keys(DEFAULT_PERMISSIONS).forEach(function(k) { perms[k] = Object.assign({}, DEFAULT_PERMISSIONS[k]); });
   return perms;
 }
 
-async function loadPermissionsFromSupabase() {
-  try {
-    const { data } = await supa.from('app_settings')
-      .select('value').eq('key', 'qa_permissions').single();
-    if (data && data.value) {
-      _permissionsCache = JSON.parse(data.value);
-      localStorage.setItem('qa_permissions', data.value);
-      console.log('[QA] Permissions loaded from Supabase');
-    }
-  } catch(e) {
-    console.warn('[QA] Could not load permissions from Supabase, using local:', e.message);
-    // Use localStorage fallback
-    const saved = localStorage.getItem('qa_permissions');
-    if (saved) { try { _permissionsCache = JSON.parse(saved); } catch(e2) {} }
+function hasPermission(feature) {
+  var base  = (currentStaff && currentStaff.role || '').toLowerCase();
+  var email = (currentUser && currentUser.email || '').toLowerCase();
+  var effRole = (roleOverrides && roleOverrides[email]) || ROLE_MAP_EMAIL[email] || base;
+  if (effRole === 'admin') return true;
+  var perms = getPermissions();
+  var perm  = perms[feature];
+  if (!perm) return false;
+  var roleKey = effRole === 'mgr' ? 'manager'
+              : effRole === 'tl'  ? 'tl'
+              : effRole === 'qa'  ? 'qa'
+              : effRole === 'agent' ? 'agent'
+              : effRole;
+  return perm[roleKey] === true;
+}
+
+function loadPermissionsFromSupabase() {
+  // Load from localStorage (instant, no network)
+  var base = {};
+  Object.keys(DEFAULT_PERMISSIONS).forEach(function(k) {
+    base[k] = Object.assign({}, DEFAULT_PERMISSIONS[k]);
+  });
+  var saved = localStorage.getItem('qa_feature_permissions');
+  if (saved) {
+    try {
+      var parsed = JSON.parse(saved);
+      Object.keys(parsed).forEach(function(k) {
+        if (base[k]) Object.assign(base[k], parsed[k]);
+      });
+    } catch(e) {}
   }
-  if (!_permissionsCache) {
-    _permissionsCache = {};
-    Object.keys(DEFAULT_PERMISSIONS).forEach(k => { _permissionsCache[k] = Object.assign({}, DEFAULT_PERMISSIONS[k]); });
-  }
+  _permissionsCache = base;
+  // Sync to Supabase in background (non-blocking)
+  supa.from('app_settings').select('value').eq('key','qa_feature_permissions').maybeSingle()
+    .then(function(res) {
+      if (res.data && res.data.value) {
+        try {
+          var remote = JSON.parse(res.data.value);
+          var merged = {};
+          Object.keys(DEFAULT_PERMISSIONS).forEach(function(k) {
+            merged[k] = Object.assign({}, DEFAULT_PERMISSIONS[k]);
+          });
+          Object.keys(remote).forEach(function(k) {
+            if (merged[k]) Object.assign(merged[k], remote[k]);
+          });
+          _permissionsCache = merged;
+          localStorage.setItem('qa_feature_permissions', JSON.stringify(merged));
+          updateNavVisibility();
+        } catch(e) {}
+      }
+    }).catch(function(){});
 }
 
 async function savePermissions(perms) {
   _permissionsCache = perms;
-  localStorage.setItem('qa_permissions', JSON.stringify(perms));
+  // Save to localStorage immediately
+  localStorage.setItem('qa_feature_permissions', JSON.stringify(perms));
+  // Save to Supabase in background
   try {
-    // Check if row exists
-    const { data: existing } = await supa.from('app_settings').select('id').eq('key','qa_permissions');
-    if (existing && existing.length > 0) {
-      await supa.from('app_settings').update({ value: JSON.stringify(perms), updated_at: new Date().toISOString() }).eq('key','qa_permissions');
+    var res = await supa.from('app_settings').select('id').eq('key','qa_feature_permissions');
+    if (res.data && res.data.length > 0) {
+      await supa.from('app_settings').update({ value: JSON.stringify(perms), updated_at: new Date().toISOString() }).eq('key','qa_feature_permissions');
     } else {
-      await supa.from('app_settings').insert({ key:'qa_permissions', value: JSON.stringify(perms), updated_at: new Date().toISOString() });
+      await supa.from('app_settings').insert({ key:'qa_feature_permissions', value: JSON.stringify(perms), updated_at: new Date().toISOString() });
     }
-    console.log('[QA] Permissions saved to Supabase');
-    // Toast shown by caller
-  } catch(e) {
-    console.warn('[QA] Could not save permissions to Supabase:', e.message);
-  }
+  } catch(e) { console.warn('Could not sync permissions to Supabase:', e.message); }
 }
 
-function hasPermission(feature) {
-  const base  = (currentStaff?.role||'').toLowerCase();
-  const email = (currentUser?.email||'').toLowerCase();
-  const effRole = roleOverrides[email] || ROLE_MAP_EMAIL[email] || base;
-  const isAdmin = effRole === 'admin';
-  if (isAdmin) return true;
-
-  const perms = getPermissions();
-  const perm  = perms[feature];
-  if (!perm) return false;
-
-  // Map effective role to permission key
-  const roleKey = effRole === 'mgr' ? 'manager'
-                : effRole === 'team leader' ? 'tl'
-                : effRole === 'qa evaluator' ? 'qa'
-                : effRole;
-  return perm[roleKey] === true;
-}
-
-function renderPermissionsTable() {
-  const tbody = document.getElementById('permTableBody');
-  if (!tbody) return;
-  const perms = getPermissions();
-  const roles = ['admin','manager','qa','tl','agent'];
-
-  tbody.innerHTML = Object.keys(perms).map(key => {
-    const p = perms[key];
-    const cells = roles.map(role => {
-      const isLocked  = (p.locked||[]).includes(role);
-      const isChecked = p[role] ? 'checked' : '';
-      if (isLocked) {
-        return `<td style="text-align:center"><span style="font-size:16px">${p[role]?'✅':'🚫'}</span></td>`;
-      }
-      return `<td style="text-align:center">
-        <label class="toggle-switch" style="display:inline-flex;align-items:center;cursor:pointer">
-          <input type="checkbox" ${isChecked} onchange="togglePermission('${key}','${role}',this.checked)"
-            style="width:0;height:0;opacity:0;position:absolute">
-          <span style="width:36px;height:20px;background:${p[role]?'var(--green)':'var(--surface3)'};border-radius:10px;position:relative;transition:background .2s;display:inline-block">
-            <span style="position:absolute;top:3px;left:${p[role]?'17px':'3px'};width:14px;height:14px;background:#fff;border-radius:50%;transition:left .2s;display:inline-block"></span>
-          </span>
-        </label>
-      </td>`;
-    }).join('');
-    return `<tr>
-      <td style="font-size:12px;font-weight:500">${p.label}</td>
-      ${cells}
-    </tr>`;
-  }).join('');
-}
 
 async function togglePermission(feature, role, enabled) {
   const perms = getPermissions();
