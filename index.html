@@ -2132,10 +2132,10 @@ function updateNavVisibility() {
 
   // New Evaluation
   const navNew = document.getElementById('nav-new-eval');
-  if (navNew) navNew.style.display = (isAdmin || hasPermission('new_eval')) ? '' : 'none';
-  const canCreate = isAdmin || hasPermission('new_eval');
+  if (navNew) navNew.style.display = (isAdmin || isQA || isTL) ? '' : 'none';
+  const canCreate = isAdmin || isQA || isTL;
   ['dashNewBtn','evalsNewBtn'].forEach(function(id) {
-    const el = document.getElementById(id); if (el) el.style.display = canCreate ? '' : 'none';
+    const el = document.getElementById(id); if (el) el.style.display = (isAdmin||isQA||isTL) ? '' : 'none';
   });
 
   // All Evaluations
