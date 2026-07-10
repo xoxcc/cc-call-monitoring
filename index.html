@@ -416,6 +416,7 @@
       <div class="sidebar-item" onclick="showPage('new-eval')" id="nav-new-eval"><span class="icon">✏️</span>New Evaluation</div>
       <div class="sidebar-item" onclick="showPage('evaluations')" id="nav-evaluations"><span class="icon">📋</span>Evaluations<span class="badge" id="sbEvalCount">0</span></div>
       <div class="sidebar-item" onclick="showPage('my-evals')" id="nav-my-evals"><span class="icon">📊</span>My Evaluations</div>
+      <div class="sidebar-item" onclick="showPage('qa-productivity')" id="nav-qa-productivity"><span class="icon">📈</span>QA Productivity</div>
       <div class="sidebar-item" onclick="showPage('pipeline')" id="nav-pipeline"><span class="icon">🔄</span>Pipeline Tracker</div>
       <div class="sidebar-item" onclick="showPage('fail-analysis')" id="nav-fail-analysis"><span class="icon">📉</span>Failure Analysis</div>
       <div class="sidebar-item" onclick="showPage('monthly-perf')" id="nav-monthly-perf"><span class="icon">📅</span>Monthly Performance</div>
@@ -736,6 +737,42 @@
         <div class="card">
           <table class="eval-table"><thead><tr><th>Ref</th><th>Agent</th><th>Score</th><th>Disputed By</th><th>Reason</th><th>Actions</th></tr></thead>
           <tbody id="disputesBody"><tr><td colspan="6"><div class="empty-state"><div class="icon">✅</div><p>No active disputes.</p></div></td></tr></tbody></table>
+        </div>
+      </div>
+
+      <!-- QA PRODUCTIVITY PAGE -->
+      <div class="page" id="page-qa-productivity">
+        <div class="page-header">
+          <div class="page-header-row">
+            <div><h1>📈 QA Productivity</h1><p>Daily evaluation count per QA evaluator — monthly view</p></div>
+            <div style="display:flex;gap:8px;align-items:center">
+              <select class="form-select" id="qaProdMonth" onchange="loadQAProductivity()" style="width:170px;padding:7px 10px">
+                <option value="">All Time</option>
+              </select>
+              <button class="btn btn-ghost btn-sm" onclick="document.getElementById('qaProdMonth').value='';loadQAProductivity()">✕ Clear</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Summary cards -->
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px" id="qaProdSummary"></div>
+
+        <!-- Daily breakdown table -->
+        <div class="card" style="margin-bottom:16px;overflow-x:auto">
+          <div class="card-header" style="margin-bottom:14px">
+            <div><div class="card-title">📅 Daily Evaluation Count by QA</div>
+            <div class="card-subtitle">Each row = one day, columns = QA evaluators</div></div>
+          </div>
+          <div id="qaProdTableWrap"></div>
+        </div>
+
+        <!-- Bar chart per QA -->
+        <div class="card">
+          <div class="card-header" style="margin-bottom:14px">
+            <div><div class="card-title">📊 Monthly Total per QA</div>
+            <div class="card-subtitle">Total evaluations submitted by each QA for the selected period</div></div>
+          </div>
+          <div id="qaProdBars" style="display:flex;flex-direction:column;gap:10px;padding:8px 0"></div>
         </div>
       </div>
 
@@ -2154,6 +2191,12 @@ function updateNavVisibility() {
   const navMyEvals = document.getElementById('nav-my-evals');
   if (navMyEvals) navMyEvals.style.display = (isAdmin || isQA) ? '' : 'none';
 
+  // QA Productivity: Admin, Manager, QA
+  const navQAProd = document.getElementById('nav-qa-productivity');
+  if (navQAProd) navQAProd.style.display = (isAdmin || isManager || isQA) ? '' : 'none';
+
+  // QA Productivity: Admin, Manager, QA
+
   // ── Nav visibility based on Feature Permissions ──
   const showNav = function(id, feature, fallback) {
     const el = document.getElementById(id);
@@ -2273,6 +2316,7 @@ function showPage(id) {
   if (id === 'calibration') loadCalibration();
   if (id === 'audit-log')   loadAuditLog();
   if (id === 'my-evals') loadMyEvals();
+  if (id === 'qa-productivity') loadQAProductivity();
   if (id === 'pipeline') loadPipeline();
   if (id === 'fail-analysis') loadFailAnalysis();
   if (id === 'monthly-perf') initMonthlyPerf();
@@ -2761,7 +2805,11 @@ CREATE POLICY "all_access" ON qa_evaluations FOR ALL USING (true) WITH CHECK (tr
     return;
   }
 
-  alert(status==='draft' ? `✅ Draft saved -- Ref #${data.ref}` : `✅ Evaluation #${data.ref} submitted to TL for review.`);
+  var msg = status==='draft' ? '✅ Draft saved! Ref #'+data.ref : '✅ Evaluation #'+data.ref+' submitted to TL for review.';
+  showToast(status==='draft'?'Draft Saved':'Submitted to TL', msg, 'success');
+  resetEvalForm();
+  selectedTemplate = null;
+  evaluations = null;
   showPage('evaluations');
 }
 
@@ -5199,6 +5247,323 @@ async function loadFailAnalysis() {
 }
 
 // ===============================================
+//  QA PRODUCTIVITY
+// ===============================================
+
+async function loadQAProductivity() {
+  const all = evaluations && evaluations.length > 0 ? evaluations : await loadEvals();
+  evaluations = all;
+
+  // Populate month filter
+  const months = new Set();
+  all.forEach(e => {
+    const d = e.created_at ? e.created_at.slice(0,7) : '';
+    if (d) months.add(d);
+  });
+  // Default to current month
+  const now = new Date();
+  const currentMonth = now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0');
+  months.add(currentMonth);
+
+  const moSel = document.getElementById('qaProdMonth');
+  if (moSel) {
+    // Rebuild options
+    moSel.innerHTML = '<option value="">All Time</option>'
+      + [...months].sort().reverse().map(m => {
+          const [yr,mo] = m.split('-');
+          return '<option value="'+m+'">'+new Date(yr,mo-1,1).toLocaleDateString('en-MY',{month:'long',year:'numeric'})+'</option>';
+        }).join('');
+    // Default to current month if not already set
+    if (!moSel.value || moSel.value === '') {
+      moSel.value = currentMonth;
+    }
+  }
+
+  const selMonth = (moSel && moSel.value) ? moSel.value : currentMonth;
+  const filtered = selMonth ? all.filter(e => (e.created_at||'').startsWith(selMonth)) : all;
+
+  // Get unique QA names
+  const qaNames = [...new Set(all.map(e => e.qa_user_name).filter(Boolean))].sort();
+
+  // Summary cards
+  const summaryEl = document.getElementById('qaProdSummary');
+  if (summaryEl) {
+    const closed     = filtered.filter(e=>e.status==='closed').length;
+    const pendingAck = filtered.filter(e=>e.status==='tl-approved').length;
+    const avgDaily   = (() => {
+      const days = new Set(filtered.map(e=>(e.created_at||'').slice(0,10)).filter(Boolean));
+      return days.size > 0 ? Math.round(filtered.length/days.size*10)/10 : 0;
+    })();
+    summaryEl.innerHTML =
+      '<div class="stat-card blue"><div class="stat-num" style="font-size:22px">'+filtered.length+'</div><div class="stat-label">Total Evaluated</div></div>'+
+      '<div class="stat-card green"><div class="stat-num" style="font-size:22px">'+closed+'</div><div class="stat-label">Closed</div></div>'+
+      '<div class="stat-card amber"><div class="stat-num" style="font-size:22px">'+pendingAck+'</div><div class="stat-label">Pending Agent Ack</div></div>'+
+      '<div class="stat-card green"><div class="stat-num" style="font-size:22px">'+avgDaily+'</div><div class="stat-label">Avg per Day</div></div>';
+  }
+
+  // Build full month date range
+  const tableWrap = document.getElementById('qaProdTableWrap');
+  if (tableWrap) {
+    // Get all days in selected month
+    let allDays = [];
+    if (selMonth) {
+      const [yr, mo] = selMonth.split('-').map(Number);
+      const daysInMonth = new Date(yr, mo, 0).getDate();
+      for (let d = daysInMonth; d >= 1; d--) {
+        const dd = String(d).padStart(2,'0');
+        allDays.push(yr+'-'+String(mo).padStart(2,'0')+'-'+dd);
+      }
+    } else {
+      // No month selected - show current month by default
+      const yr2 = now.getFullYear(), mo2 = now.getMonth()+1;
+      const dim2 = new Date(yr2, mo2, 0).getDate();
+      for (let d = dim2; d >= 1; d--) {
+        allDays.push(yr2+'-'+String(mo2).padStart(2,'0')+'-'+String(d).padStart(2,'0'));
+      }
+    }
+
+    // Load remarks from localStorage
+    const remarksKey = 'qa_prod_remarks_' + selMonth;
+    let remarks = {};
+    try { remarks = JSON.parse(localStorage.getItem(remarksKey)||'{}'); } catch(e){}
+
+    // Group by date and QA
+    const byDate = {};
+    filtered.forEach(e => {
+      const d = (e.created_at||'').slice(0,10);
+      if (!d) return;
+      if (!byDate[d]) byDate[d] = {};
+      byDate[d][e.qa_user_name] = (byDate[d][e.qa_user_name]||0)+1;
+    });
+
+    const short = n => n ? n.split(' ')[0] : '--';
+    const today = new Date().toISOString().slice(0,10);
+
+    let html = '<table class="eval-table" style="min-width:100%"><thead><tr>'
+      + '<th style="width:120px">Date</th>';
+
+    qaNames.forEach(q => {
+      html += '<th style="text-align:center">'+short(q)+'</th>'
+            + '<th style="min-width:150px">Remarks ('+short(q)+')</th>';
+    });
+    html += '<th style="text-align:center">Total</th></tr></thead><tbody>';
+
+    let grandTotal = {};
+    qaNames.forEach(q => grandTotal[q] = 0);
+
+    allDays.forEach(d => {
+      const row    = byDate[d] || {};
+      const dayTotal = qaNames.reduce((s,q) => s+(row[q]||0), 0);
+      const dt     = new Date(d+'T00:00:00');
+      const isToday = d === today;
+      const isFuture = d > today;
+      const dayLabel = dt.toLocaleDateString('en-MY',{weekday:'short',day:'2-digit',month:'short'});
+      const rowStyle = isToday ? 'background:rgba(79,142,247,.08);' : '';
+
+      html += '<tr style="'+rowStyle+'">';
+      html += '<td style="font-size:11px;white-space:nowrap;color:'+(isToday?'var(--accent)':isFuture?'var(--text3)':'var(--text')+'">'+dayLabel+(isToday?' ★':'')+'</td>';
+
+      qaNames.forEach(q => {
+        const count = row[q] || 0;
+        grandTotal[q] += count;
+        const bg = count===0?'':count>=10?'background:rgba(34,197,94,.2)':count>=5?'background:rgba(34,197,94,.12)':count>=3?'background:rgba(245,158,11,.1)':'';
+        const remarkKey = d+'_'+q;
+        const remarkVal = (remarks[remarkKey]||'').replace(/"/g,'&quot;');
+
+        var tdSt='text-align:center;font-family:monospace;font-weight:'+(count?'700':'400')+';color:'+(count?'var(--text)':'var(--text3)')+(bg?';'+bg:'');
+        html += '<td style="'+tdSt+'">'+( isFuture?'':count||'&mdash;')+'</td>';
+        html += '<td><input class="form-input" value="'+remarkVal+'" placeholder="Remarks..." style="padding:3px 8px;font-size:11px;width:100%;min-width:120px" data-key="'+remarksKey+'" data-rkey="'+remarkKey+'" onchange="saveQAProdRemark(this.dataset.key,this.dataset.rkey,this.value)" '+(isFuture?'disabled':'')+'>\u003c/td>';
+      });
+
+      var totalSt='text-align:center;font-family:monospace;font-weight:700;color:'+(dayTotal?'var(--accent)':'var(--text3)');
+      html += '<td style="'+totalSt+'">'+( isFuture?'':dayTotal||'&mdash;')+'</td>';
+      html += '</tr>';
+    });
+
+    // Total row
+    const grandSum = qaNames.reduce((s,q)=>s+grandTotal[q],0);
+    html += '<tr style="border-top:2px solid var(--border);font-weight:700;background:var(--surface2)"><td style="font-size:12px">TOTAL</td>';
+    qaNames.forEach(q => {
+      html += '<td style="text-align:center;font-family:monospace;color:var(--green)">'+grandTotal[q]+'</td><td></td>';
+    });
+    html += '<td style="text-align:center;font-family:monospace;color:var(--accent)">'+grandSum+'</td></tr>';
+    html += '</tbody></table>';
+    tableWrap.innerHTML = html;
+  }
+
+  // Bar chart
+  const barsEl = document.getElementById('qaProdBars');
+  if (barsEl) {
+    const totals = qaNames.map(q=>({ name:q, count:filtered.filter(e=>e.qa_user_name===q).length })).sort((a,b)=>b.count-a.count);
+    const max = totals.length ? Math.max(totals[0].count,1) : 1;
+    const colors = ['var(--green)','var(--accent)','var(--amber)','var(--cyan)','var(--purple)'];
+    barsEl.innerHTML = totals.map((t,i) => {
+      const pct = Math.round(t.count/max*100);
+      return '<div style="display:grid;grid-template-columns:180px 1fr 60px;gap:12px;align-items:center">'
+        +'<div style="font-size:12px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+(['🥇','🥈','🥉'][i]||'')+' '+t.name+'</div>'
+        +'<div style="height:24px;background:var(--surface3);border-radius:4px;overflow:hidden"><div style="height:100%;width:'+pct+'%;background:'+colors[i%colors.length]+';border-radius:4px"></div></div>'
+        +'<div style="font-family:monospace;font-size:14px;font-weight:700;color:'+colors[i%colors.length]+';text-align:right">'+t.count+'</div>'
+        +'</div>';
+    }).join('');
+  }
+}
+
+function saveQAProdRemark(storageKey, remarkKey, value) {
+  var remarks = {};
+  try { remarks = JSON.parse(localStorage.getItem(storageKey)||'{}'); } catch(e){}
+  if (value) remarks[remarkKey] = value;
+  else delete remarks[remarkKey];
+  localStorage.setItem(storageKey, JSON.stringify(remarks));
+}
+
+function exportQAProductivity() {
+  const d = window._qpData;
+  if (!d || !d.qaArr.length) { alert('No data to export.'); return; }
+  const rows = [];
+  d.qaArr.forEach(q => {
+    const row = { 'QA Evaluator': q.name, 'Total': q.total };
+    d.dates.forEach(date => { row[date] = q.days[date]||0; });
+    rows.push(row);
+  });
+  // Total row
+  const total = { 'QA Evaluator': 'TOTAL', 'Total': d.filtered.length };
+  d.dates.forEach(date => { total[date] = d.qaArr.reduce((a,q)=>a+(q.days[date]||0),0); });
+  rows.push(total);
+  dlCSV(rows, 'QA_Productivity_'+(d.selMonth||'all')+'.csv');
+}
+
+// ===============================================
+//  QA PRODUCTIVITY
+// ===============================================
+
+async function loadQAProductivity() {
+  const all = evaluations && evaluations.length > 0 ? evaluations : await loadEvals();
+  evaluations = all;
+
+  // Populate month filter
+  const months = new Set();
+  all.forEach(e => {
+    const d = e.created_at ? e.created_at.slice(0,7) : '';
+    if (d) months.add(d);
+  });
+  const moSel = document.getElementById('qaProdMonth');
+  if (moSel && moSel.options.length <= 1) {
+    [...months].sort().reverse().forEach(m => {
+      const [yr,mo] = m.split('-');
+      const o = document.createElement('option');
+      o.value = m;
+      o.textContent = new Date(yr, mo-1, 1).toLocaleDateString('en-MY', {month:'long', year:'numeric'});
+      moSel.appendChild(o);
+    });
+  }
+
+  const selMonth = moSel?.value || '';
+  const filtered = selMonth
+    ? all.filter(e => (e.created_at||'').startsWith(selMonth))
+    : all;
+
+  // Group by QA name
+  const qaNames = [...new Set(filtered.map(e => e.qa_user_name).filter(Boolean))].sort();
+
+  // Group by date then QA
+  const byDate = {};
+  filtered.forEach(e => {
+    const d = (e.created_at||'').slice(0,10);
+    if (!d) return;
+    if (!byDate[d]) byDate[d] = {};
+    byDate[d][e.qa_user_name] = (byDate[d][e.qa_user_name] || 0) + 1;
+  });
+  const dates = Object.keys(byDate).sort().reverse();
+
+  // Summary cards
+  const summaryEl = document.getElementById('qaProdSummary');
+  if (summaryEl) {
+    const totalByQA = {};
+    qaNames.forEach(q => {
+      totalByQA[q] = filtered.filter(e => e.qa_user_name === q).length;
+    });
+    const topQA   = qaNames.sort((a,b) => totalByQA[b] - totalByQA[a])[0];
+    const avgDaily = dates.length > 0 ? Math.round(filtered.length / dates.length * 10) / 10 : 0;
+
+    summaryEl.innerHTML = `
+      <div class="stat-card blue"><div class="stat-num" style="font-size:22px">${filtered.length}</div><div class="stat-label">Total Evals</div></div>
+      <div class="stat-card green"><div class="stat-num" style="font-size:22px">${qaNames.length}</div><div class="stat-label">QA Evaluators</div></div>
+      <div class="stat-card amber"><div class="stat-num" style="font-size:22px">${dates.length}</div><div class="stat-label">Active Days</div></div>
+      <div class="stat-card green"><div class="stat-num" style="font-size:22px">${avgDaily}</div><div class="stat-label">Avg per Day</div></div>`;
+  }
+
+  // Daily table
+  const tableWrap = document.getElementById('qaProdTableWrap');
+  if (tableWrap) {
+    if (!dates.length) {
+      tableWrap.innerHTML = '<div class="empty-state"><div class="icon">📅</div><p>No data for this period.</p></div>';
+    } else {
+      // Short name helper
+      const short = n => n ? n.split(' ')[0] : '--';
+
+      let html = '<table class="eval-table"><thead><tr>'
+        + '<th>Date</th>'
+        + qaNames.map(q => `<th style="text-align:center">${short(q)}</th>`).join('')
+        + '<th style="text-align:center">Total</th>'
+        + '</tr></thead><tbody>';
+
+      dates.forEach(d => {
+        const row = byDate[d];
+        const dayTotal = Object.values(row).reduce((a,b)=>a+b,0);
+        const dt = new Date(d);
+        const dayLabel = dt.toLocaleDateString('en-MY', {weekday:'short', day:'2-digit', month:'short'});
+        html += `<tr><td style="font-size:12px;white-space:nowrap">${dayLabel}</td>`
+          + qaNames.map(q => {
+              const count = row[q] || 0;
+              const bg = count === 0 ? '' : count >= 5 ? 'background:rgba(34,197,94,.15)' : count >= 3 ? 'background:rgba(245,158,11,.1)' : '';
+              return `<td style="text-align:center;font-family:'JetBrains Mono',monospace;font-weight:${count?'700':'400'};color:${count?'var(--text)':'var(--text3)'};${bg}">${count || '—'}</td>`;
+            }).join('')
+          + `<td style="text-align:center;font-weight:700;font-family:'JetBrains Mono',monospace;color:var(--accent)">${dayTotal}</td>`
+          + '</tr>';
+      });
+
+      // Total row
+      html += '<tr style="border-top:2px solid var(--border);font-weight:700">'
+        + '<td style="font-size:12px">TOTAL</td>'
+        + qaNames.map(q => {
+            const t = filtered.filter(e=>e.qa_user_name===q).length;
+            return `<td style="text-align:center;font-family:'JetBrains Mono',monospace;color:var(--green)">${t}</td>`;
+          }).join('')
+        + `<td style="text-align:center;font-family:'JetBrains Mono',monospace;color:var(--accent)">${filtered.length}</td>`
+        + '</tr>';
+
+      html += '</tbody></table>';
+      tableWrap.innerHTML = html;
+    }
+  }
+
+  // Bar chart per QA
+  const barsEl = document.getElementById('qaProdBars');
+  if (barsEl) {
+    const totals = qaNames.map(q => ({ name: q, count: filtered.filter(e=>e.qa_user_name===q).length }))
+      .sort((a,b) => b.count - a.count);
+    const max = totals.length ? totals[0].count : 1;
+
+    barsEl.innerHTML = totals.map((t, i) => {
+      const pct  = Math.round(t.count / max * 100);
+      const colors = ['var(--green)', 'var(--accent)', 'var(--amber)', 'var(--cyan)', 'var(--purple)'];
+      const color= colors[i % colors.length];
+      const medals = ['🥇','🥈','🥉'];
+      return `<div style="display:grid;grid-template-columns:180px 1fr 60px;gap:12px;align-items:center">
+        <div style="font-size:12px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">
+          ${medals[i]||'  '} ${t.name}
+        </div>
+        <div style="height:24px;background:var(--surface3);border-radius:4px;overflow:hidden">
+          <div style="height:100%;width:${pct}%;background:${color};border-radius:4px;transition:width .4s;display:flex;align-items:center;padding-left:8px">
+          </div>
+        </div>
+        <div style="font-family:'JetBrains Mono',monospace;font-size:14px;font-weight:700;color:${color};text-align:right">${t.count}</div>
+      </div>`;
+    }).join('');
+  }
+}
+
+// ===============================================
 //  MY EVALUATIONS (QA view)
 // ===============================================
 
@@ -6258,7 +6623,8 @@ async function loadAuditLog() {
 
   tbody.innerHTML = filtered.slice(0,300).map(e => {
     const dt = e.ts ? new Date(e.ts).toLocaleString('en-MY',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit',hour12:true}) : '--';
-    return '<tr style="cursor:pointer" onclick="viewEval(\''+e.evalId+'\')"><td style="font-size:11px;color:var(--text3);white-space:nowrap">'+dt+'</td><td><span style="font-family:\'JetBrains Mono\',monospace;color:var(--accent);font-size:12px">#'+e.ref+'</span></td><td style="font-size:12px;font-weight:500">'+e.agent+'</td><td><span style="font-size:12px;font-weight:600;color:'+ac(e.action)+'">'+e.action+'</span></td><td style="font-size:12px;color:var(--text2)">'+e.by+'</td><td style="font-size:11px;color:var(--text3);max-width:250px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="'+e.note+'">'+( e.note||'--')+'</td></tr>';
+        var tdStyle = 'text-align:center;font-family:monospace;font-weight:'+(count?'700':'400')+';color:'+(count?'var(--text)':'var(--text3)')+(bg?';'+bg:'');
+        html += '<td style="'+tdStyle+'">'+( isFuture?'':count||'—')+'</td>';
   }).join('');
 }
 
