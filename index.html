@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -917,7 +916,7 @@
               <select class="form-select" id="mpView" onchange="loadMonthlyPerf()" style="width:160px;padding:7px 10px">
                 <option value="team">By Team Leader</option>
                 <option value="agent">By Agent</option>
-                <option value="both">Both</option>
+                <option value="both" selected>Both</option>
               </select>
             </div>
           </div>
@@ -5590,16 +5589,22 @@ async function loadFailAnalysis() {
 
   // ── Aggregate question stats ──
   // For each question: count appearances, count failures (score=0), count partial (score<max)
-  const qStats = {}; // qid -> { q, wt, type, total, fails, partial, totalScore, maxScore }
+  // Key by id + exact wording (not just id): if a template gets edited and the
+  // question text at a given id/slot changes, old evaluations still hold the
+  // OLD wording under that same id. Keying by id alone would silently merge
+  // the old and new question versions together, mixing their comments/stats
+  // in the drill-down. Keying by id+text keeps them separate and accurate.
+  const qStats = {}; // (qid+text) -> { q, wt, type, total, fails, partial, totalScore, maxScore }
 
   filtered.forEach(e => {
     const qs      = e.questions || [];
     const answers = e.answers   || {};
     qs.forEach(q => {
-      if (!qStats[q.id]) {
-        qStats[q.id] = { num:q.num, q:q.q, wt:q.wt, type:q.type, total:0, fails:0, partial:0, totalScore:0, maxScore:0 };
+      const key = q.id + '::' + q.q;
+      if (!qStats[key]) {
+        qStats[key] = { id:q.id, num:q.num, q:q.q, wt:q.wt, type:q.type, total:0, fails:0, partial:0, totalScore:0, maxScore:0 };
       }
-      const s   = qStats[q.id];
+      const s   = qStats[key];
       const ans = answers[q.id];
       if (!ans || ans.val === null || ans.val === undefined) return;
       s.total++;
@@ -6210,19 +6215,17 @@ function openFailDrillDown(q, filtered) {
     const answers = e.answers || {};
     const eqs     = e.questions || [];
 
-    // Step 1: try direct q.id match (same as stats aggregation)
-    let ans    = answers[q.id];
-    let matchedWt = q.wt;
+    // Match this eval's own question snapshot to the exact question version
+    // (id AND wording) we're drilling into. Matching by id alone is not
+    // enough: if the template was edited, this eval's id may now hold
+    // different wording than the question the user clicked on — and a
+    // pure-id match would silently attach the wrong comment/answer.
+    let matchQ = eqs.find(eq => eq.id === q.id && eq.q === q.q);
+    if (!matchQ) matchQ = eqs.find(eq => eq.q === q.q); // wording match even if id shifted
+    if (!matchQ) return; // this eval never had this exact question — skip it entirely
 
-    // Step 2: if not found, find the matching question in THIS eval's question list
-    // (question IDs may differ across templates e.g. s23 vs g16 for same question text)
-    if (!ans || ans.val === null || ans.val === undefined) {
-      const matchQ = eqs.find(eq => eq.num === q.num || eq.q === q.q);
-      if (matchQ) {
-        ans = answers[matchQ.id];
-        matchedWt = matchQ.wt;
-      }
-    }
+    const ans     = answers[matchQ.id];
+    const matchedWt = matchQ.wt;
 
     // Skip if still not answered (consistent with stats)
     if (!ans || ans.val === null || ans.val === undefined) return;
