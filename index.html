@@ -3024,8 +3024,23 @@ async function saveEditedEval(evalId) {
   evaluations = null; // clear cache
   window._editingEvalId = null;
   window._editingEval   = null;
-  showToast('Saved', 'Evaluation #'+e.ref+' updated. Score: '+newScore.toFixed(2)+'%', 'success');
+  // Check if this edit was part of a dispute resolution
+  if (window._pendingResolutionEvalId === evalId) {
+    var resNote  = window._pendingResolutionNote || 'Score revised after dispute.';
+    var isTL     = window._pendingResolutionIsTL;
+    var action   = 'Dispute Resolved — Revised (score: '+newScore.toFixed(2)+'%)';
+    var newStatus = isTL ? 'submitted' : 'qa-review';
+    var resWF    = [{ role: isTL?'qa':'mgr', action, ts:new Date().toISOString(), note: resNote, by: currentStaff?.name||'' }];
+    await appendWorkflowAndStatus(evalId, newStatus, resWF);
+    window._pendingResolutionNote   = null;
+    window._pendingResolutionEvalId = null;
+    window._pendingResolutionIsTL   = null;
+    showToast('Resolved & Updated', 'Score revised to '+newScore.toFixed(2)+'% and sent back to '+(isTL?'TL':'QA')+'.', 'success');
+  } else {
+    showToast('Saved', 'Evaluation #'+e.ref+' updated. Score: '+newScore.toFixed(2)+'%', 'success');
+  }
   closeModal('detailModal');
+  evaluations = null;
   loadAllEvals();
 }
 
@@ -3882,48 +3897,62 @@ function agentAction(id, action) {
 }
 
 async function resolveDispute(id) {
-  // Fetch eval to know if TL or Agent disputed
-  const { data: e } = await supa.from('qa_evaluations').select('status,agent_name,workflow').eq('id',id).single();
+  const { data: e } = await supa.from('qa_evaluations').select('*').eq('id',id).single();
   if (!e) return;
   const isTLDispute    = e.status === 'tl-disputed';
   const isAgentDispute = e.status === 'agent-disputed';
 
+  // Get TL dispute reason from workflow
+  const wfSteps   = e.workflow || [];
+  const disputeWF = [...wfSteps].reverse().find(w => w.action && w.action.toLowerCase().includes('disput'));
+  const disputeReason = disputeWF?.note || '';
+  const disputeBy     = disputeWF?.by   || '';
+
   openActionModal(
-    '🔒 Resolve Dispute',
+    isTLDispute ? '🔒 Resolve TL Dispute' : '🔒 Resolve Agent Dispute',
     isTLDispute
-      ? `<div class="alert alert-warning">TL disputed this evaluation. Resolve and send back to TL for approval.</div>`
-      : `<div class="alert alert-danger">Agent disputed this evaluation. Resolve and send back to QA to review and resubmit.</div>`,
-    `<div class="form-group">
-      <label class="form-label">Resolution</label>
-      <select class="form-select" id="resolutionType">
-        <option value="uphold">Uphold original evaluation — no changes</option>
-        <option value="revise">Revise evaluation — scores will be updated</option>
-      </select>
-    </div>
-    <div class="form-group">
-      <label class="form-label">Resolution Notes (required)</label>
-      <textarea class="form-textarea" id="actionNote" rows="3"
-        placeholder="State your resolution and rationale..."></textarea>
-    </div>`,
+      ? '<div class="alert alert-warning"><strong>TL Disputed:</strong> ' + (disputeReason ? '"'+disputeReason+'" — by '+disputeBy : 'No reason provided') + '<br><br>Review the evaluation and either uphold your original score or revise it.</div>'
+      : '<div class="alert alert-danger"><strong>Agent Disputed.</strong> Manager must resolve before QA re-evaluates.</div>',
+    '<div class="form-group">'
+      +'<label class="form-label">Your Decision</label>'
+      +'<select class="form-select" id="resolutionType">'
+      +'<option value="uphold">Uphold original evaluation — no score changes</option>'
+      +'<option value="revise">Revise evaluation — I will adjust the scores</option>'
+      +'</select></div>'
+      +'<div class="form-group">'
+      +'<label class="form-label">Resolution Notes <span class="req">*</span></label>'
+      +'<textarea class="form-textarea" id="actionNote" rows="3" placeholder="Explain your decision..."></textarea>'
+      +'</div>',
     async () => {
-      const note = document.getElementById('actionNote').value.trim();
-      const res  = document.getElementById('resolutionType').value;
-      if (!note) { alert('Please provide resolution notes'); return false; }
+      const note = document.getElementById('actionNote')?.value.trim();
+      const res  = document.getElementById('resolutionType')?.value;
+      if (!note) { alert('Please provide resolution notes.'); return false; }
 
-      const action = res==='uphold' ? 'Dispute Resolved — Upheld' : 'Dispute Resolved — Revised';
-
-      if (isTLDispute) {
-        // TL disputed → QA resolved → back to TL for approval
-        const wf = [{ role:'qa', action, ts:new Date().toISOString(), note, by:currentStaff?.name||'' }];
-        await appendWorkflowAndStatus(id, 'submitted', wf);
-      } else {
-        // Agent disputed → QA/Manager resolved → back to QA to review & resubmit
-        const wf = [{ role:'mgr', action, ts:new Date().toISOString(), note, by:currentStaff?.name||'' }];
-        await appendWorkflowAndStatus(id, 'qa-review', wf);
+      if (res === 'revise') {
+        // Close modal and open edit mode
+        closeModal('actionModal');
+        // Store resolution note for after edit
+        window._pendingResolutionNote  = note;
+        window._pendingResolutionEvalId = id;
+        window._pendingResolutionIsTL   = isTLDispute;
+        // Open eval in edit mode
+        await viewEval(id);
+        setTimeout(function() { editEvaluation(id); }, 500);
+        showToast('Edit to Revise', 'Adjust the scores then click Save — resolution will be submitted automatically.', 'info');
+        return true;
       }
-      loadDisputes(); return true;
+
+      // Uphold — no score change, just move status
+      const action = 'Dispute Resolved — Upheld';
+      const newWF  = [{ role: isTLDispute?'qa':'mgr', action, ts:new Date().toISOString(), note, by:currentStaff?.name||'' }];
+      const newStatus = isTLDispute ? 'submitted' : 'qa-review';
+      await appendWorkflowAndStatus(id, newStatus, newWF);
+      evaluations = null;
+      loadDisputes();
+      showToast('Resolved', 'Evaluation upheld and sent back to '+(isTLDispute?'TL':'QA')+'.', 'success');
+      return true;
     },
-    'btn-primary', '🔒 Resolve & Forward'
+    'btn-primary', '🔒 Submit Resolution'
   );
 }
 
