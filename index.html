@@ -641,7 +641,7 @@
           </div>
           <div style="display:flex;gap:10px;justify-content:flex-end">
             <button class="btn btn-ghost" onclick="saveEval('draft')">💾 Save Draft</button>
-            <button class="btn btn-primary" onclick="saveEval('submitted')">Submit to TL →</button>
+            <button class="btn btn-primary" id="submitEvalBtn" onclick="saveEval('submitted')">Submit to TL →</button>
           </div>
         </div>
       </div>
@@ -2758,7 +2758,18 @@ async function saveEval(status) {
   };
 
   setLoading(true, status==='draft'?'Saving draft...':'Submitting evaluation...');
-  const { data, error } = await supa.from('qa_evaluations').insert(payload).select().single();
+  // Check if editing existing eval (admin edit mode)
+  let data, error;
+  if (window._editingEvalId) {
+    const editId = window._editingEvalId;
+    delete payload.ref; // Don't overwrite ref
+    const res = await supa.from('qa_evaluations').update(payload).eq('id', editId).select().single();
+    data = res.data; error = res.error;
+    window._editingEvalId = null; // Clear edit mode
+  } else {
+    const res = await supa.from('qa_evaluations').insert(payload).select().single();
+    data = res.data; error = res.error;
+  }
   setLoading(false);
 
   if (error) {
@@ -2807,11 +2818,219 @@ CREATE POLICY "all_access" ON qa_evaluations FOR ALL USING (true) WITH CHECK (tr
 
   var msg = status==='draft' ? '✅ Draft saved! Ref #'+data.ref : '✅ Evaluation #'+data.ref+' submitted to TL for review.';
   showToast(status==='draft'?'Draft Saved':'Submitted to TL', msg, 'success');
-  resetNewEval();
+  resetEvalForm();
   selectedTemplate = null;
   evaluations = null;
   showPage('evaluations');
 }
+
+// ===============================================
+//  EDIT EVALUATION (Admin only)
+// ===============================================
+
+async function editEvaluation(evalId) {
+  // Load eval
+  let e = (evaluations||[]).find(x => x.id === evalId);
+  if (!e) {
+    setLoading(true, 'Loading...');
+    const res = await supa.from('qa_evaluations').select('*').eq('id', evalId).single();
+    setLoading(false);
+    e = res.data;
+  }
+  if (!e) { alert('Evaluation not found.'); return; }
+
+  window._editingEvalId = evalId;
+  window._editingEval   = e;
+
+  // Switch Scores tab to edit mode
+  switchDTab('scores');
+
+  // Get all questions from eval
+  const questions   = e.questions   || [];
+  const answers     = e.answers     || {};
+  const fatals      = FATALS || [];
+  const fatalAns    = e.fatal_answers || {};
+  const pm          = getPassingMark();
+
+  // Build editable scores UI
+  var html = '<div style="background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.3);border-radius:8px;padding:10px 14px;margin-bottom:14px;font-size:12px;color:var(--amber)">'
+    + '✏️ <strong>Edit Mode</strong> — Adjust scores below and click <strong>Save Changes</strong>.</div>';
+
+  html += '<div style="display:flex;flex-direction:column;gap:8px;max-height:55vh;overflow-y:auto;padding-right:4px">';
+
+  questions.forEach(function(q) {
+    var ans    = answers[q.id] || {};
+    var curVal = ans.val || '';
+    var curCmt = ans.comment || '';
+    var opts   = q.type === '012'
+      ? [['Y','Yes ('+q.wt+'pts)'],['P','Partial ('+Math.round(q.wt/2)+'pts)'],['N','No (0pts)']]
+      : [['Y','Yes ('+q.wt+'pts)'],['N','No (0pts)']];
+
+    html += '<div style="background:var(--surface2);border-radius:6px;padding:10px 12px">'
+      + '<div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:8px">'
+      + '<span style="font-size:12px;font-weight:600;flex:1">' + q.num + ' ' + q.q + '</span>'
+      + '<span style="font-size:11px;color:var(--text3);flex-shrink:0;margin-left:8px">(' + q.wt + 'pts)</span>'
+      + '</div>'
+      + '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:6px">';
+
+    opts.forEach(function(opt) {
+      var sel = curVal === opt[0];
+      html += '<label style="display:flex;align-items:center;gap:4px;cursor:pointer;font-size:12px;padding:4px 10px;border-radius:6px;'
+        + (sel ? 'background:rgba(79,142,247,.2);border:1px solid var(--accent);font-weight:600' : 'background:var(--surface3);border:1px solid var(--border)')
+        + '">'
+        + '<input type="radio" name="eq_'+q.id+'" value="'+opt[0]+'" data-qid="'+q.id+'" data-wt="'+q.wt+'" data-type="'+q.type+'"'+(sel?' checked':'')+' onchange="updateEditScore()">'
+        + ' ' + opt[1] + '</label>';
+    });
+
+    html += '</div>'
+      + '<input class="form-input" placeholder="Comment (optional)" value="'+curCmt.replace(/"/g,'&quot;')+'" id="ecmt_'+q.id+'" style="padding:4px 8px;font-size:11px">'
+      + '</div>';
+  });
+
+  // Fatal errors
+  if (fatals.length) {
+    html += '<div style="margin-top:8px;font-size:11px;font-weight:700;color:var(--red);text-transform:uppercase;letter-spacing:.5px">⛔ Fatal Errors</div>';
+    fatals.forEach(function(f) {
+      var fans   = fatalAns[f.id] || {};
+      var curVal = fans.val || 'N';
+      html += '<div style="background:rgba(239,68,68,.06);border:1px solid rgba(239,68,68,.2);border-radius:6px;padding:8px 12px">'
+        + '<div style="font-size:12px;font-weight:600;color:var(--red);margin-bottom:6px">' + f.q + '</div>'
+        + '<div style="display:flex;gap:6px">';
+      [['N','No Fatal'],['Y','⛔ Fatal']].forEach(function(opt) {
+        var sel = curVal === opt[0];
+        html += '<label style="display:flex;align-items:center;gap:4px;cursor:pointer;font-size:12px;padding:4px 10px;border-radius:6px;'
+          +(sel?'background:rgba(239,68,68,.15);border:1px solid var(--red);font-weight:600':'background:var(--surface3);border:1px solid var(--border)')
+          +'">'
+          +'<input type="radio" name="ef_'+f.id+'" value="'+opt[0]+'" data-fid="'+f.id+'"'+(sel?' checked':'')+' onchange="updateEditScore()">'
+          +' '+opt[1]+'</label>';
+      });
+      html += '</div></div>';
+    });
+  }
+
+  html += '</div>';
+  html += '<div style="margin-top:12px;background:var(--surface2);border-radius:8px;padding:12px;display:flex;align-items:center;justify-content:space-between">'
+    + '<div><div style="font-size:11px;color:var(--text3)">New Score</div>'
+    + '<div id="editScoreDisplay" style="font-size:28px;font-weight:700;font-family:monospace;color:var(--green)">--</div></div>'
+    + '<textarea class="form-textarea" id="editCoachNotes" rows="2" placeholder="Update coaching notes (optional)..." style="flex:1;margin-left:16px;padding:8px;font-size:12px">'+(e.coaching_notes||e.call_remarks||'')+'</textarea>'
+    + '</div>';
+
+  // Replace modal body
+  var body = document.getElementById('detailModalBody');
+  if (body) {
+    body.innerHTML = html;
+    // Calculate initial score
+    setTimeout(updateEditScore, 100);
+  }
+
+  // Update footer
+  var footer = document.getElementById('detailModalFooter');
+  if (footer) {
+    var cancelBtn2 = document.createElement('button'); cancelBtn2.className='btn btn-ghost'; cancelBtn2.textContent='Cancel';
+    cancelBtn2.onclick = function(){ viewEval(evalId); };
+    var saveBtn2 = document.createElement('button'); saveBtn2.className='btn btn-primary'; saveBtn2.textContent='💾 Save Changes';
+    saveBtn2.style.cssText='background:var(--amber);border-color:var(--amber)';
+    saveBtn2.onclick = function(){ saveEditedEval(evalId); };
+    footer.innerHTML = '';
+    footer.appendChild(cancelBtn2);
+    footer.appendChild(saveBtn2);
+  }
+}
+
+function updateEditScore() {
+  var e     = window._editingEval || {};
+  var total = 0, earned = 0, hasFatal = false;
+
+  // Calculate from checked radios
+  document.querySelectorAll('[name^="eq_"]:checked').forEach(function(r) {
+    var wt   = parseFloat(r.dataset.wt || 0);
+    var type = r.dataset.type || 'yn';
+    total += wt;
+    if (r.value === 'Y') earned += wt;
+    else if (r.value === 'P') earned += Math.round(wt/2);
+  });
+
+  document.querySelectorAll('[name^="ef_"]:checked').forEach(function(r) {
+    if (r.value === 'Y') hasFatal = true;
+  });
+
+  var score = hasFatal ? 0 : total > 0 ? Math.round(earned/total*10000)/100 : 0;
+  var pm    = getPassingMark();
+  var color = hasFatal ? 'var(--red)' : score>=pm ? 'var(--green)' : score>=(pm*0.75) ? 'var(--amber)' : 'var(--red)';
+  var el    = document.getElementById('editScoreDisplay');
+  if (el) {
+    el.textContent = hasFatal ? 'FATAL (0%)' : score.toFixed(2)+'%';
+    el.style.color = color;
+  }
+}
+
+async function saveEditedEval(evalId) {
+  var e = window._editingEval;
+  if (!e) return;
+
+  // Collect answers
+  var newAnswers = {};
+  var questions  = e.questions || [];
+  var total = 0, earned = 0;
+
+  questions.forEach(function(q) {
+    var radio = document.querySelector('[name="eq_'+q.id+'"]:checked');
+    var cmt   = (document.getElementById('ecmt_'+q.id)||{}).value || '';
+    if (!radio) return;
+    total += q.wt;
+    var score = radio.value==='Y' ? q.wt : radio.value==='P' ? Math.round(q.wt/2) : 0;
+    earned += score;
+    newAnswers[q.id] = { val: radio.value, score: score, comment: cmt };
+  });
+
+  // Collect fatal answers
+  var newFatalAns = {};
+  var hasFatal    = false;
+  (FATALS||[]).forEach(function(f) {
+    var radio = document.querySelector('[name="ef_'+f.id+'"]:checked');
+    if (!radio) return;
+    if (radio.value === 'Y') hasFatal = true;
+    newFatalAns[f.id] = { val: radio.value };
+  });
+
+  var newScore = hasFatal ? 0 : total > 0 ? Math.round(earned/total*10000)/100 : 0;
+  var notes    = (document.getElementById('editCoachNotes')||{}).value || '';
+
+  // Add edit note to workflow
+  var workflow = e.workflow || [];
+  workflow.push({
+    action: 'Admin Edited',
+    by:     currentStaff?.name || currentUser?.email,
+    ts:     new Date().toISOString(),
+    note:   'Score updated from '+e.score+'% to '+newScore+'%'+(notes?' | Notes: '+notes:'')
+  });
+
+  setLoading(true, 'Saving changes...');
+  var res = await supa.from('qa_evaluations').update({
+    answers:       newAnswers,
+    fatal_answers: newFatalAns,
+    has_fatal:     hasFatal,
+    earned_pts:    earned,
+    total_wt:      total,
+    score:         newScore,
+    coaching_notes:notes,
+    workflow:      workflow,
+    updated_at:    new Date().toISOString()
+  }).eq('id', evalId);
+  setLoading(false);
+
+  if (res.error) { alert('Error saving: '+res.error.message); return; }
+
+  evaluations = null; // clear cache
+  window._editingEvalId = null;
+  window._editingEval   = null;
+  showToast('Saved', 'Evaluation #'+e.ref+' updated. Score: '+newScore.toFixed(2)+'%', 'success');
+  closeModal('detailModal');
+  loadAllEvals();
+}
+
+// Override saveEval to handle edit mode
+const _origSaveEval = typeof saveEval !== 'undefined' ? saveEval : null;
 
 // ===============================================
 //  LOAD DATA
@@ -3826,10 +4045,12 @@ async function viewEval(id) {
 
   const isQARole  = (currentStaff?.role||'').toLowerCase() === 'qa';
   const isThisQA  = isQARole && (e.qa_user_id === currentUser?.id || e.qa_user_name === currentStaff?.name);
-  let footer = `<button class="btn btn-ghost" onclick="closeModal('detailModal')">Close</button>`;
+  const _adminEmail = (currentUser?.email||'').toLowerCase();
+  const _isAdmin = (currentStaff?.role||'').toLowerCase()==='admin'||ROLE_MAP_EMAIL[_adminEmail]==='admin'||roleOverrides[_adminEmail]==='admin';
+  let footer = '<button class="btn btn-ghost" onclick="closeModal(\'detailModal\')">Close</button>';
+  // edit btn added after footer innerHTML set below
   if (isQARole && isThisQA && ['submitted','tl-approved'].includes(e.status)) {
-    footer = `<div style="font-size:12px;color:var(--text3);padding:4px 8px;flex:1">
-      ℹ️ You submitted this evaluation — TL and Agent actions are handled by them.</div>` + footer;
+    footer = '<div style="font-size:12px;color:var(--text3);padding:4px 8px;flex:1">ℹ️ You submitted this evaluation — TL and Agent actions are handled by them.</div>' + footer;
   }
   if (e.status==='submitted' && canActAs('tl') && !isQARole)
     footer += `<button class="btn btn-success" onclick="closeModal('detailModal');tlAction('${e.id}','approve')">✓ Approve</button>
@@ -3845,6 +4066,16 @@ async function viewEval(id) {
     footer += `<button class="btn btn-primary" onclick="closeModal('detailModal');resolveDispute('${e.id}')">🔒 Resolve</button>`;
 
   document.getElementById('detailModalFooter').innerHTML = footer;
+  // Append edit button for admin and QA (must be after innerHTML is set)
+  if (_isAdmin || isQARole) {
+    var _eid2 = e.id;
+    var _editBtn2 = document.createElement('button');
+    _editBtn2.className = 'btn btn-ghost';
+    _editBtn2.textContent = '✏️ Edit Evaluation';
+    _editBtn2.style.cssText = 'color:var(--amber);border-color:rgba(245,158,11,.5)';
+    _editBtn2.onclick = function(){ editEvaluation(_eid2); };
+    document.getElementById('detailModalFooter').appendChild(_editBtn2);
+  }
   document.getElementById('detailModal').classList.remove('hidden');
 }
 
@@ -5735,7 +5966,10 @@ function renderMyEvalsList() {
       <td>${statusBadge(e.status)}</td>
       <td style="font-size:11px;color:var(--text3)">${e.date||'--'}</td>
       <td style="font-size:11px;color:var(--text3)">${evalDate}</td>
-      <td onclick="event.stopPropagation()"><button class="btn btn-ghost btn-sm" onclick="viewEval('${e.id}')">View</button></td>
+      <td onclick="event.stopPropagation()" style="display:flex;gap:4px">
+        <button class="btn btn-ghost btn-sm" onclick="viewEval('${e.id}')">View</button>
+        ${isAdmin?`<button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();editEvaluation('${e.id}')">✏️</button>`:''}
+      </td>
     </tr>`;
   }).join('');
 }
