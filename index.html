@@ -1573,6 +1573,12 @@ let currentAnswers = {};
 let currentFatalAnswers = {};
 let selectedTemplate = null; // {evalType:'historical'|'live', csat:'yes'|'no'}
 
+// Agents should only ever see an evaluation once the TL has approved it (or
+// later stages of that same approved evaluation). 'draft', 'submitted'
+// (awaiting TL review), and 'tl-disputed' (TL sent it back to QA before it
+// was ever approved) must stay hidden from the agent.
+const AGENT_VISIBLE_STATUSES = ['tl-approved', 'agent-acknowledged', 'agent-disputed', 'qa-review', 'closed'];
+
 // ===============================================
 //  ROLE PERMISSION HELPER
 // ===============================================
@@ -2447,7 +2453,11 @@ document.addEventListener('click', e => {
 //  TEMPLATE SELECTION
 // ===============================================
 function selectTemplate(evalType, csat) {
-  selectedTemplate = { evalType, csat };
+  // All Historical/Live templates share one editable question bank, saved
+  // under the 'hist-no' key by the Template Manager (see saveBuiltinTemplate).
+  // Setting id here lets getTemplateQuestions() find that saved override
+  // instead of silently falling back to the hardcoded default questions.
+  selectedTemplate = { evalType, csat, id: (evalType === 'complaint' ? 'complaint' : 'hist-no') };
   document.querySelectorAll('.template-card').forEach(c => c.classList.remove('selected'));
 
   if (evalType === 'complaint') {
@@ -3093,6 +3103,13 @@ async function loadEvals(filters = {}) {
     });
     console.log('[QA loadEvals] Client-side agent filter applied, rows:', rows.length);
   }
+
+  // Status gate for agents: never show draft / submitted / tl-disputed —
+  // an agent should only see an evaluation from the point the TL approved it.
+  if (isAgent) {
+    rows = rows.filter(e => AGENT_VISIBLE_STATUSES.includes(e.status));
+  }
+
   console.log('[QA loadEvals] base:', base, '| mappedRole:', mappedRole, '| isAgent:', isAgent, '| rows after filter:', rows.length, '| currentStaff.name:', currentStaff?.name);
   return rows;
 }
@@ -3978,6 +3995,21 @@ async function viewEval(id) {
   setLoading(false);
   if (!e) return;
 
+  // Hard access-control guard: viewEval() fetches directly by id, bypassing
+  // the list-level filters in loadEvals(). Enforce the same rule here so an
+  // agent can never see another agent's evaluation, or their own before the
+  // TL has approved it, no matter how this function gets triggered.
+  const base = (currentStaff?.role || '').toLowerCase();
+  if (base === 'agent') {
+    const myName = (currentStaff?.name || '').toLowerCase().trim();
+    const isMine = (e.agent_name || '').toLowerCase().trim() === myName;
+    const isVisible = AGENT_VISIBLE_STATUSES.includes(e.status);
+    if (!isMine || !isVisible) {
+      alert('This evaluation is not available for you to view yet.');
+      return;
+    }
+  }
+
   document.getElementById('detailModalTitle').textContent = `Evaluation #${e.ref} -- ${e.agent_name}`;
   const scoreColor = e.score>=80?'var(--green)':e.score>=60?'var(--amber)':'var(--red)';
   const qs = e.questions || [];
@@ -4789,6 +4821,15 @@ async function loadBuiltinOverrides() {
     // Apply fatals globally (shared across all templates)
     var anyFatals = data.find(function(r){ return r.fatals && r.fatals.length; });
     if (anyFatals) FATALS = anyFatals.fatals;
+    // Apply the shared std/gen question bank globally too, so STD_QS/GEN_QS
+    // (used directly in a couple of places, e.g. Template Manager counts)
+    // reflect saved edits immediately after a fresh page load, not just
+    // the TPL_OVERRIDES map.
+    var shared = TPL_OVERRIDES['hist-no'];
+    if (shared) {
+      if (shared.std_qs) STD_QS = shared.std_qs;
+      if (shared.gen_qs) GEN_QS = shared.gen_qs;
+    }
   } catch(e) {
     console.warn('[QA] Could not load builtin overrides:', e.message);
   }
@@ -4802,6 +4843,107 @@ function getTemplateQuestions(tplId) {
     gen_qs: (override && override.gen_qs) ? override.gen_qs : GEN_QS,
     fatals: FATALS
   };
+}
+
+// ===============================================
+//  ADMIN: RECALCULATE ALL EVALUATIONS AGAINST LATEST TEMPLATE
+// ===============================================
+// Rebuilds `questions`/`score`/`earned_pts`/`total_wt` for EVERY evaluation
+// (including approved/acknowledged/closed ones) using the current STD_QS /
+// GEN_QS / FATALS. Answers carry over by matching question id — questions
+// that were removed from the template are simply dropped from scoring;
+// questions that are new to the template count as unanswered (0 pts) since
+// no historical answer exists for them, which will lower affected scores.
+//
+// SAFETY: always run with dryRun:true first and review the console table.
+// This is IRREVERSIBLE once run with dryRun:false — back up the
+// qa_evaluations table in Supabase before running for real.
+//
+// Usage (paste in browser console while logged in as admin):
+//   adminRecalculateAllScores({dryRun:true})   // preview only, no writes
+//   adminRecalculateAllScores({dryRun:false})  // apply for real
+async function adminRecalculateAllScores(opts) {
+  opts = opts || {};
+  var dryRun = opts.dryRun !== false; // default true — must opt in to write
+
+  var base = (currentStaff?.role || '').toLowerCase();
+  var isAdmin = base === 'admin' || ROLE_MAP_EMAIL[(currentUser?.email||'').toLowerCase()] === 'admin';
+  if (!isAdmin) { console.error('[Recalc] Admin role required.'); return; }
+
+  await loadBuiltinOverrides(); // make sure STD_QS/GEN_QS/FATALS reflect latest saved template
+
+  var { data: rows, error } = await supa.from('qa_evaluations').select('*');
+  if (error) { console.error('[Recalc] Failed to load evaluations:', error); return; }
+
+  var fatalIds = FATALS.map(function(f){ return f.id; });
+  var summary = [];
+  var updates = [];
+
+  rows.forEach(function(e) {
+    var cat = e.call_category === 'general' ? 'general' : 'standard';
+    var newQuestions = (cat === 'standard' ? [...STD_QS] : [...GEN_QS]);
+    if (e.csat === 'yes') {
+      var csatQ = cat === 'standard' ? STD_CSAT : GEN_CSAT;
+      var idx = newQuestions.findIndex(function(q){ return q.id === (cat==='standard'?'s34':'g27'); });
+      newQuestions.splice(idx < 0 ? newQuestions.length : idx, 0, csatQ);
+    }
+
+    var answers = e.answers || {};
+    var earned = newQuestions.reduce(function(a,q){ return a + (answers[q.id]?.score || 0); }, 0);
+    var totalWt = newQuestions.reduce(function(a,q){ return a + q.wt; }, 0);
+
+    var fatalAnswers = e.fatal_answers || {};
+    var hasFatal = fatalIds.some(function(fid){ return fatalAnswers[fid]?.val === 'Y'; });
+
+    var newScore = hasFatal ? 0 : (totalWt > 0 ? Math.round(earned/totalWt*10000)/100 : 0);
+    var unansweredNew = newQuestions.filter(function(q){ return answers[q.id] === undefined; }).length;
+
+    summary.push({
+      ref: e.ref, agent: e.agent_name, status: e.status,
+      old_score: e.score, new_score: newScore,
+      delta: Math.round((newScore - (e.score||0)) * 100) / 100,
+      unanswered_new_questions: unansweredNew
+    });
+
+    updates.push({
+      id: e.id,
+      questions: newQuestions,
+      answers: answers,
+      has_fatal: hasFatal,
+      score: newScore,
+      earned_pts: earned,
+      total_wt: totalWt,
+      workflow: (e.workflow || []).concat([{
+        role: 'system', action: 'Score Recalculated — Template Updated',
+        ts: new Date().toISOString(),
+        note: 'Rescored against latest template by admin. Old: ' + (e.score||0) + '%, New: ' + newScore + '%.' + (unansweredNew ? ' (' + unansweredNew + ' new question(s) counted as unanswered)' : ''),
+        by: currentStaff?.name || currentUser?.email || 'Admin'
+      }])
+    });
+  });
+
+  console.table(summary);
+  console.log('[Recalc] ' + summary.length + ' evaluation(s) evaluated. Changed: ' + summary.filter(function(s){return s.delta!==0;}).length + '. Dry run: ' + dryRun);
+
+  if (dryRun) {
+    console.log('[Recalc] Dry run only — no changes written. Run adminRecalculateAllScores({dryRun:false}) to apply.');
+    return summary;
+  }
+
+  var failed = [];
+  for (var i = 0; i < updates.length; i++) {
+    var u = updates[i];
+    var res = await supa.from('qa_evaluations').update({
+      questions: u.questions, has_fatal: u.has_fatal, score: u.score,
+      earned_pts: u.earned_pts, total_wt: u.total_wt, workflow: u.workflow,
+      updated_at: new Date().toISOString()
+    }).eq('id', u.id);
+    if (res.error) failed.push({ id: u.id, error: res.error.message });
+  }
+
+  console.log('[Recalc] Applied ' + (updates.length - failed.length) + '/' + updates.length + ' updates.');
+  if (failed.length) console.error('[Recalc] Failed updates:', failed);
+  return { summary, failed };
 }
 
 async function loadTplMgmt() {
@@ -6395,7 +6537,7 @@ function loadPermissionsFromSupabase() {
   }
   _permissionsCache = base;
   // Sync to Supabase in background (non-blocking)
-  supa.from('app_settings').select('value').eq('key','qa_feature_permissions').maybeSingle()
+  return supa.from('app_settings').select('value').eq('key','qa_feature_permissions').maybeSingle()
     .then(function(res) {
       if (res.data && res.data.value) {
         try {
