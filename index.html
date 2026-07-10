@@ -2807,7 +2807,7 @@ CREATE POLICY "all_access" ON qa_evaluations FOR ALL USING (true) WITH CHECK (tr
 
   var msg = status==='draft' ? '✅ Draft saved! Ref #'+data.ref : '✅ Evaluation #'+data.ref+' submitted to TL for review.';
   showToast(status==='draft'?'Draft Saved':'Submitted to TL', msg, 'success');
-  resetEvalForm();
+  resetNewEval();
   selectedTemplate = null;
   evaluations = null;
   showPage('evaluations');
