@@ -1248,6 +1248,14 @@
           </div>
         </div>
 
+        <!-- Team Roster: agents grouped by Team Leader -->
+        <div class="card" style="margin-bottom:16px">
+          <div class="card-header" style="margin-bottom:16px">
+            <div><div class="card-title">👥 Team Roster</div><div class="card-subtitle">Which agents report to which Team Leader</div></div>
+          </div>
+          <div id="teamRosterContent"><div class="text-sm" style="text-align:center;padding:20px;color:var(--text3)">Loading...</div></div>
+        </div>
+
         <div class="card" style="padding:0;overflow:hidden">
           <table class="eval-table" id="rmTable">
             <thead>
@@ -1568,6 +1576,71 @@ let FATALS = [
 let currentUser = null;      // supabase auth user
 let currentStaff = null;     // row from staff table
 let allStaff = [];           // all staff for autocomplete
+
+// ── AUTHORITATIVE TEAM ROSTER OVERRIDE ──
+// The staff table's `team` field has proven unreliable for grouping agents
+// under their TL (several agents were matching multiple/all TLs at once).
+// This explicit list is the source of truth until the underlying staff data
+// is cleaned up. Used by: Team Roster (Role Management), TL auto-fill on
+// the evaluation form, and the TL's own data-visibility filter.
+const TEAM_ROSTER_OVERRIDE = {
+  'Zaid Amirul Bin Shaharom': [
+    'Fatin Nadhirah Binti Aziz', 'Muhammad Rasdan Bin Sulaiman', 'Nurzamalisa Binti Mohammed Zamri',
+    'Nur Erika Adlyn Binti Mohd Rashdy', 'Muhammad Azim Bin Kamal Bacha', 'Muhammad Danial Bin Rusli'
+  ],
+  'Asriza Bin Anwar': [
+    'Muhammad Aidil Ashraf Bin Mukhtar', 'Siti Fatimah Binti Mansor', 'Nor Azira Binti Saidin',
+    'Muhammad Iman Hadzri Bin Mohd Nadziri'
+  ],
+  'Asrul Rezman Bin Muhamad Fauzi': [
+    'Ammar Syatbi Bin Mohd Shabry', 'Nurfatini Idayu Binti Suti', 'Mohamad Syafiq Izzat Bin Mohamad Yusof',
+    "Nur Suhailah Binti Ros Mustapha Kamal", 'Nuranati Zulaika Binti Zulkiefly'
+  ],
+  'Intan Ardina Binti Ramli': [
+    'Nor Hasyimah Binti Abdul Latif', 'Anis Izzati Binti Abd Khani', 'Nor Hakimah Ahmad Hanafiah',
+    'Amalina Sofea Binti Fauzi', 'Mohamad Noor Shah Bin Nordin'
+  ],
+  'Saputra Hanim Purnama Bin Tarsan': [
+    'Johari Bin Bahardin', 'Siti Nursafwanah Binti Daim', "Mu'ammar Ilham Bin Hairol Bakti",
+    'Maria Afifah Binti Hamir', 'Muhammad Nazam Bin Muhammad Nasir'
+  ],
+};
+
+// Agents that don't (yet) report to a specific Team Leader but belong to a
+// known operational group — e.g. outbound agents. Kept separate from
+// TEAM_ROSTER_OVERRIDE (which is strictly TL -> agents) so the roster can
+// display them without falsely implying a TL relationship, and so they
+// don't get flagged as a data error in the "Unassigned" warning.
+const NON_TL_AGENT_GROUPS = {
+  'Operation (Outbound)': ['Siti Ruqaiyah Binti Hussain'],
+};
+
+// Normalize a name for comparison: lowercase, trim, strip apostrophes and
+// collapse whitespace. Handles cases like "Mu'ammar" vs "Muammar" where the
+// staff table and a manually-typed roster don't spell a name identically.
+function normName(n) {
+  return (n || '').toLowerCase().trim().replace(/['’]/g, '').replace(/\s+/g, ' ');
+}
+
+// Reverse lookup: normalized agent name -> TL name
+const AGENT_TO_TL_OVERRIDE = {};
+Object.entries(TEAM_ROSTER_OVERRIDE).forEach(([tlName, agentList]) => {
+  agentList.forEach(agentName => {
+    AGENT_TO_TL_OVERRIDE[normName(agentName)] = tlName;
+  });
+});
+
+// normalized agent name -> group name (for NON_TL_AGENT_GROUPS)
+const AGENT_TO_NON_TL_GROUP = {};
+Object.entries(NON_TL_AGENT_GROUPS).forEach(([groupName, agentList]) => {
+  agentList.forEach(agentName => {
+    AGENT_TO_NON_TL_GROUP[normName(agentName)] = groupName;
+  });
+});
+
+function getTLNameForAgent(agentName) {
+  return AGENT_TO_TL_OVERRIDE[normName(agentName)] || null;
+}
 let evaluations = [];
 let currentAnswers = {};
 let currentFatalAnswers = {};
@@ -2356,6 +2429,12 @@ function isTLRole(role) {
 }
 
 function findTLForAgent(agent) {
+  // Strategy 0: authoritative roster override (most reliable — see TEAM_ROSTER_OVERRIDE)
+  const overrideTLName = getTLNameForAgent(agent?.name);
+  if (overrideTLName) {
+    const tl = allStaff.find(x => normName(x.name) === normName(overrideTLName));
+    if (tl) return tl;
+  }
   // Strategy 1: direct team_leader_id FK
   if (agent.team_leader_id) {
     const tl = allStaff.find(x => x.id === agent.team_leader_id);
@@ -3064,6 +3143,9 @@ async function loadEvals(filters = {}) {
   let q = supa.from('qa_evaluations').select('*').order('created_at', { ascending: false });
   if (filters.status)   q = q.eq('status', filters.status);
   if (filters.statuses) q = q.in('status', filters.statuses);
+  // Soft-deleted evaluations (see deleteEvaluation()) are hidden from every
+  // normal view/report/score by default. Pass includeDeleted:true to see them.
+  if (!filters.includeDeleted) q = q.neq('status', 'deleted');
 
   // Agent-level DB filter: push down to Supabase for efficiency
   const base  = (currentStaff?.role || '').toLowerCase();
@@ -3410,6 +3492,8 @@ async function loadAllEvals() {
   });
 
   const tbody = document.getElementById('allEvalsBody');
+  const _email2 = (currentUser?.email || '').toLowerCase();
+  const _isAdminForDelete = (currentStaff?.role||'').toLowerCase()==='admin' || ROLE_MAP_EMAIL[_email2]==='admin' || roleOverrides[_email2]==='admin';
   if (!filtered.length) { tbody.innerHTML = '<tr><td colspan="12"><div class="empty-state"><div class="icon">🔍</div><p>No evaluations match the selected filters.</p></div></td></tr>'; return; }
   tbody.innerHTML = filtered.map(e => {
     const evalDT   = e.created_at ? new Date(e.created_at) : null;
@@ -3436,6 +3520,7 @@ async function loadAllEvals() {
     <td style="display:flex;gap:6px">
       <button class="btn btn-ghost btn-sm" onclick="viewEval('${e.id}')">View</button>
       ${e.status==='draft' ? `<button class="btn btn-primary btn-sm" onclick="quickSubmit('${e.id}')">Submit</button>` : ''}
+      ${_isAdminForDelete ? `<button class="btn btn-ghost btn-sm" style="color:var(--red)" onclick="event.stopPropagation();deleteEvaluation('${e.id}','${e.ref}','${(e.agent_name||'').replace(/'/g,"\\'")}')" title="Delete evaluation">🗑️</button>` : ''}
     </td>
   </tr>`;}).join('');
   updateSidebarBadges(all);
@@ -3514,18 +3599,27 @@ function filterByMyTeam(rows) {
   const myName  = (currentStaff?.name || '').toLowerCase().trim();
   const teamKey = getMyTeamKey(); // first word of TL full name e.g. "Intan", "Asriza"
 
-  // Agents in staff table have team = TL's first name
-  const myTeamAgents = allStaff
-    .filter(s => {
-      const agentTeam = (s._raw?.team || s.team || '').trim().toLowerCase();
-      return teamKey && agentTeam === teamKey.toLowerCase();
-    })
-    .map(s => s.name.toLowerCase().trim());
+  // Authoritative override takes priority (see TEAM_ROSTER_OVERRIDE) since the
+  // staff table's team field has proven unreliable. Fall back to old
+  // field-matching only for TLs not yet covered by the override.
+  const myTLKey = Object.keys(TEAM_ROSTER_OVERRIDE).find(tlName => normName(tlName) === normName(myName));
+  let myTeamAgents;
+  if (myTLKey) {
+    myTeamAgents = TEAM_ROSTER_OVERRIDE[myTLKey].map(n => normName(n));
+  } else {
+    // Agents in staff table have team = TL's first name
+    myTeamAgents = allStaff
+      .filter(s => {
+        const agentTeam = (s._raw?.team || s.team || '').trim().toLowerCase();
+        return teamKey && agentTeam === teamKey.toLowerCase();
+      })
+      .map(s => s.name.toLowerCase().trim());
+  }
 
   console.log('[QA Filter] TL:', currentStaff?.name, '| teamKey:', teamKey, '| myTeamAgents:', myTeamAgents);
 
   return rows.filter(e => {
-    const agentMatch = myTeamAgents.includes((e.agent_name || '').toLowerCase().trim());
+    const agentMatch = myTeamAgents.includes(normName(e.agent_name));
     const tlMatch    = (e.tl_name || '').toLowerCase().trim() === myName;
     return agentMatch || tlMatch;
   });
@@ -4137,6 +4231,14 @@ async function viewEval(id) {
     _editBtn2.onclick = function(){ editEvaluation(_eid2); };
     document.getElementById('detailModalFooter').appendChild(_editBtn2);
   }
+  if (_isAdmin) {
+    var _delBtn = document.createElement('button');
+    _delBtn.className = 'btn btn-ghost';
+    _delBtn.textContent = '🗑️ Delete Evaluation';
+    _delBtn.style.cssText = 'color:var(--red);border-color:rgba(239,68,68,.5)';
+    _delBtn.onclick = function(){ deleteEvaluation(e.id, e.ref, e.agent_name||''); };
+    document.getElementById('detailModalFooter').appendChild(_delBtn);
+  }
   document.getElementById('detailModal').classList.remove('hidden');
 }
 
@@ -4178,6 +4280,50 @@ async function editCallDate(evalId, currentDate) {
       return true;
     },
     'btn-primary', 'Save Date'
+  );
+}
+
+// Admin-only: soft-delete an evaluation (e.g. accidental duplicate submission).
+// The row is NOT removed from the database — it's marked status:'deleted' so
+// it disappears from every list/dashboard/score, while its full history stays
+// intact for audit purposes. Requires a reason, which gets logged.
+async function deleteEvaluation(evalId, ref, agentName) {
+  const base  = (currentStaff?.role || '').toLowerCase();
+  const email = (currentUser?.email || '').toLowerCase();
+  const isAdminUser = base === 'admin' || ROLE_MAP_EMAIL[email] === 'admin' || roleOverrides[email] === 'admin';
+  if (!isAdminUser) { alert('Only admins can delete evaluations.'); return; }
+
+  openActionModal(
+    `🗑️ Delete Evaluation #${ref}`,
+    `<div class="alert alert-danger" style="margin-bottom:12px">This removes <strong>#${ref} — ${agentName}</strong> from every list, dashboard, and score calculation. The record is kept (not permanently erased) for audit purposes, but it will no longer appear anywhere in the app.</div>`,
+    `<div class="form-group">
+      <label class="form-label">Reason for deletion (required)</label>
+      <textarea class="form-input" id="deleteEvalReason" rows="3" placeholder="e.g. Duplicate — QA accidentally clicked Submit to TL twice"></textarea>
+    </div>`,
+    async () => {
+      const reason = (document.getElementById('deleteEvalReason').value || '').trim();
+      if (!reason) { alert('Please provide a reason for deletion.'); return false; }
+
+      const { data: row } = await supa.from('qa_evaluations').select('workflow').eq('id', evalId).single();
+      const wf = (row?.workflow || []).concat([{
+        role: 'system', action: 'Deleted',
+        ts: new Date().toISOString(),
+        note: reason,
+        by: currentStaff?.name || currentUser?.email || 'Admin'
+      }]);
+
+      const { error } = await supa.from('qa_evaluations')
+        .update({ status: 'deleted', workflow: wf, updated_at: new Date().toISOString() })
+        .eq('id', evalId);
+      if (error) { alert('Failed to delete: ' + error.message); return false; }
+
+      showToast('Evaluation Deleted', '#' + ref + ' has been removed.', 'success');
+      closeModal('detailModal');
+      if (document.getElementById('page-evaluations')?.classList.contains('active')) loadAllEvals();
+      if (document.getElementById('page-dashboard')?.classList.contains('active')) loadDashboard();
+      return true;
+    },
+    'btn-danger', 'Delete Evaluation'
   );
 }
 
@@ -6707,6 +6853,7 @@ async function loadRoleManagement() {
   window._rmRows = rows;
   updateRmStats(rows);
   renderRoleTable();
+  renderTeamRoster(rows);
 }
 
 function updateRmStats(rows) {
@@ -6757,6 +6904,93 @@ function renderRoleTable() {
       </td>
     </tr>`;
   }).join('');
+}
+
+// Groups agents under their Team Leader for a quick "who reports to whom" view.
+// Matches agent.team (which holds the TL's team key) against each TL's own
+// team field — same matching convention used by filterByMyTeam(). Agents
+// that don't match any TL are surfaced separately so mismatched team
+// assignments (e.g. typo in the staff table) are easy to spot.
+function renderTeamRoster(rows) {
+  const el = document.getElementById('teamRosterContent');
+  if (!el) return;
+
+  const tls    = rows.filter(r => r.role === 'tl');
+  const agents = rows.filter(r => r.role === 'agent');
+
+  if (!tls.length) {
+    el.innerHTML = '<div class="text-sm" style="text-align:center;padding:20px;color:var(--text3)">No Team Leaders found.</div>';
+    return;
+  }
+
+  const assignedIds = new Set();
+  const groups = tls.map(tl => {
+    const overrideKey = Object.keys(TEAM_ROSTER_OVERRIDE).find(n => normName(n) === normName(tl.name));
+
+    let myAgents;
+    if (overrideKey) {
+      // Authoritative override — match by name against the known-correct list
+      const rosterNames = TEAM_ROSTER_OVERRIDE[overrideKey].map(n => normName(n));
+      myAgents = agents.filter(a => rosterNames.includes(normName(a.name)));
+    } else {
+      // Fallback to old team-field matching for TLs not yet in the override
+      const tlTeam  = (tl.team || '').toLowerCase().trim();
+      const tlFirst = (tl.name || '').split(' ')[0].toLowerCase();
+      myAgents = agents.filter(a => {
+        const aTeam = (a.team || '').toLowerCase().trim();
+        if (!aTeam) return false;
+        return (tlTeam && aTeam === tlTeam) || aTeam === tlFirst;
+      });
+    }
+    myAgents.forEach(a => assignedIds.add(a.id));
+    return { tl, agents: myAgents.sort((a,b)=>a.name.localeCompare(b.name)) };
+  }).sort((a,b) => b.agents.length - a.agents.length);
+
+  // Non-TL operational groups (e.g. outbound agents under "Operation") —
+  // deliberate placements, not data errors, so styled neutrally rather than
+  // flagged as a warning.
+  const nonTLGroups = Object.entries(NON_TL_AGENT_GROUPS).map(([groupName, names]) => {
+    const normNames = names.map(normName);
+    const myAgents = agents.filter(a => normNames.includes(normName(a.name)));
+    myAgents.forEach(a => assignedIds.add(a.id));
+    return { groupName, agents: myAgents };
+  }).filter(g => g.agents.length);
+
+  const unassigned = agents.filter(a => !assignedIds.has(a.id));
+
+  const tlHTML = groups.map(g => {
+    const initials = g.tl.name ? g.tl.name.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase() : '?';
+    return `<div style="margin-bottom:12px;padding:14px;background:var(--surface2);border-radius:8px">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+        <div style="width:32px;height:32px;border-radius:50%;background:rgba(168,85,247,.15);border:2px solid var(--purple);
+          display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:var(--purple);flex-shrink:0">${initials}</div>
+        <div style="font-weight:600">${g.tl.name}</div>
+        <span style="font-size:11px;color:var(--text3)">${g.agents.length} agent${g.agents.length!==1?'s':''}</span>
+      </div>
+      ${g.agents.length
+        ? `<div style="display:flex;flex-wrap:wrap;gap:6px">${g.agents.map(a=>`<span class="pill" style="font-size:11px">${a.name}</span>`).join('')}</div>`
+        : `<div style="font-size:12px;color:var(--text3);font-style:italic">No agents assigned</div>`}
+    </div>`;
+  }).join('');
+
+  const nonTLHTML = nonTLGroups.map(g => `
+    <div style="margin-bottom:12px;padding:14px;background:var(--surface2);border-radius:8px;border:1px dashed var(--accent)">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+        <div style="width:32px;height:32px;border-radius:50%;background:rgba(79,142,247,.15);border:2px solid var(--accent);
+          display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0">📞</div>
+        <div style="font-weight:600">${g.groupName}</div>
+        <span style="font-size:11px;color:var(--text3)">${g.agents.length} agent${g.agents.length!==1?'s':''} · no TL assigned yet</span>
+      </div>
+      <div style="display:flex;flex-wrap:wrap;gap:6px">${g.agents.map(a=>`<span class="pill" style="font-size:11px">${a.name}</span>`).join('')}</div>
+    </div>`).join('');
+
+  const unassignedHTML = unassigned.length ? `
+    <div style="padding:14px;background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.25);border-radius:8px">
+      <div style="font-weight:600;color:var(--red);margin-bottom:8px">⚠️ Unassigned Agents (${unassigned.length}) — team field doesn't match any TL</div>
+      <div style="display:flex;flex-wrap:wrap;gap:6px">${unassigned.map(a=>`<span class="pill" style="font-size:11px">${a.name} <span style="color:var(--text3)">(team: ${a.team||'blank'})</span></span>`).join('')}</div>
+    </div>` : '';
+
+  el.innerHTML = tlHTML + nonTLHTML + unassignedHTML;
 }
 
 function openAddRoleModal() {
@@ -7073,8 +7307,14 @@ async function loadAuditLog() {
 
   tbody.innerHTML = filtered.slice(0,300).map(e => {
     const dt = e.ts ? new Date(e.ts).toLocaleString('en-MY',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit',hour12:true}) : '--';
-        var tdStyle = 'text-align:center;font-family:monospace;font-weight:'+(count?'700':'400')+';color:'+(count?'var(--text)':'var(--text3)')+(bg?';'+bg:'');
-        html += '<td style="'+tdStyle+'">'+( isFuture?'':count||'—')+'</td>';
+    return `<tr>
+      <td style="font-size:12px;color:var(--text3);white-space:nowrap">${dt}</td>
+      <td><span style="font-family:'JetBrains Mono',monospace;color:var(--accent)">#${e.ref||'--'}</span></td>
+      <td style="font-weight:500">${e.agent||'--'}</td>
+      <td style="color:${ac(e.action)};font-weight:600;font-size:12px">${e.action||'--'}</td>
+      <td style="font-size:12px;color:var(--text2)">${e.by||'--'}</td>
+      <td style="font-size:12px;color:var(--text3)">${e.note||''}</td>
+    </tr>`;
   }).join('');
 }
 
