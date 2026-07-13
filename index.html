@@ -1481,7 +1481,7 @@ window.onunhandledrejection = function(e) {
 //  SUPABASE INIT
 // ===============================================
 const SUPA_URL = 'https://jrfiyliesitsgnehxqtv.supabase.co';
-const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpyZml5bGllc2l0c2duZWh4cXR2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk2ODAwNjAsImV4cCI6MjA5NTI1NjA2MH0.ZO-4OYF9_1NRduLZlKiSVStOfg07W4Ozx7vhvUTuozA';
+const SUPA_KEY = 'sb_publishable_-AOpf0GlT5MeQh5-NMZc9g_CD2xu9Ch';
 const supa = supabase.createClient(SUPA_URL, SUPA_KEY);
 
 // ===============================================
@@ -5131,6 +5131,108 @@ async function adminRecalculateAllScores(opts) {
   console.log('[Recalc] Applied ' + (updates.length - failed.length) + '/' + updates.length + ' updates.');
   if (failed.length) console.error('[Recalc] Failed updates:', failed);
   return { summary, failed };
+}
+
+// ===============================================
+//  ADMIN: FIX STAFF TABLE TEAM ASSIGNMENTS
+// ===============================================
+// One-time cleanup that writes TEAM_ROSTER_OVERRIDE / NON_TL_AGENT_GROUPS
+// back into the actual staff table's `team` field, using the same
+// convention the app's original (pre-override) matching logic expects:
+// agent.team = TL's first name (lowercase), and each TL's own team field
+// set to their own first name too. This makes the underlying data correct
+// again, so new agents just need their `team` field set correctly going
+// forward — no code changes needed for people already covered here.
+//
+// The dry-run output also lists any 'agent' role staff NOT covered by
+// TEAM_ROSTER_OVERRIDE or NON_TL_AGENT_GROUPS whose current team field
+// doesn't already resolve to a real TL — i.e. genuinely unmapped agents,
+// the concrete list to check for a possible 6th team/TL.
+//
+// Usage (browser console, logged in as admin):
+//   adminFixTeamAssignments({dryRun:true})
+//   adminFixTeamAssignments({dryRun:false})
+async function adminFixTeamAssignments(opts) {
+  opts = opts || {};
+  const dryRun = opts.dryRun !== false;
+
+  const base  = (currentStaff?.role || '').toLowerCase();
+  const email = (currentUser?.email || '').toLowerCase();
+  const isAdminUser = base === 'admin' || ROLE_MAP_EMAIL[email] === 'admin' || roleOverrides[email] === 'admin';
+  if (!isAdminUser) { console.error('[TeamFix] Admin role required.'); return; }
+
+  const staffTable = window._staffTable;
+  if (!staffTable) { console.error('[TeamFix] Staff table not detected — reload the app first.'); return; }
+
+  const { data: staff, error } = await supa.from(staffTable).select('*');
+  if (error) { console.error('[TeamFix] Failed to load staff:', error); return; }
+
+  const isTL    = s => isTLRole(s.role || s.staff_role);
+  const isAgent = s => (s.role || s.staff_role || '').toLowerCase() === 'agent';
+
+  const plan = [];      // { id, name, oldTeam, newTeam }
+  const unmapped = [];  // agents not in override AND not already correctly matched
+
+  // 1) Each TL's own team field -> their own first name (self-referential key)
+  staff.filter(isTL).forEach(tl => {
+    const firstName = (tl.name || '').split(' ')[0].toLowerCase();
+    if ((tl.team || '').toLowerCase().trim() !== firstName) {
+      plan.push({ id: tl.id, name: tl.name, role: 'TL', oldTeam: tl.team || '(blank)', newTeam: firstName });
+    }
+  });
+
+  // 2) Agents covered by TEAM_ROSTER_OVERRIDE -> their TL's first name
+  Object.entries(TEAM_ROSTER_OVERRIDE).forEach(([tlName, agentNames]) => {
+    const tlFirst = tlName.split(' ')[0].toLowerCase();
+    agentNames.forEach(agentName => {
+      const row = staff.find(s => isAgent(s) && normName(s.name) === normName(agentName));
+      if (!row) { console.warn('[TeamFix] No staff row found for override agent:', agentName); return; }
+      if ((row.team || '').toLowerCase().trim() !== tlFirst) {
+        plan.push({ id: row.id, name: row.name, role: 'Agent', oldTeam: row.team || '(blank)', newTeam: tlFirst });
+      }
+    });
+  });
+
+  // 3) Agents covered by NON_TL_AGENT_GROUPS -> the group name (e.g. "Operation")
+  Object.entries(NON_TL_AGENT_GROUPS).forEach(([groupName, agentNames]) => {
+    agentNames.forEach(agentName => {
+      const row = staff.find(s => isAgent(s) && normName(s.name) === normName(agentName));
+      if (!row) { console.warn('[TeamFix] No staff row found for group agent:', agentName); return; }
+      if ((row.team || '') !== groupName) {
+        plan.push({ id: row.id, name: row.name, role: 'Agent', oldTeam: row.team || '(blank)', newTeam: groupName });
+      }
+    });
+  });
+
+  // 4) Surface any agents not covered by either list above, for manual follow-up
+  const coveredNames = new Set([
+    ...Object.values(TEAM_ROSTER_OVERRIDE).flat().map(normName),
+    ...Object.values(NON_TL_AGENT_GROUPS).flat().map(normName),
+  ]);
+  staff.filter(isAgent).forEach(a => {
+    if (!coveredNames.has(normName(a.name))) {
+      unmapped.push({ name: a.name, currentTeam: a.team || '(blank)' });
+    }
+  });
+
+  console.log('[TeamFix] Planned updates:', plan.length);
+  console.table(plan);
+  console.log('[TeamFix] Agents NOT covered by any known team (check these for a possible 6th TL):', unmapped.length);
+  console.table(unmapped);
+
+  if (dryRun) {
+    console.log('[TeamFix] Dry run only — no changes written. Run adminFixTeamAssignments({dryRun:false}) to apply.');
+    return { plan, unmapped };
+  }
+
+  const failed = [];
+  for (const p of plan) {
+    const res = await supa.from(staffTable).update({ team: p.newTeam }).eq('id', p.id);
+    if (res.error) failed.push({ id: p.id, name: p.name, error: res.error.message });
+  }
+  console.log('[TeamFix] Applied ' + (plan.length - failed.length) + '/' + plan.length + ' updates.');
+  if (failed.length) console.error('[TeamFix] Failed updates:', failed);
+  return { plan, unmapped, failed };
 }
 
 async function loadTplMgmt() {
