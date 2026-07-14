@@ -1481,7 +1481,7 @@ window.onunhandledrejection = function(e) {
 //  SUPABASE INIT
 // ===============================================
 const SUPA_URL = 'https://jrfiyliesitsgnehxqtv.supabase.co';
-const SUPA_KEY = 'sb_publishable_-AOpf0GlT5MeQh5-NMZc9g_CD2xu9Ch';
+const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpyZml5bGllc2l0c2duZWh4cXR2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk2ODAwNjAsImV4cCI6MjA5NTI1NjA2MH0.ZO-4OYF9_1NRduLZlKiSVStOfg07W4Ozx7vhvUTuozA';
 const supa = supabase.createClient(SUPA_URL, SUPA_KEY);
 
 // ===============================================
@@ -4138,7 +4138,7 @@ async function viewEval(id) {
       <div class="card" style="padding:12px;margin:0">
         <div class="text-sm" style="margin-bottom:4px">Agent</div>
         <div style="font-weight:600;font-size:15px">${e.agent_name}</div>
-        <div class="text-sm" style="margin-top:4px">TL: ${e.tl_name||'--'}</div>
+        <div class="text-sm" style="margin-top:4px">TL: ${e.tl_name||'--'}${canEditCallDate ? ` <a href="#" onclick="event.preventDefault();editEvalTL('${e.id}','${(e.tl_name||'').replace(/'/g,"\\'")}')" style="text-decoration:none" title="Edit TL">✏️</a>` : ''}</div>
         <div class="text-sm" style="margin-top:2px">QA: ${e.qa_user_name||'--'}</div>
       </div>
       <div class="card" style="padding:12px;margin:0;text-align:center">
@@ -4280,6 +4280,51 @@ async function editCallDate(evalId, currentDate) {
       return true;
     },
     'btn-primary', 'Save Date'
+  );
+}
+
+// Admin/QA: correct the TL name on a single evaluation (e.g. it was
+// auto-filled wrong before the team roster override existed).
+async function editEvalTL(evalId, currentTL) {
+  const base = (currentStaff?.role || '').toLowerCase();
+  const email = (currentUser?.email || '').toLowerCase();
+  const isAdminUser = base === 'admin' || ROLE_MAP_EMAIL[email] === 'admin' || roleOverrides[email] === 'admin';
+  if (!isAdminUser && base !== 'qa') { alert('Only QA or admin can edit the TL.'); return; }
+
+  const tlOptions = Object.keys(TEAM_ROSTER_OVERRIDE);
+  openActionModal(
+    '🧑‍💼 Edit Team Leader',
+    `<div class="alert alert-info" style="margin-bottom:12px">Correct the TL if it was auto-filled wrong. This only changes the TL — scores and status are unaffected.</div>`,
+    `<div class="form-group">
+      <label class="form-label">Team Leader</label>
+      <select class="form-select" id="editEvalTLInput" style="width:100%">
+        <option value="${currentTL||''}">${currentTL || '-- current: blank --'}</option>
+        ${tlOptions.filter(t=>normName(t)!==normName(currentTL)).map(t=>`<option value="${t}">${t}</option>`).join('')}
+      </select>
+    </div>`,
+    async () => {
+      const newTL = document.getElementById('editEvalTLInput').value;
+      if (!newTL) { alert('Please select a TL.'); return false; }
+      if (normName(newTL) === normName(currentTL)) { return true; } // no change
+
+      const { data: row } = await supa.from('qa_evaluations').select('workflow').eq('id', evalId).single();
+      const wf = (row?.workflow || []).concat([{
+        role: 'system', action: 'TL Corrected',
+        ts: new Date().toISOString(),
+        note: 'Changed from ' + (currentTL || '(blank)') + ' to ' + newTL,
+        by: currentStaff?.name || currentUser?.email || 'Admin'
+      }]);
+
+      const { error } = await supa.from('qa_evaluations')
+        .update({ tl_name: newTL, workflow: wf, updated_at: new Date().toISOString() })
+        .eq('id', evalId);
+      if (error) { alert('Failed to update: ' + error.message); return false; }
+
+      showToast('TL Updated', 'Changed to ' + newTL + '.', 'success');
+      viewEval(evalId);
+      return true;
+    },
+    'btn-primary', 'Save TL'
   );
 }
 
@@ -5167,14 +5212,24 @@ async function adminFixTeamAssignments(opts) {
   const { data: staff, error } = await supa.from(staffTable).select('*');
   if (error) { console.error('[TeamFix] Failed to load staff:', error); return; }
 
-  const isTL    = s => isTLRole(s.role || s.staff_role);
-  const isAgent = s => (s.role || s.staff_role || '').toLowerCase() === 'agent';
+  // IMPORTANT: the raw staff table's role/staff_role/position column is NOT
+  // reliable (confirmed — it mislabels some admin/manager/QA accounts as
+  // 'TL', and doesn't reliably tag agents at all). The app's real source of
+  // truth for role is ROLE_MAP_NAME / ROLE_MAP_EMAIL, resolved via
+  // resolveRoleFull(). Use that instead of trusting the raw column.
+  const realRole = s => (resolveRoleFull(s.name, s.email) || '').toLowerCase();
+  const isRealTL    = s => realRole(s) === 'tl';
+  const isRealAgent = s => realRole(s) === 'agent';
 
   const plan = [];      // { id, name, oldTeam, newTeam }
   const unmapped = [];  // agents not in override AND not already correctly matched
 
-  // 1) Each TL's own team field -> their own first name (self-referential key)
-  staff.filter(isTL).forEach(tl => {
+  // 1) Only the TLs actually in TEAM_ROSTER_OVERRIDE get their own team field
+  // set to their own first name (self-referential key). Do NOT touch every
+  // staff row the raw column happens to call "TL" — several of those are
+  // actually admin/manager/QA per ROLE_MAP_NAME.
+  staff.filter(isRealTL).forEach(tl => {
+    if (!Object.keys(TEAM_ROSTER_OVERRIDE).some(n => normName(n) === normName(tl.name))) return;
     const firstName = (tl.name || '').split(' ')[0].toLowerCase();
     if ((tl.team || '').toLowerCase().trim() !== firstName) {
       plan.push({ id: tl.id, name: tl.name, role: 'TL', oldTeam: tl.team || '(blank)', newTeam: firstName });
@@ -5185,7 +5240,7 @@ async function adminFixTeamAssignments(opts) {
   Object.entries(TEAM_ROSTER_OVERRIDE).forEach(([tlName, agentNames]) => {
     const tlFirst = tlName.split(' ')[0].toLowerCase();
     agentNames.forEach(agentName => {
-      const row = staff.find(s => isAgent(s) && normName(s.name) === normName(agentName));
+      const row = staff.find(s => isRealAgent(s) && normName(s.name) === normName(agentName));
       if (!row) { console.warn('[TeamFix] No staff row found for override agent:', agentName); return; }
       if ((row.team || '').toLowerCase().trim() !== tlFirst) {
         plan.push({ id: row.id, name: row.name, role: 'Agent', oldTeam: row.team || '(blank)', newTeam: tlFirst });
@@ -5196,7 +5251,7 @@ async function adminFixTeamAssignments(opts) {
   // 3) Agents covered by NON_TL_AGENT_GROUPS -> the group name (e.g. "Operation")
   Object.entries(NON_TL_AGENT_GROUPS).forEach(([groupName, agentNames]) => {
     agentNames.forEach(agentName => {
-      const row = staff.find(s => isAgent(s) && normName(s.name) === normName(agentName));
+      const row = staff.find(s => isRealAgent(s) && normName(s.name) === normName(agentName));
       if (!row) { console.warn('[TeamFix] No staff row found for group agent:', agentName); return; }
       if ((row.team || '') !== groupName) {
         plan.push({ id: row.id, name: row.name, role: 'Agent', oldTeam: row.team || '(blank)', newTeam: groupName });
@@ -5204,17 +5259,18 @@ async function adminFixTeamAssignments(opts) {
     });
   });
 
-  // 4) Surface any agents not covered by either list above, for manual follow-up
+  // 4) Surface any REAL agents (per ROLE_MAP_NAME) not covered by either list above
   const coveredNames = new Set([
     ...Object.values(TEAM_ROSTER_OVERRIDE).flat().map(normName),
     ...Object.values(NON_TL_AGENT_GROUPS).flat().map(normName),
   ]);
-  staff.filter(isAgent).forEach(a => {
+  staff.filter(isRealAgent).forEach(a => {
     if (!coveredNames.has(normName(a.name))) {
       unmapped.push({ name: a.name, currentTeam: a.team || '(blank)' });
     }
   });
 
+  console.log('[TeamFix] Total staff rows loaded:', staff.length, '| detected as real agent:', staff.filter(isRealAgent).length, '| detected as real TL:', staff.filter(isRealTL).length);
   console.log('[TeamFix] Planned updates:', plan.length);
   console.table(plan);
   console.log('[TeamFix] Agents NOT covered by any known team (check these for a possible 6th TL):', unmapped.length);
@@ -5233,6 +5289,64 @@ async function adminFixTeamAssignments(opts) {
   console.log('[TeamFix] Applied ' + (plan.length - failed.length) + '/' + plan.length + ' updates.');
   if (failed.length) console.error('[TeamFix] Failed updates:', failed);
   return { plan, unmapped, failed };
+}
+
+// ===============================================
+//  ADMIN: FIX WRONG TL NAME ON EXISTING EVALUATIONS
+// ===============================================
+// tl_name gets baked into an evaluation at submission time (auto-filled from
+// the agent's team assignment, which was unreliable before the roster fix).
+// This corrects tl_name on already-submitted evaluations to match the
+// authoritative TEAM_ROSTER_OVERRIDE, without touching scores/answers/status.
+// Only touches evaluations for agents covered by the override — anyone else
+// is left alone rather than guessed at.
+//
+// Usage (browser console, logged in as admin):
+//   adminFixEvalTLNames({dryRun:true})
+//   adminFixEvalTLNames({dryRun:false})
+async function adminFixEvalTLNames(opts) {
+  opts = opts || {};
+  const dryRun = opts.dryRun !== false;
+
+  const base  = (currentStaff?.role || '').toLowerCase();
+  const email = (currentUser?.email || '').toLowerCase();
+  const isAdminUser = base === 'admin' || ROLE_MAP_EMAIL[email] === 'admin' || roleOverrides[email] === 'admin';
+  if (!isAdminUser) { console.error('[TLFix] Admin role required.'); return; }
+
+  const { data: rows, error } = await supa.from('qa_evaluations').select('*').neq('status', 'deleted');
+  if (error) { console.error('[TLFix] Failed to load evaluations:', error); return; }
+
+  const plan = [];
+  rows.forEach(e => {
+    const correctTL = getTLNameForAgent(e.agent_name);
+    if (!correctTL) return; // agent not covered by the override — don't guess
+    if (normName(e.tl_name || '') !== normName(correctTL)) {
+      plan.push({ id: e.id, ref: e.ref, agent: e.agent_name, oldTL: e.tl_name || '(blank)', newTL: correctTL, workflow: e.workflow || [] });
+    }
+  });
+
+  console.log('[TLFix] Evaluations checked:', rows.length, '| planned corrections:', plan.length);
+  console.table(plan.map(p => ({ ref: p.ref, agent: p.agent, oldTL: p.oldTL, newTL: p.newTL })));
+
+  if (dryRun) {
+    console.log('[TLFix] Dry run only — no changes written. Run adminFixEvalTLNames({dryRun:false}) to apply.');
+    return plan;
+  }
+
+  const failed = [];
+  for (const p of plan) {
+    const wf = p.workflow.concat([{
+      role: 'system', action: 'TL Corrected',
+      ts: new Date().toISOString(),
+      note: 'TL changed from ' + p.oldTL + ' to ' + p.newTL + ' (team roster correction)',
+      by: currentStaff?.name || currentUser?.email || 'Admin'
+    }]);
+    const res = await supa.from('qa_evaluations').update({ tl_name: p.newTL, workflow: wf, updated_at: new Date().toISOString() }).eq('id', p.id);
+    if (res.error) failed.push({ ref: p.ref, error: res.error.message });
+  }
+  console.log('[TLFix] Applied ' + (plan.length - failed.length) + '/' + plan.length + ' corrections.');
+  if (failed.length) console.error('[TLFix] Failed updates:', failed);
+  return { plan, failed };
 }
 
 async function loadTplMgmt() {
