@@ -3116,15 +3116,13 @@ async function saveEditedEval(evalId) {
   // Check if this edit was part of a dispute resolution
   if (window._pendingResolutionEvalId === evalId) {
     var resNote  = window._pendingResolutionNote || 'Score revised after dispute.';
-    var isTL     = window._pendingResolutionIsTL;
-    var action   = 'Dispute Resolved — Revised (score: '+newScore.toFixed(2)+'%)';
-    var newStatus = isTL ? 'submitted' : 'qa-review';
-    var resWF    = [{ role: isTL?'qa':'mgr', action, ts:new Date().toISOString(), note: resNote, by: currentStaff?.name||'' }];
-    await appendWorkflowAndStatus(evalId, newStatus, resWF);
+    var action   = 'Dispute Resolved — Re-evaluated (score: '+newScore.toFixed(2)+'%)';
+    var resWF    = [{ role:'qa', action, ts:new Date().toISOString(), note: resNote, by: currentStaff?.name||'' }];
+    await appendWorkflowAndStatus(evalId, 'submitted', resWF);
     window._pendingResolutionNote   = null;
     window._pendingResolutionEvalId = null;
     window._pendingResolutionIsTL   = null;
-    showToast('Resolved & Updated', 'Score revised to '+newScore.toFixed(2)+'% and sent back to '+(isTL?'TL':'QA')+'.', 'success');
+    showToast('Resolved & Updated', 'Score revised to '+newScore.toFixed(2)+'% and sent to TL for approval.', 'success');
   } else {
     showToast('Saved', 'Evaluation #'+e.ref+' updated. Score: '+newScore.toFixed(2)+'%', 'success');
   }
@@ -3155,9 +3153,12 @@ async function loadEvals(filters = {}) {
   const isAgent   = base === 'agent';
 
   if (isAgent && currentStaff?.name && currentStaff.name.split(' ').length > 1) {
-    // Full name available — filter at DB level with wildcard
-    q = q.ilike('agent_name', '%' + currentStaff.name.split(' ')[0] + '%');
-    console.log('[QA loadEvals] Agent DB filter by first name:', currentStaff.name.split(' ')[0]);
+    // Full name available — match it exactly (case-insensitive), not a
+    // wildcard on just the first word. A wildcard on the first word alone
+    // (e.g. "Mohamad") matches every other agent who shares that common
+    // first name, wildly inflating an agent's own evaluation count.
+    q = q.ilike('agent_name', currentStaff.name);
+    console.log('[QA loadEvals] Agent DB filter by exact full name:', currentStaff.name);
   } else if (isAgent) {
     console.log('[QA loadEvals] Agent short name, will filter client-side:', currentStaff?.name);
   }
@@ -3681,9 +3682,10 @@ async function loadPendingTL() {
     loadEvals({ status: 'submitted' }),
     loadEvals({ status: 'qa-review' })
   ]);
-  let rows = [...submitted, ...qaReview].sort((a,b) => new Date(b.created_at)-new Date(a.created_at));
-  // TLs only see their own team; managers and admins see all
-  rows = filterByMyTeam(rows);
+  // Team filtering only applies to TL's own "submitted" queue — QA review
+  // items must stay visible to any QA evaluator regardless of team,
+  // otherwise a resolved dispute can end up with nobody able to see it.
+  let rows = [...filterByMyTeam(submitted), ...qaReview].sort((a,b) => new Date(b.created_at)-new Date(a.created_at));
   const tbody = document.getElementById('pendingTLBody');
   if (!rows.length) { tbody.innerHTML = '<tr><td colspan="7"><div class="empty-state"><div class="icon">✅</div><p>Nothing pending TL review.</p></div></td></tr>'; return; }
   tbody.innerHTML = rows.map(e => {
@@ -3704,6 +3706,8 @@ async function loadPendingTL() {
       ${e.status==='qa-review' && canActAs('qa') ? `
         <span style="font-size:11px;color:var(--accent2);font-weight:600">⟳ Agent Disputed — QA Review Required</span>
         <button class="btn btn-primary btn-sm" onclick="qaResubmit('${e.id}')">Re-evaluate</button>` :
+      e.status==='qa-review' ? `
+        <span style="font-size:11px;color:var(--text3)">Waiting on QA re-evaluation</span>` :
       canActAs('tl') ? `
         <button class="btn btn-success btn-sm" onclick="tlAction('${e.id}','approve')">✓ Approve</button>
         <button class="btn btn-amber btn-sm" onclick="tlAction('${e.id}','dispute')">⚠ Dispute</button>` : ''}
@@ -3758,7 +3762,7 @@ async function loadPendingAgent() {
 }
 
 async function loadDisputes() {
-  const rows = await loadEvals({ statuses: ['tl-disputed','agent-disputed','qa-review'] });
+  const rows = await loadEvals({ statuses: ['tl-disputed','agent-disputed'] });
   const tbody = document.getElementById('disputesBody');
   if (!rows.length) { tbody.innerHTML = '<tr><td colspan="6"><div class="empty-state"><div class="icon">✅</div><p>No active disputes.</p></div></td></tr>'; return; }
   const myRole = currentStaff?.role;
@@ -3772,7 +3776,7 @@ async function loadDisputes() {
       <td style="font-size:12px;color:var(--text3);max-width:200px">${lastWf?.note||'--'}</td>
       <td style="display:flex;gap:6px">
         <button class="btn btn-ghost btn-sm" onclick="viewEval('${e.id}')">View</button>
-        ${canActAs('manager') ? `<button class="btn btn-primary btn-sm" onclick="resolveDispute('${e.id}')">Resolve</button>` : ''}
+        ${canActAs('qa') ? `<button class="btn btn-primary btn-sm" onclick="resolveDispute('${e.id}')">Resolve</button>` : ''}
       </td>
     </tr>`;
   }).join('');
@@ -4010,7 +4014,7 @@ async function resolveDispute(id) {
   const isTLDispute    = e.status === 'tl-disputed';
   const isAgentDispute = e.status === 'agent-disputed';
 
-  // Get TL dispute reason from workflow
+  // Get dispute reason from workflow
   const wfSteps   = e.workflow || [];
   const disputeWF = [...wfSteps].reverse().find(w => w.action && w.action.toLowerCase().includes('disput'));
   const disputeReason = disputeWF?.note || '';
@@ -4018,14 +4022,16 @@ async function resolveDispute(id) {
 
   openActionModal(
     isTLDispute ? '🔒 Resolve TL Dispute' : '🔒 Resolve Agent Dispute',
-    isTLDispute
-      ? '<div class="alert alert-warning"><strong>TL Disputed:</strong> ' + (disputeReason ? '"'+disputeReason+'" — by '+disputeBy : 'No reason provided') + '<br><br>Review the evaluation and either uphold your original score or revise it.</div>'
-      : '<div class="alert alert-danger"><strong>Agent Disputed.</strong> Manager must resolve before QA re-evaluates.</div>',
+    (isTLDispute
+      ? '<div class="alert alert-warning"><strong>TL Disputed:</strong> '
+      : '<div class="alert alert-danger"><strong>Agent Disputed:</strong> ')
+      + (disputeReason ? '"'+disputeReason+'" — by '+disputeBy : 'No reason provided')
+      + '<br><br>Re-evaluate and fix the scoring if needed, or submit as-is if no changes are required. Either way this goes to the TL to approve and the agent to acknowledge.</div>',
     '<div class="form-group">'
       +'<label class="form-label">Your Decision</label>'
       +'<select class="form-select" id="resolutionType">'
-      +'<option value="uphold">Uphold original evaluation — no score changes</option>'
-      +'<option value="revise">Revise evaluation — I will adjust the scores</option>'
+      +'<option value="uphold">No changes required — submit as-is</option>'
+      +'<option value="revise">Re-evaluate — I will fix the scoring</option>'
       +'</select></div>'
       +'<div class="form-group">'
       +'<label class="form-label">Resolution Notes <span class="req">*</span></label>'
@@ -4037,27 +4043,25 @@ async function resolveDispute(id) {
       if (!note) { alert('Please provide resolution notes.'); return false; }
 
       if (res === 'revise') {
-        // Close modal and open edit mode
+        // Close modal and open edit mode for QA to fix scoring
         closeModal('actionModal');
-        // Store resolution note for after edit
         window._pendingResolutionNote  = note;
         window._pendingResolutionEvalId = id;
         window._pendingResolutionIsTL   = isTLDispute;
-        // Open eval in edit mode
         await viewEval(id);
         setTimeout(function() { editEvaluation(id); }, 500);
-        showToast('Edit to Revise', 'Adjust the scores then click Save — resolution will be submitted automatically.', 'info');
+        showToast('Edit to Re-evaluate', 'Adjust the scores then click Save — this will submit to TL automatically.', 'info');
         return true;
       }
 
-      // Uphold — no score change, just move status
-      const action = 'Dispute Resolved — Upheld';
-      const newWF  = [{ role: isTLDispute?'qa':'mgr', action, ts:new Date().toISOString(), note, by:currentStaff?.name||'' }];
-      const newStatus = isTLDispute ? 'submitted' : 'qa-review';
-      await appendWorkflowAndStatus(id, newStatus, newWF);
+      // No changes required — submit straight back to TL, same destination
+      // for both TL disputes and Agent disputes.
+      const action = 'Dispute Resolved — No Changes Required';
+      const newWF  = [{ role:'qa', action, ts:new Date().toISOString(), note, by:currentStaff?.name||'' }];
+      await appendWorkflowAndStatus(id, 'submitted', newWF);
       evaluations = null;
       loadDisputes();
-      showToast('Resolved', 'Evaluation upheld and sent back to '+(isTLDispute?'TL':'QA')+'.', 'success');
+      showToast('Resolved', 'Evaluation submitted to TL for approval.', 'success');
       return true;
     },
     'btn-primary', '🔒 Submit Resolution'
@@ -6816,7 +6820,7 @@ function renderPipeline() {
           <button class="btn btn-amber btn-sm"  onclick="event.stopPropagation();tlAction('${e.id}','dispute')">⚠</button>` : ''}
         ${!isClosed && e.status==='tl-approved' && canActAs('agent') ? `
           <button class="btn btn-success btn-sm" onclick="event.stopPropagation();agentAction('${e.id}','acknowledge')">✓ Ack</button>` : ''}
-        ${!isClosed && ['tl-disputed','agent-disputed','qa-review'].includes(e.status) && canActAs('manager') ? `
+        ${!isClosed && ['tl-disputed','agent-disputed'].includes(e.status) && canActAs('qa') ? `
           <button class="btn btn-primary btn-sm" onclick="event.stopPropagation();resolveDispute('${e.id}')">Resolve</button>` : ''}
       </td>
     </tr>`;
