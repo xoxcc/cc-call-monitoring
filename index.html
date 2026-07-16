@@ -540,6 +540,7 @@
                 <span class="tc-badge" style="background:rgba(245,158,11,.15);color:var(--amber)">📋 Chronology Required</span>
               </div>
             </div>
+            <div id="customTplCardsContainer" style="grid-column:span 2;display:contents"></div>
           </div>
           <div id="tplSelectedInfo" style="display:none;margin-top:12px">
             <div class="alert alert-info" id="tplInfoAlert"></div>
@@ -2399,7 +2400,7 @@ function showPage(id) {
   if (id === 'pipeline') loadPipeline();
   if (id === 'fail-analysis') loadFailAnalysis();
   if (id === 'monthly-perf') initMonthlyPerf();
-  if (id === 'new-eval') resetNewEval();
+  if (id === 'new-eval') { resetNewEval(); loadCustomTemplatesForNewEval(); }
 }
 
 function setLoading(show, msg='') {
@@ -2531,6 +2532,77 @@ document.addEventListener('click', e => {
 // ===============================================
 //  TEMPLATE SELECTION
 // ===============================================
+// ===============================================
+//  CUSTOM TEMPLATES IN NEW EVALUATION
+// ===============================================
+async function loadCustomTemplatesForNewEval() {
+  const el = document.getElementById('customTplCardsContainer');
+  if (!el) return;
+  try {
+    const { data, error } = await supa.from('qa_templates').select('*').eq('type','custom').order('created_at',{ascending:false});
+    if (error) throw error;
+    customTemplates = data || [];
+  } catch(e) {
+    console.warn('[New Eval] Could not load custom templates:', e);
+    return;
+  }
+  el.innerHTML = customTemplates.map(t => `
+    <div class="template-card" id="tpl-custom-${t.id}" onclick="selectCustomTemplate('${t.id}')" style="grid-column:span 2;border-color:rgba(139,92,246,.3);background:rgba(139,92,246,.04)">
+      <div class="tc-icon">🧩</div>
+      <div class="tc-title" style="color:var(--purple, #8b5cf6)">${t.name}</div>
+      <div class="tc-desc">${t.description || 'Custom template'}</div>
+      <div style="display:flex;gap:6px;margin-top:8px">
+        <span class="tc-badge" style="background:rgba(139,92,246,.15);color:#8b5cf6">🧩 Custom</span>
+        <span class="tc-badge" style="background:rgba(100,116,139,.15);color:var(--text3)">${(t.questions||[]).length} questions</span>
+      </div>
+    </div>`).join('');
+}
+
+function selectCustomTemplate(tplId) {
+  const tpl = customTemplates.find(t => String(t.id) === String(tplId));
+  if (!tpl) return;
+  selectedTemplate = { evalType:'custom', csat:'no', id: tpl.id, isCustom:true, customTpl: tpl };
+  document.querySelectorAll('.template-card').forEach(c => c.classList.remove('selected'));
+  document.getElementById('tpl-custom-' + tplId)?.classList.add('selected');
+
+  const info = document.getElementById('tplInfoAlert');
+  const catGroup = document.getElementById('fCallCategory')?.closest('.form-group');
+  info.innerHTML = '<strong>' + tpl.name + '</strong> — ' + (tpl.description || 'Custom template') + '. No call category needed — form is ready below.';
+  document.getElementById('tplSelectedInfo').style.display = 'block';
+  if (catGroup) catGroup.style.display = 'none'; // custom templates aren't split by call category
+  document.getElementById('callDetailsCard').style.display = 'block';
+  renderCustomEvalForm(tpl);
+}
+
+function renderCustomEvalForm(tpl) {
+  const questions = tpl.questions || [];
+  const totalWt = questions.reduce((a,q) => a + (q.wt||0), 0);
+
+  let html = `<div class="card"><div class="card-header">
+    <div><div class="card-title">📝 ${tpl.name}</div>
+    <div class="card-subtitle">Score each item. Yes/No or 0/1/2 scale</div></div>
+    <div class="pill">Total: ${totalWt} pts</div></div>
+    <div style="display:grid;grid-template-columns:26px 1fr 60px 150px 1fr;gap:12px;padding:6px 0;border-bottom:1px solid var(--border2)">
+      <span class="text-sm">#</span><span class="text-sm">Question</span>
+      <span class="text-sm" style="text-align:center">Wt</span>
+      <span class="text-sm" style="text-align:center">Answer</span>
+      <span class="text-sm">Comment</span>
+    </div>`;
+  html += `<div class="eval-section-hdr">📋 ${tpl.name} Criteria</div>`;
+  questions.forEach((q, i) => { html += renderQRow(q, i+1); });
+  html += `<div class="fatal-section-hdr">⛔ Fatal Errors &nbsp;<span style="font-size:10px;font-weight:400;opacity:.8">(Y = Fatal Error triggered → Total Score = 0%)</span></div>`;
+  html += `<div style="display:grid;grid-template-columns:26px 1fr 120px 1fr;gap:12px;padding:6px 0;border-bottom:1px solid var(--border2)">
+    <span class="text-sm">#</span><span class="text-sm">Fatal Error</span>
+    <span class="text-sm" style="text-align:center">Answer</span>
+    <span class="text-sm">Comment</span></div>`;
+  FATALS.forEach((fe, i) => { html += renderFatalRow(fe, i+1); });
+  html += `</div>`;
+
+  document.getElementById('evalFormContainer').innerHTML = html;
+  document.getElementById('evalSubmitSection').style.display = 'block';
+  updateScore();
+}
+
 function selectTemplate(evalType, csat) {
   // All Historical/Live templates share one editable question bank, saved
   // under the 'hist-no' key by the Template Manager (see saveBuiltinTemplate).
@@ -2757,7 +2829,7 @@ async function saveEval(status) {
   const contactID  = document.getElementById('fContactID').value.trim();
 
   if (!selectedTemplate) { alert('Please select an evaluation template'); return; }
-  if (!cat && selectedTemplate.evalType !== 'complaint') { alert('Please select a call category'); return; }
+  if (!cat && selectedTemplate.evalType !== 'complaint' && !selectedTemplate.isCustom) { alert('Please select a call category'); return; }
 
   // Validate all mandatory fields
   const missing = [];
