@@ -420,6 +420,7 @@
       <div class="sidebar-item" onclick="showPage('pipeline')" id="nav-pipeline"><span class="icon">🔄</span>Pipeline Tracker</div>
       <div class="sidebar-item" onclick="showPage('fail-analysis')" id="nav-fail-analysis"><span class="icon">📉</span>Failure Analysis</div>
       <div class="sidebar-item" onclick="showPage('monthly-perf')" id="nav-monthly-perf"><span class="icon">📅</span>Monthly Performance</div>
+      <div class="sidebar-item" onclick="showPage('knowledge-base')" id="nav-knowledge-base"><span class="icon">📚</span>Knowledge Base</div>
 
       <div class="sidebar-divider"></div>
       <div class="sidebar-label" id="sb-admin-label" style="display:none">Admin</div>
@@ -775,6 +776,30 @@
           </div>
           <div id="qaProdBars" style="display:flex;flex-direction:column;gap:10px;padding:8px 0"></div>
         </div>
+      </div>
+
+      <!-- KNOWLEDGE BASE PAGE -->
+      <div class="page" id="page-knowledge-base">
+        <div class="page-header">
+          <div class="page-header-row">
+            <div><h1>📚 Knowledge Base</h1><p>SOPs, guides, and reference articles for the team</p></div>
+            <div style="display:flex;gap:8px;align-items:center">
+              <button class="btn btn-primary btn-sm" id="kbNewBtn" onclick="openKBModal()" style="display:none">+ New Article</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="card" style="margin-bottom:16px">
+          <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
+            <input class="form-input" id="kbSearch" placeholder="🔍 Search title, tags, or content…" style="flex:1;min-width:220px" oninput="renderKBList()">
+            <select class="form-select" id="kbCategoryFilter" style="width:200px" onchange="renderKBList()">
+              <option value="">All Categories</option>
+            </select>
+            <button class="btn btn-ghost btn-sm" onclick="document.getElementById('kbSearch').value='';document.getElementById('kbCategoryFilter').value='';renderKBList()">✕ Clear</button>
+          </div>
+        </div>
+
+        <div id="kbListWrap" style="display:flex;flex-direction:column;gap:10px"></div>
       </div>
 
       <!-- MY EVALUATIONS PAGE (QA) -->
@@ -1435,6 +1460,66 @@
       <button class="btn btn-ghost" onclick="closeModal('changePwModal')">Cancel</button>
       <button class="btn btn-primary" id="changePwBtn" onclick="doChangePassword()">Update Password</button>
     </div>
+  </div>
+</div>
+
+<!-- KB EDIT/CREATE MODAL -->
+<div class="modal-overlay hidden" id="kbEditModal">
+  <div class="modal" style="max-width:640px">
+    <div class="modal-header">
+      <div class="modal-title" id="kbEditModalTitle">New Article</div>
+      <button class="modal-close" onclick="closeModal('kbEditModal')">×</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="kbEditId">
+      <div class="form-group">
+        <label class="form-label">Title <span style="color:var(--red)">*</span></label>
+        <input class="form-input" id="kbEditTitle" placeholder="e.g. Drop/Silent Call SOP v2.0">
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+        <div class="form-group">
+          <label class="form-label">Category</label>
+          <input class="form-input" id="kbEditCategory" list="kbCategoryList" placeholder="e.g. SOP, Troubleshooting, Compliance">
+          <datalist id="kbCategoryList"></datalist>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Tags <span style="color:var(--text3);font-weight:400">(comma-separated)</span></label>
+          <input class="form-input" id="kbEditTags" placeholder="e.g. call drop, silent call, escalation">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Content <span style="color:var(--red)">*</span></label>
+        <textarea class="form-textarea" id="kbEditContent" rows="10" placeholder="Article content… plain text or simple HTML (e.g. <b>, <ul><li>, <br>)"></textarea>
+      </div>
+      <div class="form-group">
+        <label class="form-label">📎 Attachments <span style="color:var(--text3);font-weight:400">(images, PDFs, docs — max 20MB each)</span></label>
+        <input type="file" id="kbFileInput" multiple accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.csv,.txt" onchange="handleKBFileSelect(event)" style="font-size:13px;color:var(--text2)">
+        <div id="kbAttachmentsList" style="display:flex;flex-direction:column;gap:6px;margin-top:10px"></div>
+      </div>
+      <label style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text2);cursor:pointer">
+        <input type="checkbox" id="kbEditPinned"> 📌 Pin this article to the top
+      </label>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('kbEditModal')">Cancel</button>
+      <button class="btn btn-primary" id="kbSaveBtn" onclick="saveKBArticle()">💾 Save Article</button>
+    </div>
+  </div>
+</div>
+
+<!-- KB VIEW MODAL -->
+<div class="modal-overlay hidden" id="kbViewModal">
+  <div class="modal" style="max-width:700px">
+    <div class="modal-header">
+      <div class="modal-title" id="kbViewTitle">Article</div>
+      <button class="modal-close" onclick="closeModal('kbViewModal')">×</button>
+    </div>
+    <div class="modal-body">
+      <div id="kbViewMeta" style="font-size:12px;color:var(--text3);margin-bottom:14px"></div>
+      <div id="kbViewContent" style="font-size:14px;line-height:1.6;color:var(--text)"></div>
+      <div id="kbViewAttachments" style="margin-top:18px"></div>
+    </div>
+    <div class="modal-footer" id="kbViewFooter"></div>
   </div>
 </div>
 
@@ -2400,6 +2485,7 @@ function showPage(id) {
   if (id === 'pipeline') loadPipeline();
   if (id === 'fail-analysis') loadFailAnalysis();
   if (id === 'monthly-perf') initMonthlyPerf();
+  if (id === 'knowledge-base') loadKB();
   if (id === 'new-eval') { resetNewEval(); loadCustomTemplatesForNewEval(); }
 }
 
@@ -6147,192 +6233,6 @@ async function loadQAProductivity() {
     const d = e.created_at ? e.created_at.slice(0,7) : '';
     if (d) months.add(d);
   });
-  // Default to current month
-  const now = new Date();
-  const currentMonth = now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0');
-  months.add(currentMonth);
-
-  const moSel = document.getElementById('qaProdMonth');
-  if (moSel) {
-    // Rebuild options
-    moSel.innerHTML = '<option value="">All Time</option>'
-      + [...months].sort().reverse().map(m => {
-          const [yr,mo] = m.split('-');
-          return '<option value="'+m+'">'+new Date(yr,mo-1,1).toLocaleDateString('en-MY',{month:'long',year:'numeric'})+'</option>';
-        }).join('');
-    // Default to current month if not already set
-    if (!moSel.value || moSel.value === '') {
-      moSel.value = currentMonth;
-    }
-  }
-
-  const selMonth = (moSel && moSel.value) ? moSel.value : currentMonth;
-  const filtered = selMonth ? all.filter(e => (e.created_at||'').startsWith(selMonth)) : all;
-
-  // Get unique QA names
-  const qaNames = [...new Set(all.map(e => e.qa_user_name).filter(Boolean))].sort();
-
-  // Summary cards
-  const summaryEl = document.getElementById('qaProdSummary');
-  if (summaryEl) {
-    const closed     = filtered.filter(e=>e.status==='closed').length;
-    const pendingAck = filtered.filter(e=>e.status==='tl-approved').length;
-    const avgDaily   = (() => {
-      const days = new Set(filtered.map(e=>(e.created_at||'').slice(0,10)).filter(Boolean));
-      return days.size > 0 ? Math.round(filtered.length/days.size*10)/10 : 0;
-    })();
-    summaryEl.innerHTML =
-      '<div class="stat-card blue"><div class="stat-num" style="font-size:22px">'+filtered.length+'</div><div class="stat-label">Total Evaluated</div></div>'+
-      '<div class="stat-card green"><div class="stat-num" style="font-size:22px">'+closed+'</div><div class="stat-label">Closed</div></div>'+
-      '<div class="stat-card amber"><div class="stat-num" style="font-size:22px">'+pendingAck+'</div><div class="stat-label">Pending Agent Ack</div></div>'+
-      '<div class="stat-card green"><div class="stat-num" style="font-size:22px">'+avgDaily+'</div><div class="stat-label">Avg per Day</div></div>';
-  }
-
-  // Build full month date range
-  const tableWrap = document.getElementById('qaProdTableWrap');
-  if (tableWrap) {
-    // Get all days in selected month
-    let allDays = [];
-    if (selMonth) {
-      const [yr, mo] = selMonth.split('-').map(Number);
-      const daysInMonth = new Date(yr, mo, 0).getDate();
-      for (let d = daysInMonth; d >= 1; d--) {
-        const dd = String(d).padStart(2,'0');
-        allDays.push(yr+'-'+String(mo).padStart(2,'0')+'-'+dd);
-      }
-    } else {
-      // No month selected - show current month by default
-      const yr2 = now.getFullYear(), mo2 = now.getMonth()+1;
-      const dim2 = new Date(yr2, mo2, 0).getDate();
-      for (let d = dim2; d >= 1; d--) {
-        allDays.push(yr2+'-'+String(mo2).padStart(2,'0')+'-'+String(d).padStart(2,'0'));
-      }
-    }
-
-    // Load remarks from localStorage
-    const remarksKey = 'qa_prod_remarks_' + selMonth;
-    let remarks = {};
-    try { remarks = JSON.parse(localStorage.getItem(remarksKey)||'{}'); } catch(e){}
-
-    // Group by date and QA
-    const byDate = {};
-    filtered.forEach(e => {
-      const d = (e.created_at||'').slice(0,10);
-      if (!d) return;
-      if (!byDate[d]) byDate[d] = {};
-      byDate[d][e.qa_user_name] = (byDate[d][e.qa_user_name]||0)+1;
-    });
-
-    const short = n => n ? n.split(' ')[0] : '--';
-    const today = new Date().toISOString().slice(0,10);
-
-    let html = '<table class="eval-table" style="min-width:100%"><thead><tr>'
-      + '<th style="width:120px">Date</th>';
-
-    qaNames.forEach(q => {
-      html += '<th style="text-align:center">'+short(q)+'</th>'
-            + '<th style="min-width:150px">Remarks ('+short(q)+')</th>';
-    });
-    html += '<th style="text-align:center">Total</th></tr></thead><tbody>';
-
-    let grandTotal = {};
-    qaNames.forEach(q => grandTotal[q] = 0);
-
-    allDays.forEach(d => {
-      const row    = byDate[d] || {};
-      const dayTotal = qaNames.reduce((s,q) => s+(row[q]||0), 0);
-      const dt     = new Date(d+'T00:00:00');
-      const isToday = d === today;
-      const isFuture = d > today;
-      const dayLabel = dt.toLocaleDateString('en-MY',{weekday:'short',day:'2-digit',month:'short'});
-      const rowStyle = isToday ? 'background:rgba(79,142,247,.08);' : '';
-
-      html += '<tr style="'+rowStyle+'">';
-      html += '<td style="font-size:11px;white-space:nowrap;color:'+(isToday?'var(--accent)':isFuture?'var(--text3)':'var(--text')+'">'+dayLabel+(isToday?' ★':'')+'</td>';
-
-      qaNames.forEach(q => {
-        const count = row[q] || 0;
-        grandTotal[q] += count;
-        const bg = count===0?'':count>=10?'background:rgba(34,197,94,.2)':count>=5?'background:rgba(34,197,94,.12)':count>=3?'background:rgba(245,158,11,.1)':'';
-        const remarkKey = d+'_'+q;
-        const remarkVal = (remarks[remarkKey]||'').replace(/"/g,'&quot;');
-
-        var tdSt='text-align:center;font-family:monospace;font-weight:'+(count?'700':'400')+';color:'+(count?'var(--text)':'var(--text3)')+(bg?';'+bg:'');
-        html += '<td style="'+tdSt+'">'+( isFuture?'':count||'&mdash;')+'</td>';
-        html += '<td><input class="form-input" value="'+remarkVal+'" placeholder="Remarks..." style="padding:3px 8px;font-size:11px;width:100%;min-width:120px" data-key="'+remarksKey+'" data-rkey="'+remarkKey+'" onchange="saveQAProdRemark(this.dataset.key,this.dataset.rkey,this.value)" '+(isFuture?'disabled':'')+'>\u003c/td>';
-      });
-
-      var totalSt='text-align:center;font-family:monospace;font-weight:700;color:'+(dayTotal?'var(--accent)':'var(--text3)');
-      html += '<td style="'+totalSt+'">'+( isFuture?'':dayTotal||'&mdash;')+'</td>';
-      html += '</tr>';
-    });
-
-    // Total row
-    const grandSum = qaNames.reduce((s,q)=>s+grandTotal[q],0);
-    html += '<tr style="border-top:2px solid var(--border);font-weight:700;background:var(--surface2)"><td style="font-size:12px">TOTAL</td>';
-    qaNames.forEach(q => {
-      html += '<td style="text-align:center;font-family:monospace;color:var(--green)">'+grandTotal[q]+'</td><td></td>';
-    });
-    html += '<td style="text-align:center;font-family:monospace;color:var(--accent)">'+grandSum+'</td></tr>';
-    html += '</tbody></table>';
-    tableWrap.innerHTML = html;
-  }
-
-  // Bar chart
-  const barsEl = document.getElementById('qaProdBars');
-  if (barsEl) {
-    const totals = qaNames.map(q=>({ name:q, count:filtered.filter(e=>e.qa_user_name===q).length })).sort((a,b)=>b.count-a.count);
-    const max = totals.length ? Math.max(totals[0].count,1) : 1;
-    const colors = ['var(--green)','var(--accent)','var(--amber)','var(--cyan)','var(--purple)'];
-    barsEl.innerHTML = totals.map((t,i) => {
-      const pct = Math.round(t.count/max*100);
-      return '<div style="display:grid;grid-template-columns:180px 1fr 60px;gap:12px;align-items:center">'
-        +'<div style="font-size:12px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+(['🥇','🥈','🥉'][i]||'')+' '+t.name+'</div>'
-        +'<div style="height:24px;background:var(--surface3);border-radius:4px;overflow:hidden"><div style="height:100%;width:'+pct+'%;background:'+colors[i%colors.length]+';border-radius:4px"></div></div>'
-        +'<div style="font-family:monospace;font-size:14px;font-weight:700;color:'+colors[i%colors.length]+';text-align:right">'+t.count+'</div>'
-        +'</div>';
-    }).join('');
-  }
-}
-
-function saveQAProdRemark(storageKey, remarkKey, value) {
-  var remarks = {};
-  try { remarks = JSON.parse(localStorage.getItem(storageKey)||'{}'); } catch(e){}
-  if (value) remarks[remarkKey] = value;
-  else delete remarks[remarkKey];
-  localStorage.setItem(storageKey, JSON.stringify(remarks));
-}
-
-function exportQAProductivity() {
-  const d = window._qpData;
-  if (!d || !d.qaArr.length) { alert('No data to export.'); return; }
-  const rows = [];
-  d.qaArr.forEach(q => {
-    const row = { 'QA Evaluator': q.name, 'Total': q.total };
-    d.dates.forEach(date => { row[date] = q.days[date]||0; });
-    rows.push(row);
-  });
-  // Total row
-  const total = { 'QA Evaluator': 'TOTAL', 'Total': d.filtered.length };
-  d.dates.forEach(date => { total[date] = d.qaArr.reduce((a,q)=>a+(q.days[date]||0),0); });
-  rows.push(total);
-  dlCSV(rows, 'QA_Productivity_'+(d.selMonth||'all')+'.csv');
-}
-
-// ===============================================
-//  QA PRODUCTIVITY
-// ===============================================
-
-async function loadQAProductivity() {
-  const all = evaluations && evaluations.length > 0 ? evaluations : await loadEvals();
-  evaluations = all;
-
-  // Populate month filter
-  const months = new Set();
-  all.forEach(e => {
-    const d = e.created_at ? e.created_at.slice(0,7) : '';
-    if (d) months.add(d);
-  });
   const moSel = document.getElementById('qaProdMonth');
   if (moSel && moSel.options.length <= 1) {
     [...months].sort().reverse().forEach(m => {
@@ -6409,6 +6309,18 @@ async function loadQAProductivity() {
           + '</tr>';
       });
 
+      // Average per day row (each QA's own total ÷ their own active days), placed above TOTAL
+      html += '<tr style="border-top:1px solid var(--border);font-weight:600">'
+        + '<td style="font-size:12px">AVG / DAY</td>'
+        + qaNames.map(q => {
+            const t = filtered.filter(e=>e.qa_user_name===q).length;
+            const activeDaysForQ = dates.filter(d => (byDate[d][q]||0) > 0).length;
+            const avg = activeDaysForQ ? (t/activeDaysForQ) : 0;
+            return `<td style="text-align:center;font-family:'JetBrains Mono',monospace;color:var(--text2)">${avg? avg.toFixed(1) : '—'}</td>`;
+          }).join('')
+        + `<td style="text-align:center;font-family:'JetBrains Mono',monospace;color:var(--text2)">${dates.length ? (filtered.length/dates.length).toFixed(1) : '—'}</td>`
+        + '</tr>';
+
       // Total row
       html += '<tr style="border-top:2px solid var(--border);font-weight:700">'
         + '<td style="font-size:12px">TOTAL</td>'
@@ -6448,6 +6360,351 @@ async function loadQAProductivity() {
       </div>`;
     }).join('');
   }
+}
+
+// ===============================================
+//  KNOWLEDGE BASE
+// ===============================================
+
+let _kbArticles = [];
+let _kbAttachmentCounts = {};   // article_id -> count, for list badges
+let _kbEditNewFiles = [];        // File objects staged for upload on save
+let _kbEditExistingAttachments = []; // rows from kb_attachments for the article being edited
+let _kbEditRemovedAttachmentIds = []; // existing attachment ids marked for removal on save
+
+const KB_MAX_FILE_MB = 20;
+const KB_IMAGE_TYPES = ['image/png','image/jpeg','image/jpg','image/gif','image/webp','image/svg+xml'];
+
+function kbCanManage() {
+  const base    = (currentStaff && currentStaff.role || '').toLowerCase();
+  const email   = (currentUser && currentUser.email || '').toLowerCase();
+  const isAdmin = base === 'admin' || ROLE_MAP_EMAIL[email] === 'admin' || roleOverrides[email] === 'admin';
+  const isTL      = base === 'tl';
+  const isQA      = base === 'qa';
+  const isManager = base === 'manager' || base === 'mgr';
+  return isAdmin || isTL || isQA || isManager;
+}
+
+function kbFormatBytes(bytes) {
+  if (!bytes && bytes !== 0) return '';
+  if (bytes < 1024) return bytes + ' B';
+  if (bytes < 1024*1024) return (bytes/1024).toFixed(1) + ' KB';
+  return (bytes/(1024*1024)).toFixed(1) + ' MB';
+}
+
+function kbIsImage(type) {
+  return KB_IMAGE_TYPES.includes((type||'').toLowerCase());
+}
+
+function kbSanitizeFileName(name) {
+  return (name || 'file').replace(/[^a-zA-Z0-9._-]/g, '_');
+}
+
+async function loadKB() {
+  const wrap = document.getElementById('kbListWrap');
+  if (wrap) wrap.innerHTML = '<div style="text-align:center;color:var(--text3);padding:30px">📚 Loading articles…</div>';
+
+  const { data, error } = await supa.from('kb_articles').select('*')
+    .order('pinned', { ascending: false })
+    .order('updated_at', { ascending: false });
+
+  if (error) {
+    console.error('[KB] load error:', error);
+    if (wrap) wrap.innerHTML = '<div style="text-align:center;color:var(--red);padding:30px">Failed to load knowledge base. ' + (error.message||'') + '</div>';
+    return;
+  }
+
+  _kbArticles = data || [];
+
+  // Lightweight fetch of attachment counts per article (for paperclip badges)
+  _kbAttachmentCounts = {};
+  const { data: attRows } = await supa.from('kb_attachments').select('article_id');
+  (attRows || []).forEach(r => { _kbAttachmentCounts[r.article_id] = (_kbAttachmentCounts[r.article_id]||0) + 1; });
+
+  // Populate category filter + datalist
+  const cats = [...new Set(_kbArticles.map(a => a.category).filter(Boolean))].sort();
+  const catFilter = document.getElementById('kbCategoryFilter');
+  if (catFilter) {
+    const cur = catFilter.value;
+    catFilter.innerHTML = '<option value="">All Categories</option>' +
+      cats.map(c => `<option value="${c}">${c}</option>`).join('');
+    catFilter.value = cur;
+  }
+  const catList = document.getElementById('kbCategoryList');
+  if (catList) catList.innerHTML = cats.map(c => `<option value="${c}">`).join('');
+
+  // Show/hide "+ New Article" based on role
+  const newBtn = document.getElementById('kbNewBtn');
+  if (newBtn) newBtn.style.display = kbCanManage() ? '' : 'none';
+
+  renderKBList();
+}
+
+function renderKBList() {
+  const wrap = document.getElementById('kbListWrap');
+  if (!wrap) return;
+
+  const q   = (document.getElementById('kbSearch')?.value || '').toLowerCase().trim();
+  const cat = document.getElementById('kbCategoryFilter')?.value || '';
+
+  let list = _kbArticles.filter(a => {
+    if (cat && a.category !== cat) return false;
+    if (!q) return true;
+    const hay = (a.title + ' ' + (a.tags||'') + ' ' + (a.content||'')).toLowerCase();
+    return hay.includes(q);
+  });
+
+  if (!list.length) {
+    wrap.innerHTML = '<div class="card" style="text-align:center;color:var(--text3);padding:30px">No articles found' + (q || cat ? ' matching your filters.' : ' yet. Click "+ New Article" to add the first one.') + '</div>';
+    return;
+  }
+
+  wrap.innerHTML = list.map(a => {
+    const snippet = (a.content || '').replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 160);
+    const tags = (a.tags || '').split(',').map(t => t.trim()).filter(Boolean);
+    const updated = a.updated_at ? new Date(a.updated_at).toLocaleDateString('en-MY', { day:'2-digit', month:'short', year:'numeric' }) : '';
+    const attCount = _kbAttachmentCounts[a.id] || 0;
+    return `<div class="card" style="cursor:pointer" onclick="viewKBArticle('${a.id}')">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px">
+        <div style="flex:1;min-width:0">
+          <div style="font-weight:600;font-size:15px;display:flex;align-items:center;gap:6px">
+            ${a.pinned ? '📌' : ''} ${a.title} ${attCount ? `<span style="font-size:11px;color:var(--text3);font-weight:400">📎 ${attCount}</span>` : ''}
+          </div>
+          <div style="font-size:12px;color:var(--text3);margin:4px 0 8px">
+            <span style="background:var(--surface3);color:var(--text2);font-size:11px;font-weight:600;padding:2px 8px;border-radius:10px">${a.category || 'General'}</span>
+            ${tags.map(t => `<span style="background:var(--surface3);color:var(--text3);font-size:11px;padding:2px 8px;border-radius:10px;margin-left:4px">#${t}</span>`).join('')}
+          </div>
+          <div style="font-size:13px;color:var(--text2)">${snippet}${(a.content||'').length > 160 ? '…' : ''}</div>
+        </div>
+        <div style="font-size:11px;color:var(--text3);white-space:nowrap">Updated ${updated}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+async function viewKBArticle(id) {
+  const a = _kbArticles.find(x => x.id === id);
+  if (!a) return;
+  document.getElementById('kbViewTitle').textContent = (a.pinned ? '📌 ' : '') + a.title;
+  const tags = (a.tags || '').split(',').map(t => t.trim()).filter(Boolean);
+  document.getElementById('kbViewMeta').innerHTML =
+    `<span style="background:var(--surface3);color:var(--text2);font-size:11px;font-weight:600;padding:2px 8px;border-radius:10px">${a.category || 'General'}</span> ${tags.map(t => `<span style="background:var(--surface3);color:var(--text3);font-size:11px;padding:2px 8px;border-radius:10px;margin-left:4px">#${t}</span>`).join('')}` +
+    `<div style="margin-top:6px">By ${a.created_by || 'Unknown'} · Updated ${a.updated_at ? new Date(a.updated_at).toLocaleString('en-MY') : ''}</div>`;
+  document.getElementById('kbViewContent').innerHTML = a.content || '';
+
+  const attWrap = document.getElementById('kbViewAttachments');
+  attWrap.innerHTML = '<div style="font-size:12px;color:var(--text3)">Loading attachments…</div>';
+
+  const footer = document.getElementById('kbViewFooter');
+  if (kbCanManage()) {
+    footer.innerHTML = `
+      <button class="btn btn-ghost" style="color:var(--red)" onclick="deleteKBArticle('${a.id}')">🗑️ Delete</button>
+      <button class="btn btn-ghost" onclick="closeModal('kbViewModal')">Close</button>
+      <button class="btn btn-primary" onclick="closeModal('kbViewModal');openKBModal('${a.id}')">✏️ Edit</button>`;
+  } else {
+    footer.innerHTML = `<button class="btn btn-ghost" onclick="closeModal('kbViewModal')">Close</button>`;
+  }
+  document.getElementById('kbViewModal').classList.remove('hidden');
+
+  const { data: files, error } = await supa.from('kb_attachments').select('*').eq('article_id', id).order('uploaded_at');
+  if (error) { attWrap.innerHTML = ''; console.error('[KB] attachment load error:', error); return; }
+  if (!files || !files.length) { attWrap.innerHTML = ''; return; }
+
+  const images = files.filter(f => kbIsImage(f.file_type));
+  const others  = files.filter(f => !kbIsImage(f.file_type));
+
+  let html = '';
+  if (images.length) {
+    html += `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px;margin-bottom:${others.length?'14px':'0'}">` +
+      images.map(f => `<a href="${f.file_url}" target="_blank" rel="noopener" title="${f.file_name}">
+        <img src="${f.file_url}" alt="${f.file_name}" style="width:100%;height:110px;object-fit:cover;border-radius:8px;border:1px solid var(--border)">
+      </a>`).join('') + '</div>';
+  }
+  if (others.length) {
+    html += `<div style="display:flex;flex-direction:column;gap:6px">` +
+      others.map(f => `<a href="${f.file_url}" target="_blank" rel="noopener" style="display:flex;align-items:center;gap:8px;padding:8px 10px;background:var(--surface2);border-radius:8px;text-decoration:none;color:var(--text)">
+        <span>📄</span>
+        <span style="flex:1;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${f.file_name}</span>
+        <span style="font-size:11px;color:var(--text3)">${kbFormatBytes(f.file_size)}</span>
+      </a>`).join('') + '</div>';
+  }
+  attWrap.innerHTML = html;
+}
+
+function openKBModal(id) {
+  const a = id ? _kbArticles.find(x => x.id === id) : null;
+  document.getElementById('kbEditModalTitle').textContent = a ? 'Edit Article' : 'New Article';
+  document.getElementById('kbEditId').value = a ? a.id : '';
+  document.getElementById('kbEditTitle').value = a ? a.title : '';
+  document.getElementById('kbEditCategory').value = a ? (a.category || '') : '';
+  document.getElementById('kbEditTags').value = a ? (a.tags || '') : '';
+  document.getElementById('kbEditContent').value = a ? a.content : '';
+  document.getElementById('kbEditPinned').checked = a ? !!a.pinned : false;
+  document.getElementById('kbFileInput').value = '';
+  _kbEditNewFiles = [];
+  _kbEditRemovedAttachmentIds = [];
+  _kbEditExistingAttachments = [];
+  renderKBEditAttachmentsList();
+  document.getElementById('kbEditModal').classList.remove('hidden');
+
+  if (a) {
+    supa.from('kb_attachments').select('*').eq('article_id', a.id).order('uploaded_at').then(({ data, error }) => {
+      if (!error) { _kbEditExistingAttachments = data || []; renderKBEditAttachmentsList(); }
+    });
+  }
+}
+
+function handleKBFileSelect(event) {
+  const files = Array.from(event.target.files || []);
+  files.forEach(f => {
+    if (f.size > KB_MAX_FILE_MB * 1024 * 1024) {
+      showToast('File too large', `"${f.name}" exceeds ${KB_MAX_FILE_MB}MB and was skipped.`, 'error');
+      return;
+    }
+    _kbEditNewFiles.push(f);
+  });
+  event.target.value = ''; // allow re-selecting the same file if removed
+  renderKBEditAttachmentsList();
+}
+
+function removeNewKBFile(idx) {
+  _kbEditNewFiles.splice(idx, 1);
+  renderKBEditAttachmentsList();
+}
+
+function removeExistingKBAttachment(attId) {
+  _kbEditRemovedAttachmentIds.push(attId);
+  renderKBEditAttachmentsList();
+}
+
+function renderKBEditAttachmentsList() {
+  const wrap = document.getElementById('kbAttachmentsList');
+  if (!wrap) return;
+
+  const existingHtml = _kbEditExistingAttachments
+    .filter(f => !_kbEditRemovedAttachmentIds.includes(f.id))
+    .map(f => `<div style="display:flex;align-items:center;gap:8px;padding:6px 10px;background:var(--surface2);border-radius:8px">
+      <span>${kbIsImage(f.file_type) ? '🖼️' : '📄'}</span>
+      <span style="flex:1;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${f.file_name}</span>
+      <span style="font-size:11px;color:var(--text3)">${kbFormatBytes(f.file_size)}</span>
+      <button type="button" class="btn btn-ghost btn-sm" style="color:var(--red);padding:2px 8px" onclick="removeExistingKBAttachment('${f.id}')">✕</button>
+    </div>`).join('');
+
+  const newHtml = _kbEditNewFiles.map((f, i) => `<div style="display:flex;align-items:center;gap:8px;padding:6px 10px;background:var(--surface2);border-radius:8px">
+      <span>${kbIsImage(f.type) ? '🖼️' : '📄'}</span>
+      <span style="flex:1;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${f.name}</span>
+      <span style="font-size:11px;color:var(--accent)">new</span>
+      <span style="font-size:11px;color:var(--text3)">${kbFormatBytes(f.size)}</span>
+      <button type="button" class="btn btn-ghost btn-sm" style="color:var(--red);padding:2px 8px" onclick="removeNewKBFile(${i})">✕</button>
+    </div>`).join('');
+
+  wrap.innerHTML = existingHtml + newHtml || '<div style="font-size:12px;color:var(--text3)">No attachments yet.</div>';
+}
+
+async function saveKBArticle() {
+  const id       = document.getElementById('kbEditId').value;
+  const title    = document.getElementById('kbEditTitle').value.trim();
+  const category = document.getElementById('kbEditCategory').value.trim() || 'General';
+  const tags     = document.getElementById('kbEditTags').value.trim();
+  const content  = document.getElementById('kbEditContent').value.trim();
+  const pinned   = document.getElementById('kbEditPinned').checked;
+
+  if (!title || !content) {
+    showToast('Missing info', 'Title and content are required.', 'error');
+    return;
+  }
+
+  const saveBtn = document.getElementById('kbSaveBtn');
+  if (saveBtn) saveBtn.disabled = true;
+  setLoading(true, id ? 'Updating article…' : 'Creating article…');
+
+  const payload = {
+    title, category, tags, content, pinned,
+    updated_by: currentStaff?.name || currentUser?.email || 'Unknown'
+  };
+
+  let articleId = id;
+  let error;
+  if (id) {
+    ({ error } = await supa.from('kb_articles').update(payload).eq('id', id));
+  } else {
+    payload.created_by = currentStaff?.name || currentUser?.email || 'Unknown';
+    payload.created_by_id = currentUser?.id || null;
+    const { data: inserted, error: insErr } = await supa.from('kb_articles').insert(payload).select().single();
+    error = insErr;
+    articleId = inserted?.id;
+  }
+
+  if (error || !articleId) {
+    setLoading(false);
+    if (saveBtn) saveBtn.disabled = false;
+    console.error('[KB] save error:', error);
+    showToast('Save failed', error?.message || 'Could not save article.', 'error');
+    return;
+  }
+
+  // Remove attachments marked for deletion
+  for (const attId of _kbEditRemovedAttachmentIds) {
+    const att = _kbEditExistingAttachments.find(f => f.id === attId);
+    if (att) {
+      await supa.storage.from('kb-attachments').remove([att.file_path]);
+      await supa.from('kb_attachments').delete().eq('id', attId);
+    }
+  }
+
+  // Upload newly staged files
+  for (const file of _kbEditNewFiles) {
+    setLoading(true, `Uploading ${file.name}…`);
+    const path = `${articleId}/${Date.now()}_${kbSanitizeFileName(file.name)}`;
+    const { error: upErr } = await supa.storage.from('kb-attachments').upload(path, file);
+    if (upErr) {
+      console.error('[KB] upload error:', upErr);
+      showToast('Upload failed', `"${file.name}" could not be uploaded: ${upErr.message}`, 'error');
+      continue;
+    }
+    const { data: pub } = supa.storage.from('kb-attachments').getPublicUrl(path);
+    await supa.from('kb_attachments').insert({
+      article_id: articleId,
+      file_name: file.name,
+      file_path: path,
+      file_url: pub.publicUrl,
+      file_type: file.type,
+      file_size: file.size,
+      uploaded_by: currentStaff?.name || currentUser?.email || 'Unknown'
+    });
+  }
+
+  setLoading(false);
+  if (saveBtn) saveBtn.disabled = false;
+  closeModal('kbEditModal');
+  showToast('Saved', id ? 'Article updated.' : 'Article created.', 'success');
+  loadKB();
+}
+
+async function deleteKBArticle(id) {
+  const a = _kbArticles.find(x => x.id === id);
+  if (!confirm(`Delete "${a?.title || 'this article'}"? This also deletes its attachments and cannot be undone.`)) return;
+
+  setLoading(true, 'Deleting article…');
+
+  // Clean up storage files first (DB row deletion cascades via FK, but the
+  // actual files in the bucket need to be removed explicitly)
+  const { data: files } = await supa.from('kb_attachments').select('file_path').eq('article_id', id);
+  if (files && files.length) {
+    await supa.storage.from('kb-attachments').remove(files.map(f => f.file_path));
+  }
+
+  const { error } = await supa.from('kb_articles').delete().eq('id', id);
+  setLoading(false);
+
+  if (error) {
+    console.error('[KB] delete error:', error);
+    showToast('Delete failed', error.message || 'Could not delete article.', 'error');
+    return;
+  }
+  closeModal('kbViewModal');
+  showToast('Deleted', 'Article and its attachments removed.', 'success');
+  loadKB();
 }
 
 // ===============================================
