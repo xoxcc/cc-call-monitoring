@@ -7891,19 +7891,30 @@ async function loadAuditLog() {
 }
 
 function _calNormVal(val){
-  // QA evaluation answers use Y/P/N; calibration radio answers use
-  // full/partial/zero. Normalize both to one set so they can be compared.
-  if(val==='Y'||val==='full') return 'full';
-  if(val==='P'||val==='partial') return 'partial';
-  if(val==='N'||val==='zero') return 'zero';
-  return val||'';
+  // QA evaluation answers use different encodings depending on question
+  // type: 'yn'-type questions store Y/N, '012'-type (0/1/2 point scale)
+  // questions store the literal achieved points as '0'/'1'/'2'. Calibration
+  // radio answers use full/partial/zero. Normalize all of these to one set.
+  // Anything still unrecognized after that (missing, blank, N/A) becomes ''
+  // — treated as "no answer to compare", not as a real disagreeing value.
+  if(val==='Y'||val==='full'||val==='2') return 'full';
+  if(val==='P'||val==='partial'||val==='1') return 'partial';
+  if(val==='N'||val==='zero'||val==='0') return 'zero';
+  return '';
 }
 function _calValLabel(norm){
   return norm==='full'?'Yes/Full':norm==='partial'?'Partial':norm==='zero'?'No/Zero':'--';
 }
 
-function showCalibrationComparison(evalId){
-  var e = (typeof evaluations!=='undefined'?evaluations:[]).find(function(x){return x.id===evalId;});
+async function showCalibrationComparison(evalId){
+  // Fetch fresh from Supabase — same pattern as viewEval(). The in-memory
+  // `evaluations` array is loaded once per session and never refreshed, so
+  // if this evaluation was edited/corrected since then (e.g. via a dispute
+  // resolution), the stale cached copy would show outdated QA answers here
+  // that no longer match what View (which always fetches fresh) displays.
+  setLoading(true, 'Loading comparison...');
+  const { data: e } = await supa.from('qa_evaluations').select('*').eq('id', evalId).single();
+  setLoading(false);
   var cal = (window._calMap||{})[evalId];
   if(!e || !cal){ alert('Could not find evaluation or calibration data.'); return; }
 
@@ -7923,14 +7934,16 @@ function showCalibrationComparison(evalId){
     var hasBoth = qaNorm && mgrNorm;
     var match = hasBoth ? (qaNorm===mgrNorm) : null;
     if(hasBoth && !match) mismatchCount++;
-    var matchIcon = match===null ? '<span style="color:var(--text3)">—</span>'
+    var matchIcon = match===null ? '<span style="color:var(--text3)" title="No answer recorded on one side — not counted as a disagreement">—</span>'
       : match ? '<span style="color:var(--green)">✅</span>'
       : '<span style="color:var(--red)">⚠️</span>';
     var rowBg = (hasBoth && !match) ? 'background:rgba(239,68,68,.06)' : '';
+    var qaLabel = qaNorm ? _calValLabel(qaNorm) : '<span style="color:var(--text3);font-style:italic">Unanswered</span>';
+    var mgrLabel = mgrNorm ? _calValLabel(mgrNorm) : '<span style="color:var(--text3);font-style:italic">Unanswered</span>';
     return '<tr style="border-bottom:1px solid var(--border);'+rowBg+'">'
       +'<td style="padding:8px 10px;font-size:12px;vertical-align:top"><strong>'+q.num+'</strong> '+q.q+' <span style="color:var(--text3)">('+q.wt+'pts)</span></td>'
-      +'<td style="padding:8px 10px;font-size:12px;text-align:center;vertical-align:top">'+_calValLabel(qaNorm)+(qa.score!==undefined?' <span style="color:var(--text3)">('+qa.score+'pts)</span>':'')+'</td>'
-      +'<td style="padding:8px 10px;font-size:12px;text-align:center;vertical-align:top">'+_calValLabel(mgrNorm)+(mgr.score!==undefined?' <span style="color:var(--text3)">('+mgr.score+'pts)</span>':'')+'</td>'
+      +'<td style="padding:8px 10px;font-size:12px;text-align:center;vertical-align:top">'+qaLabel+(qa.score!==undefined?' <span style="color:var(--text3)">('+qa.score+'pts)</span>':'')+'</td>'
+      +'<td style="padding:8px 10px;font-size:12px;text-align:center;vertical-align:top">'+mgrLabel+(mgr.score!==undefined?' <span style="color:var(--text3)">('+mgr.score+'pts)</span>':'')+'</td>'
       +'<td style="padding:8px 10px;text-align:center;vertical-align:top">'+matchIcon+'</td>'
       +'</tr>';
   }).join('');
@@ -8080,7 +8093,13 @@ async function startCalibration(evalId){
   var ev=(evaluations||[]).find(function(e){return e.id===evalId;});
   if(!ev){return;}
   var isGen=(ev.call_category||'').toLowerCase().includes('gen');
-  var allQs=(STD_QS||[]).concat(isGen?(GEN_QS||[]):[]);
+  // Score against the SAME questions/weights that were active when QA
+  // originally evaluated this call (ev.questions, a frozen snapshot) —
+  // not the current live template. Templates can be edited over time
+  // (weights changed, questions added/removed), and calibration must use
+  // identical criteria to the original score, or "same answers" won't
+  // produce the same score, making the whole comparison misleading.
+  var allQs = (ev.questions && ev.questions.length) ? ev.questions : (STD_QS||[]).concat(isGen?(GEN_QS||[]):[]);
   var fatals=FATALS||[];
   var qaAnswers=ev.answers||{};
   document.getElementById('actionModalTitle').textContent='🎯 Calibration — Eval #'+ev.ref+' ('+ev.agent_name+')';
