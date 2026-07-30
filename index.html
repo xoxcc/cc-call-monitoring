@@ -81,6 +81,8 @@
   .sidebar-item.active{background:rgba(79,142,247,.12);color:var(--accent)}
   .sidebar-item .icon{font-size:15px;width:18px;text-align:center}
   .sidebar-item .badge{margin-left:auto;background:var(--accent);color:#fff;font-size:10px;font-weight:700;padding:1px 6px;border-radius:10px}
+  .cb-tab{background:var(--surface2);color:var(--text2);border:1px solid var(--border)}
+  .cb-tab.active{background:var(--accent);color:#fff;border-color:var(--accent)}
   .sidebar-item .badge.red{background:var(--red)}
   .sidebar-item .badge.amber{background:var(--amber)}
   .sidebar-divider{height:1px;background:var(--border);margin:10px 16px}
@@ -214,6 +216,7 @@
   /* ── MODAL ── */
   .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:200;display:flex;align-items:center;justify-content:center;padding:16px}
   .modal-overlay.hidden{display:none}
+  .hidden{display:none !important}
   .modal{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);width:100%;max-width:560px;max-height:90vh;overflow-y:auto;box-shadow:0 24px 64px rgba(0,0,0,.5)}
   .modal-header{padding:20px 20px 0;display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
   .modal-title{font-size:16px;font-weight:600}
@@ -383,34 +386,28 @@
                width:36px;height:36px;cursor:pointer;font-size:16px;display:flex;
                align-items:center;justify-content:center;transition:all .2s"
         title="Toggle dark/light mode">🌙</button>
-      <div class="user-chip">
-        <div class="user-avatar" id="topAvatar">?</div>
-        <span id="topUserName" style="font-size:13px">—</span>
+      <div style="position:relative">
+        <div class="user-chip" onclick="toggleUserMenu(event)" style="cursor:pointer">
+          <div class="user-avatar" id="topAvatar">?</div>
+          <span id="topUserName" style="font-size:13px">—</span>
+          <span style="font-size:10px;color:var(--text3);margin-left:2px">▾</span>
+        </div>
+        <div id="userMenuDropdown" class="hidden" style="position:absolute;top:calc(100% + 8px);right:0;background:var(--surface);border:1px solid var(--border);border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,.35);min-width:190px;z-index:500;overflow:hidden">
+          <div style="padding:10px 14px;border-bottom:1px solid var(--border)">
+            <div style="font-size:13px;font-weight:600" id="userMenuName">—</div>
+            <div style="font-size:11px;color:var(--text3)" id="userMenuRole">—</div>
+          </div>
+          <div style="padding:6px 0">
+            <button onclick="closeUserMenu();openChangePassword()" style="display:flex;align-items:center;gap:8px;width:100%;padding:9px 14px;background:none;border:none;color:var(--text);font-size:13px;cursor:pointer;text-align:left" onmouseover="this.style.background='var(--surface2)'" onmouseout="this.style.background='none'">🔐 Change Password</button>
+            <button onclick="closeUserMenu();doLogout()" style="display:flex;align-items:center;gap:8px;width:100%;padding:9px 14px;background:none;border:none;color:var(--red);font-size:13px;cursor:pointer;text-align:left" onmouseover="this.style.background='var(--surface2)'" onmouseout="this.style.background='none'">⏻ Sign Out</button>
+          </div>
+        </div>
       </div>
     </div>
   </nav>
 
   <div class="app">
     <aside class="sidebar">
-      <div class="sidebar-user">
-        <div class="su-name" id="sbUserName">—</div>
-        <div class="su-role" id="sbUserRole">—</div>
-        <button class="su-logout" onclick="doLogout()">⏻ Sign out</button>
-        <button class="su-logout" onclick="openChangePassword()" style="margin-top:4px;color:var(--accent);border-color:rgba(79,142,247,.3)">🔑 Change Password</button>
-        <div id="sbStaffCount" style="font-size:10px;color:var(--text3);margin-top:6px;padding-top:6px;border-top:1px solid var(--border)">Loading staff…</div>
-      </div>
-
-      <!-- Role Switcher -->
-      <div style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:10px 12px;margin:0 8px 12px">
-        <div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.8px;color:var(--text3);margin-bottom:8px">Acting as</div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px" id="roleSwitcherBtns">
-          <button onclick="setViewRole('qa')"     id="vr-qa"      class="vr-btn vr-active">QA</button>
-          <button onclick="setViewRole('tl')"     id="vr-tl"      class="vr-btn">TL</button>
-          <button onclick="setViewRole('agent')"  id="vr-agent"   class="vr-btn">Agent</button>
-          <button onclick="setViewRole('manager')" id="vr-manager" class="vr-btn">Manager</button>
-        </div>
-      </div>
-
       <div class="sidebar-label">Menu</div>
       <div class="sidebar-item active" onclick="showPage('dashboard')" id="nav-dashboard"><span class="icon">📊</span>Dashboard</div>
       <div class="sidebar-item" onclick="showPage('new-eval')" id="nav-new-eval"><span class="icon">✏️</span>New Evaluation</div>
@@ -421,6 +418,9 @@
       <div class="sidebar-item" onclick="showPage('fail-analysis')" id="nav-fail-analysis"><span class="icon">📉</span>Failure Analysis</div>
       <div class="sidebar-item" onclick="showPage('monthly-perf')" id="nav-monthly-perf"><span class="icon">📅</span>Monthly Performance</div>
       <div class="sidebar-item" onclick="showPage('knowledge-base')" id="nav-knowledge-base"><span class="icon">📚</span>Knowledge Base</div>
+      <div class="sidebar-item" onclick="showPage('callback-requests')" id="nav-callback-requests"><span class="icon">📞</span>Callback Requests<span class="badge" id="callbackPendingBadge" style="display:none">0</span></div>
+      <div class="sidebar-item" onclick="showPage('quiz-management')" id="nav-quiz-management"><span class="icon">📝</span>Quiz Management</div>
+      <div class="sidebar-item" onclick="showPage('my-quizzes')" id="nav-my-quizzes"><span class="icon">🎯</span>My Quizzes<span class="badge" id="myQuizzesPendingBadge" style="display:none">0</span></div>
 
       <div class="sidebar-divider"></div>
       <div class="sidebar-label" id="sb-admin-label" style="display:none">Admin</div>
@@ -765,7 +765,7 @@
             <div><div class="card-title">📅 Daily Evaluation Count by QA</div>
             <div class="card-subtitle">Each row = one day, columns = QA evaluators</div></div>
           </div>
-          <div id="qaProdTableWrap"></div>
+          <div id="qaProdTableWrap" style="max-height:640px;overflow-y:auto;border-radius:8px"></div>
         </div>
 
         <!-- Bar chart per QA -->
@@ -791,15 +791,121 @@
 
         <div class="card" style="margin-bottom:16px">
           <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
-            <input class="form-input" id="kbSearch" placeholder="🔍 Search title, tags, or content…" style="flex:1;min-width:220px" oninput="renderKBList()">
-            <select class="form-select" id="kbCategoryFilter" style="width:200px" onchange="renderKBList()">
-              <option value="">All Categories</option>
-            </select>
-            <button class="btn btn-ghost btn-sm" onclick="document.getElementById('kbSearch').value='';document.getElementById('kbCategoryFilter').value='';renderKBList()">✕ Clear</button>
+            <input class="form-input" id="kbSearch" placeholder="🔍 Search title, tags, or content across all categories…" style="flex:1;min-width:220px" oninput="renderKBList()">
+            <button class="btn btn-ghost btn-sm" onclick="document.getElementById('kbSearch').value='';renderKBList()">✕ Clear</button>
           </div>
         </div>
 
         <div id="kbListWrap" style="display:flex;flex-direction:column;gap:10px"></div>
+      </div>
+
+      <!-- CALLBACK REQUESTS PAGE -->
+      <div class="page" id="page-callback-requests">
+        <div class="page-header">
+          <div class="page-header-row">
+            <div><h1>📞 Superior Callback Requests</h1><p>Agents log escalation callbacks here; any staff member can pick one up and call the customer back</p></div>
+            <div style="display:flex;gap:8px;align-items:center">
+              <button class="btn btn-ghost btn-sm" onclick="exportCallbackRequests()"><i class="ti ti-file-spreadsheet"></i> Export to Excel</button>
+              <button class="btn btn-primary btn-sm" onclick="openNewCallbackModal()">+ New Request</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="card" style="margin-bottom:16px">
+          <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:12px">
+            <div style="display:flex;gap:6px" id="callbackStatusTabs">
+              <button class="btn btn-sm cb-tab active" data-status="" onclick="setCallbackFilter('')">All</button>
+              <button class="btn btn-sm cb-tab" data-status="pending" onclick="setCallbackFilter('pending')">⏳ Pending</button>
+              <button class="btn btn-sm cb-tab" data-status="picked_up" onclick="setCallbackFilter('picked_up')">📋 Picked Up</button>
+              <button class="btn btn-sm cb-tab" data-status="completed" onclick="setCallbackFilter('completed')">✅ Completed</button>
+            </div>
+            <input class="form-input" id="callbackSearch" placeholder="🔍 Search customer, phone, issue…" style="flex:1;min-width:200px" oninput="renderCallbackList()">
+          </div>
+          <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;padding-top:10px;border-top:1px solid var(--border)">
+            <span style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-right:2px">Date:</span>
+            <div style="display:flex;gap:6px;flex-wrap:wrap" id="callbackDateTabs">
+              <button class="btn btn-sm cb-tab active" data-preset="" onclick="setCallbackDatePreset('')">All Time</button>
+              <button class="btn btn-sm cb-tab" data-preset="today" onclick="setCallbackDatePreset('today')">Today</button>
+              <button class="btn btn-sm cb-tab" data-preset="yesterday" onclick="setCallbackDatePreset('yesterday')">Yesterday</button>
+              <button class="btn btn-sm cb-tab" data-preset="thisweek" onclick="setCallbackDatePreset('thisweek')">This Week</button>
+              <button class="btn btn-sm cb-tab" data-preset="thismonth" onclick="setCallbackDatePreset('thismonth')">This Month</button>
+              <button class="btn btn-sm cb-tab" data-preset="lastmonth" onclick="setCallbackDatePreset('lastmonth')">Last Month</button>
+            </div>
+            <input type="date" id="callbackDateFrom" onchange="onCallbackCustomDateChange()" style="background:var(--surface2);border:1px solid var(--border);border-radius:7px;color:var(--text);padding:5px 10px;font-size:12px;outline:none">
+            <span style="color:var(--text3);font-size:12px">to</span>
+            <input type="date" id="callbackDateTo" onchange="onCallbackCustomDateChange()" style="background:var(--surface2);border:1px solid var(--border);border-radius:7px;color:var(--text);padding:5px 10px;font-size:12px;outline:none">
+          </div>
+        </div>
+
+        <div id="callbackListWrap" style="display:flex;flex-direction:column;gap:10px"></div>
+      </div>
+
+      <!-- QUIZ MANAGEMENT PAGE -->
+      <div class="page" id="page-quiz-management">
+        <div class="page-header">
+          <div class="page-header-row">
+            <div><h1>📝 Quiz Management</h1><p>Create questions, build quizzes, and assign them to Agents, Team Leaders, and QA</p></div>
+          </div>
+        </div>
+
+        <div style="display:flex;gap:6px;margin-bottom:16px" id="quizMgmtTabs">
+          <button class="btn btn-sm cb-tab active" data-tab="quizzes" onclick="setQuizMgmtTab('quizzes')">📋 Quizzes</button>
+          <button class="btn btn-sm cb-tab" data-tab="bank" onclick="setQuizMgmtTab('bank')">🗂️ Question Bank</button>
+          <button class="btn btn-sm cb-tab" data-tab="assignments" onclick="setQuizMgmtTab('assignments')">👥 Assignments &amp; Results</button>
+          <button class="btn btn-sm cb-tab" data-tab="review" onclick="setQuizMgmtTab('review')">📝 Grade Submissions<span class="badge" id="pendingReviewBadge" style="display:none">0</span></button>
+        </div>
+
+        <!-- Quizzes tab -->
+        <div id="qmTab-quizzes">
+          <div style="margin-bottom:12px;text-align:right">
+            <button class="btn btn-primary btn-sm" onclick="openQuizFormModal()">+ New Quiz</button>
+          </div>
+          <div id="quizListWrap" style="display:flex;flex-direction:column;gap:10px"></div>
+        </div>
+
+        <!-- Question Bank tab -->
+        <div id="qmTab-bank" style="display:none">
+          <div style="margin-bottom:12px;text-align:right">
+            <button class="btn btn-primary btn-sm" onclick="openQuestionFormModal()">+ New Question</button>
+          </div>
+          <div id="questionBankWrap" style="display:flex;flex-direction:column;gap:8px"></div>
+        </div>
+
+        <!-- Assignments & Results tab -->
+        <div id="qmTab-assignments" style="display:none">
+          <div class="card" style="margin-bottom:16px">
+            <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
+              <select class="form-select" id="qmAssignQuizFilter" onchange="renderQuizAssignments()" style="width:220px">
+                <option value="">All Quizzes</option>
+              </select>
+              <select class="form-select" id="qmAssignStatusFilter" onchange="renderQuizAssignments()" style="width:160px">
+                <option value="">All Statuses</option>
+                <option value="assigned">Assigned</option>
+                <option value="in_progress">In Progress</option>
+                <option value="pending_review">Pending Review</option>
+                <option value="completed">Completed</option>
+                <option value="expired">Expired</option>
+              </select>
+            </div>
+          </div>
+          <div id="quizAssignmentsWrap" style="display:flex;flex-direction:column;gap:8px"></div>
+        </div>
+
+        <!-- Grade Submissions tab -->
+        <div id="qmTab-review" style="display:none">
+          <p style="font-size:12px;color:var(--text3);margin-bottom:12px">Written-answer questions awaiting manual grading before the final score can be released.</p>
+          <div id="pendingReviewsWrap" style="display:flex;flex-direction:column;gap:10px"></div>
+        </div>
+      </div>
+
+      <!-- MY QUIZZES PAGE -->
+      <div class="page" id="page-my-quizzes">
+        <div class="page-header">
+          <div class="page-header-row">
+            <div><h1>🎯 My Quizzes</h1><p>Quizzes assigned to you — complete before the timer runs out</p></div>
+          </div>
+        </div>
+        <div id="myQuizzesWrap" style="display:flex;flex-direction:column;gap:10px"></div>
       </div>
 
       <!-- MY EVALUATIONS PAGE (QA) -->
@@ -1472,6 +1578,261 @@
   </div>
 </div>
 
+<!-- NEW CALLBACK REQUEST MODAL -->
+<div class="modal-overlay hidden" id="cbNewModal">
+  <div class="modal" style="max-width:520px">
+    <div class="modal-header">
+      <div class="modal-title">📞 New Callback Request</div>
+      <button class="modal-close" onclick="closeModal('cbNewModal')">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label class="form-label">Customer Name <span style="color:var(--red)">*</span></label>
+        <input class="form-input" id="cbCustName" placeholder="Full name">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Customer Phone <span style="color:var(--red)">*</span></label>
+        <input class="form-input" id="cbCustPhone" placeholder="e.g. 012-3456789">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Issue Summary <span style="color:var(--red)">*</span></label>
+        <textarea class="form-textarea" id="cbIssueSummary" rows="5" placeholder="Briefly describe the issue and why the customer needs a callback from a superior…"></textarea>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('cbNewModal')">Cancel</button>
+      <button class="btn btn-primary" id="cbSubmitBtn" onclick="submitCallbackRequest()">📞 Submit Request</button>
+    </div>
+  </div>
+</div>
+
+<!-- CALLBACK DETAIL MODAL -->
+<div class="modal-overlay hidden" id="cbDetailModal">
+  <div class="modal" style="max-width:560px">
+    <div class="modal-header">
+      <div class="modal-title">📞 <span id="cbDetailTitle">Callback Request</span></div>
+      <button class="modal-close" onclick="closeModal('cbDetailModal')">×</button>
+    </div>
+    <div class="modal-body">
+      <div id="cbDetailStatus" style="margin-bottom:16px"></div>
+      <div id="cbDetailBody"></div>
+    </div>
+    <div class="modal-footer" id="cbDetailFooter">
+      <button class="btn btn-ghost" onclick="closeModal('cbDetailModal')">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- COMPLETE CALLBACK MODAL -->
+<div class="modal-overlay hidden" id="cbCompleteModal">
+  <div class="modal" style="max-width:520px">
+    <div class="modal-header">
+      <div class="modal-title">✅ Mark Callback Completed</div>
+      <button class="modal-close" onclick="closeModal('cbCompleteModal')">×</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="cbCompleteId">
+      <div id="cbCompleteSummary" style="font-size:12px;color:var(--text3);margin-bottom:14px;padding:10px 12px;background:var(--surface2);border-radius:8px"></div>
+      <div class="form-group">
+        <label class="form-label">Resolution Notes <span style="color:var(--red)">*</span></label>
+        <textarea class="form-textarea" id="cbResolutionNotes" rows="5" placeholder="What was discussed with the customer, and how was it resolved?"></textarea>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('cbCompleteModal')">Cancel</button>
+      <button class="btn btn-primary" id="cbCompleteBtn" onclick="submitCallbackComplete()">✅ Mark Completed</button>
+    </div>
+  </div>
+</div>
+
+<!-- QA PRODUCTIVITY REMARKS MODAL -->
+<div class="modal-overlay hidden" id="qaRemarksModal">
+  <div class="modal" style="max-width:520px">
+    <div class="modal-header">
+      <div class="modal-title">💬 <span id="qaRemarksModalTitle">Remarks</span></div>
+      <button class="modal-close" onclick="closeModal('qaRemarksModal')">×</button>
+    </div>
+    <div class="modal-body" id="qaRemarksModalBody"></div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('qaRemarksModal')">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- QUESTION FORM MODAL -->
+<div class="modal-overlay hidden" id="questionFormModal">
+  <div class="modal" style="max-width:560px">
+    <div class="modal-header">
+      <div class="modal-title" id="questionFormTitle">New Question</div>
+      <button class="modal-close" onclick="closeModal('questionFormModal')">×</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="qfId">
+      <div class="form-group">
+        <label class="form-label">Question <span style="color:var(--red)">*</span></label>
+        <textarea class="form-textarea" id="qfText" rows="3" placeholder="Enter the question…"></textarea>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Question Type <span style="color:var(--red)">*</span></label>
+        <select class="form-select" id="qfType" style="width:100%" onchange="onQFTypeChange()">
+          <option value="mcq">Multiple Choice (single answer)</option>
+          <option value="true_false">True / False</option>
+          <option value="multi_select">Multi-Select (multiple correct answers)</option>
+          <option value="subjective">Subjective (open-text answer)</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Category <span style="color:var(--text3);font-weight:400">(optional)</span></label>
+        <input class="form-input" id="qfCategory" placeholder="e.g. Compliance, Product Knowledge">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Related Knowledge Base Article <span style="color:var(--text3);font-weight:400">(optional)</span></label>
+        <select class="form-select" id="qfKbArticle" style="width:100%">
+          <option value="">— None —</option>
+        </select>
+        <div style="font-size:11px;color:var(--text3);margin-top:4px">If someone gets this question wrong, they'll see a link to this article when reviewing their result.</div>
+      </div>
+      <div class="form-group" id="qfSubjectiveWrap" style="display:none">
+        <label style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text2);cursor:pointer">
+          <input type="checkbox" id="qfRequiresGrading" checked>
+          Requires manual grading (an Admin/QA reviews the answer afterward and marks it correct/incorrect)
+        </label>
+        <div style="font-size:11px;color:var(--text3);margin-top:4px">If unchecked, this question is never scored — the response is just collected for reference (e.g. a reflection question).</div>
+      </div>
+      <div class="form-group" id="qfOptionsSection">
+        <label class="form-label" id="qfOptionsLabel">Options — select the correct one <span style="color:var(--red)">*</span></label>
+        <div id="qfOptionsWrap" style="display:flex;flex-direction:column;gap:8px"></div>
+        <button type="button" class="btn btn-ghost btn-sm" id="qfAddOptionBtn" onclick="addQFOption()" style="margin-top:8px">+ Add Option</button>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('questionFormModal')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveQuizQuestion()">💾 Save Question</button>
+    </div>
+  </div>
+</div>
+
+<!-- QUIZ FORM MODAL -->
+<div class="modal-overlay hidden" id="quizFormModal">
+  <div class="modal" style="max-width:640px">
+    <div class="modal-header">
+      <div class="modal-title" id="quizFormTitle">New Quiz</div>
+      <button class="modal-close" onclick="closeModal('quizFormModal')">×</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="qzId">
+      <div class="form-group">
+        <label class="form-label">Quiz Title <span style="color:var(--red)">*</span></label>
+        <input class="form-input" id="qzTitle" placeholder="e.g. Compliance Refresher Q3 2026">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Description <span style="color:var(--text3);font-weight:400">(optional)</span></label>
+        <textarea class="form-textarea" id="qzDesc" rows="2" placeholder="What is this quiz about?"></textarea>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+        <div class="form-group">
+          <label class="form-label">Time Limit (minutes) <span style="color:var(--red)">*</span></label>
+          <input type="number" class="form-input" id="qzTimeLimit" value="15" min="1">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Passing Mark (%) <span style="color:var(--red)">*</span></label>
+          <input type="number" class="form-input" id="qzPassingMark" value="90" min="1" max="100">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Questions <span style="color:var(--red)">*</span> <span style="color:var(--text3);font-weight:400" id="qzQuestionCount"></span></label>
+        <input class="form-input" id="qzQuestionSearch" placeholder="🔍 Search question bank…" oninput="renderQuizFormQuestionPicker()" style="margin-bottom:8px">
+        <div id="qzQuestionPicker" style="max-height:260px;overflow-y:auto;border:1px solid var(--border);border-radius:8px;padding:8px;display:flex;flex-direction:column;gap:4px"></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('quizFormModal')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveQuiz()">💾 Save Quiz</button>
+    </div>
+  </div>
+</div>
+
+<!-- ASSIGN QUIZ MODAL -->
+<div class="modal-overlay hidden" id="assignQuizModal">
+  <div class="modal" style="max-width:520px">
+    <div class="modal-header">
+      <div class="modal-title">👥 Assign Quiz — <span id="assignQuizTitle"></span></div>
+      <button class="modal-close" onclick="closeModal('assignQuizModal')">×</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="asgQuizId">
+      <div class="form-group">
+        <label class="form-label">Assign To <span style="color:var(--red)">*</span></label>
+        <input class="form-input" id="asgStaffSearch" placeholder="🔍 Search Agent / Team Leader / QA…" oninput="renderAssignStaffPicker()" style="margin-bottom:8px">
+        <div style="display:flex;gap:6px;margin-bottom:8px">
+          <button class="btn btn-sm cb-tab active" data-role="" onclick="setAssignRoleFilter('')">All</button>
+          <button class="btn btn-sm cb-tab" data-role="agent" onclick="setAssignRoleFilter('agent')">Agent</button>
+          <button class="btn btn-sm cb-tab" data-role="tl" onclick="setAssignRoleFilter('tl')">Team Leader</button>
+          <button class="btn btn-sm cb-tab" data-role="qa" onclick="setAssignRoleFilter('qa')">QA</button>
+        </div>
+        <div id="asgStaffPicker" style="max-height:240px;overflow-y:auto;border:1px solid var(--border);border-radius:8px;padding:8px;display:flex;flex-direction:column;gap:4px"></div>
+        <div style="font-size:11px;color:var(--text3);margin-top:6px"><span id="asgSelectedCount">0</span> staff selected</div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Available From <span style="color:var(--text3);font-weight:400">(optional — leave blank to make it available immediately)</span></label>
+        <input type="date" class="form-input" id="asgAvailableFrom">
+        <div style="font-size:11px;color:var(--text3);margin-top:4px">The quiz will be assigned now, but staff won't be able to see or start it until this date.</div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Due Date <span style="color:var(--text3);font-weight:400">(optional)</span></label>
+        <input type="date" class="form-input" id="asgDueDate">
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('assignQuizModal')">Cancel</button>
+      <button class="btn btn-primary" onclick="submitQuizAssignment()">📤 Assign Quiz</button>
+    </div>
+  </div>
+</div>
+
+<!-- TAKE QUIZ MODAL -->
+<div class="modal-overlay hidden" id="takeQuizModal">
+  <div class="modal" style="max-width:700px;max-height:90vh">
+    <div class="modal-header" style="position:sticky;top:0;background:var(--surface);z-index:2">
+      <div class="modal-title" id="takeQuizTitle">Quiz</div>
+      <div id="takeQuizTimer" style="font-family:'JetBrains Mono',monospace;font-size:18px;font-weight:700;padding:4px 14px;border-radius:8px;background:var(--surface2);color:var(--accent)">--:--</div>
+    </div>
+    <div class="modal-body" id="takeQuizBody"></div>
+    <div class="modal-footer">
+      <span style="font-size:12px;color:var(--text3);margin-right:auto" id="takeQuizProgress"></span>
+      <button class="btn btn-primary" id="takeQuizSubmitBtn" onclick="submitQuizAttempt(false)">✅ Submit Quiz</button>
+    </div>
+  </div>
+</div>
+
+<!-- GRADE SUBJECTIVE ANSWERS MODAL -->
+<div class="modal-overlay hidden" id="gradeSubjectiveModal">
+  <div class="modal" style="max-width:640px">
+    <div class="modal-header">
+      <div class="modal-title">📝 Grade Submission — <span id="gradeSubModalSubtitle"></span></div>
+      <button class="modal-close" onclick="closeModal('gradeSubjectiveModal')">×</button>
+    </div>
+    <div class="modal-body" id="gradeSubModalBody"></div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('gradeSubjectiveModal')">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- QUIZ RESULT MODAL -->
+<div class="modal-overlay hidden" id="quizResultModal">
+  <div class="modal" style="max-width:560px">
+    <div class="modal-header">
+      <div class="modal-title">📊 Quiz Result</div>
+      <button class="modal-close" onclick="closeModal('quizResultModal')">×</button>
+    </div>
+    <div class="modal-body" id="quizResultBody"></div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('quizResultModal')">Close</button>
+    </div>
+  </div>
+</div>
+
 <!-- KB EDIT/CREATE MODAL -->
 <div class="modal-overlay hidden" id="kbEditModal">
   <div class="modal" style="max-width:640px">
@@ -1539,7 +1900,7 @@
     </div>
     <div class="modal-body">
       <div id="kbViewMeta" style="font-size:12px;color:var(--text3);margin-bottom:14px"></div>
-      <div id="kbViewContent" style="font-size:14px;line-height:1.6;color:var(--text)"></div>
+      <div id="kbViewContent" style="font-size:14px;line-height:1.7;color:var(--text);white-space:pre-wrap"></div>
       <div id="kbViewAttachments" style="margin-top:18px"></div>
     </div>
     <div class="modal-footer" id="kbViewFooter"></div>
@@ -2202,6 +2563,8 @@ async function onLoggedIn(user) {
   renderUserInfo();
   updateNavVisibility();
   showPage('dashboard');
+  refreshCallbackBadgeOnly();
+  refreshMyQuizzesBadgeOnly();
 
   // Check if this user has ever set their own password
   // We track this in localStorage keyed by user email
@@ -2241,13 +2604,10 @@ function showForcedPasswordChange() {
   laterBtn.style.cssText = 'font-size:11px;color:var(--text3)';
   laterBtn.addEventListener('click', () => {
     closeModal('changePwModal');
-    // Show reminder in sidebar
-    const sb = document.getElementById('sbStaffCount');
-    if (sb) {
-      sb.innerHTML = '<span style="color:var(--amber)">⚠️ Please change your password</span>';
-      sb.style.cursor = 'pointer';
-      sb.onclick = () => openChangePassword();
-    }
+    // Change Password now lives only in the top-right dropdown menu —
+    // dismissing this prompt just closes it, no separate sidebar
+    // reminder/trigger. The forced prompt will still reappear on the
+    // next page load until the password is actually changed.
   });
   const saveBtn = document.createElement('button');
   saveBtn.className = 'btn btn-primary';
@@ -2311,6 +2671,59 @@ function syncRoleSwitcher() {
 
   // Always update nav after role sync
   updateNavVisibility();
+}
+
+// ===============================================
+//  XSS PROTECTION — escaping & sanitization utilities
+// ===============================================
+
+// Use for ANY plain-text user input rendered into innerHTML (names,
+// remarks, issue summaries, question text, etc.) — converts it to inert
+// text so it can never be interpreted as HTML/script by the browser.
+function escapeHtml(str) {
+  if (str === null || str === undefined) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+// Use ONLY for fields that intentionally allow limited HTML formatting
+// (currently: Knowledge Base article content). Parses into a detached
+// DOM tree and strips anything dangerous — script/style/iframe/object
+// tags, every "on*" event handler attribute, and javascript:/data: URLs
+// in href/src — while keeping safe formatting tags intact.
+const SANITIZE_ALLOWED_TAGS = new Set(['B','STRONG','I','EM','U','BR','P','DIV','SPAN','UL','OL','LI','A','H1','H2','H3','H4','BLOCKQUOTE','CODE','PRE','TABLE','THEAD','TBODY','TR','TD','TH']);
+function sanitizeHtml(html) {
+  if (!html) return '';
+  const tpl = document.createElement('template');
+  tpl.innerHTML = String(html);
+  (function walk(node) {
+    [...node.childNodes].forEach(child => {
+      if (child.nodeType === 1) { // element
+        if (!SANITIZE_ALLOWED_TAGS.has(child.tagName)) {
+          // Unwrap disallowed tags: keep the text content, drop the tag itself
+          const text = document.createTextNode(child.textContent);
+          child.replaceWith(text);
+          return;
+        }
+        [...child.attributes].forEach(attr => {
+          const name = attr.name.toLowerCase();
+          const val = attr.value.trim().toLowerCase();
+          if (name.startsWith('on')) { child.removeAttribute(attr.name); return; }
+          if ((name === 'href' || name === 'src') && (val.startsWith('javascript:') || val.startsWith('data:'))) {
+            child.removeAttribute(attr.name);
+          }
+        });
+        walk(child);
+      } else if (child.nodeType === 8) { // comment — drop entirely
+        child.remove();
+      }
+    });
+  })(tpl.content);
+  return tpl.innerHTML;
 }
 
 function showToast(title, msg, type) {
@@ -2418,6 +2831,14 @@ function updateNavVisibility() {
   // Audit Log
   showNav('nav-audit-log',      'audit_log',        true);
 
+  // Knowledge Base
+  showNav('nav-knowledge-base', 'knowledge_base',    true);
+
+  // Superior Callback Requests
+  showNav('nav-callback-requests', 'callback_requests', true);
+  showNav('nav-quiz-management', 'quiz_management', true);
+  showNav('nav-my-quizzes', 'my_quizzes', true);
+
   // Export buttons
   const canExport = isAdmin || hasPermission('export');
   document.querySelectorAll('[onclick*="exportEvals"]').forEach(function(el) {
@@ -2470,8 +2891,13 @@ function renderUserInfo() {
   document.getElementById('topRoleBadge').className = `role-badge ${roleCls}`;
   document.getElementById('topUserName').textContent = name;
   document.getElementById('topAvatar').textContent = initials;
-  document.getElementById('sbUserName').textContent = name;
-  document.getElementById('sbUserRole').textContent = roleLabel;
+  document.getElementById('userMenuName').textContent = name;
+  document.getElementById('userMenuRole').textContent = roleLabel;
+  // sbUserName/sbUserRole/sbStaffCount no longer exist in the sidebar
+  // (removed — all account info/actions now live in the top-right
+  // dropdown only), but guard these in case they're ever reintroduced.
+  const sbNameEl = document.getElementById('sbUserName'); if (sbNameEl) sbNameEl.textContent = name;
+  const sbRoleEl = document.getElementById('sbUserRole'); if (sbRoleEl) sbRoleEl.textContent = roleLabel;
   // Show staff count -- helps confirm data loaded
   const countEl = document.getElementById('sbStaffCount');
   if (countEl) countEl.textContent = allStaff.length
@@ -2509,6 +2935,9 @@ function showPage(id) {
   if (id === 'fail-analysis') loadFailAnalysis();
   if (id === 'monthly-perf') initMonthlyPerf();
   if (id === 'knowledge-base') loadKB();
+  if (id === 'callback-requests') loadCallbackRequests();
+  if (id === 'quiz-management') loadQuizManagement();
+  if (id === 'my-quizzes') loadMyQuizzes();
   if (id === 'new-eval') { resetNewEval(); loadCustomTemplatesForNewEval(); }
 }
 
@@ -2904,12 +3333,19 @@ function setComment(id, val) { if (!currentAnswers[id]) currentAnswers[id]={val:
 function setFatalComment(id, val) { if (!currentFatalAnswers[id]) currentFatalAnswers[id]={val:null,comment:''}; currentFatalAnswers[id].comment=val; }
 
 function updateScore() {
-  const cat = document.getElementById('fCallCategory')?.value;
-  if (!cat || !selectedTemplate) return;
-  // Use per-template override if available
-  var tplQsForEval = getTemplateQuestions(selectedTemplate.id);
-  let questions = cat==='standard'?[...tplQsForEval.std_qs]:[...tplQsForEval.gen_qs];
-  if (selectedTemplate.csat==='yes') questions.push(cat==='standard'?STD_CSAT:GEN_CSAT);
+  if (!selectedTemplate) return;
+  let questions;
+  if (selectedTemplate.isCustom) {
+    // Custom templates (e.g. Outbound) don't use the Standard/General call
+    // category split — their own question list is the whole picture.
+    questions = [...(selectedTemplate.customTpl?.questions || [])];
+  } else {
+    const cat = document.getElementById('fCallCategory')?.value;
+    if (!cat) return;
+    var tplQsForEval = getTemplateQuestions(selectedTemplate.id);
+    questions = cat==='standard'?[...tplQsForEval.std_qs]:[...tplQsForEval.gen_qs];
+    if (selectedTemplate.csat==='yes') questions.push(cat==='standard'?STD_CSAT:GEN_CSAT);
+  }
   const totalWt = questions.reduce((a,q)=>a+q.wt,0);
   const earned = questions.reduce((a,q)=>a+(currentAnswers[q.id]?.score||0),0);
   const hasFatal = Object.values(currentFatalAnswers).some(f=>f.val==='Y');
@@ -2989,8 +3425,16 @@ async function saveEval(status) {
     if (el) { el.style.borderColor = ''; el.style.boxShadow = ''; }
   });
 
-  let questions = cat==='standard'?[...STD_QS]:[...GEN_QS];
-  if (selectedTemplate.csat==='yes') questions.push(cat==='standard'?STD_CSAT:GEN_CSAT);
+  let questions;
+  if (selectedTemplate.isCustom) {
+    // Custom templates (e.g. Outbound) have their own question list — they
+    // must NOT fall through to the General question set just because
+    // `cat` is empty (custom templates deliberately have no call category).
+    questions = [...(selectedTemplate.customTpl?.questions || [])];
+  } else {
+    questions = cat==='standard'?[...STD_QS]:[...GEN_QS];
+    if (selectedTemplate.csat==='yes') questions.push(cat==='standard'?STD_CSAT:GEN_CSAT);
+  }
   const totalWt = questions.reduce((a,q)=>a+q.wt,0);
   const earned = questions.reduce((a,q)=>a+(currentAnswers[q.id]?.score||0),0);
   const hasFatal = Object.values(currentFatalAnswers).some(f=>f.val==='Y');
@@ -4687,6 +5131,23 @@ async function runConfirm() {
 }
 function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
 
+function toggleUserMenu(event) {
+  event.stopPropagation();
+  const menu = document.getElementById('userMenuDropdown');
+  if (!menu) return;
+  menu.classList.toggle('hidden');
+}
+function closeUserMenu() {
+  const menu = document.getElementById('userMenuDropdown');
+  if (menu) menu.classList.add('hidden');
+}
+// Close the dropdown when clicking anywhere else on the page
+document.addEventListener('click', function(e) {
+  const menu = document.getElementById('userMenuDropdown');
+  if (!menu || menu.classList.contains('hidden')) return;
+  if (!menu.contains(e.target)) closeUserMenu();
+});
+
 function openChangePassword() {
   // Reset form
   document.getElementById('cpNewPw').value = '';
@@ -6246,6 +6707,97 @@ async function loadFailAnalysis() {
 //  QA PRODUCTIVITY
 // ===============================================
 
+function _qaProdCanEditRemark() {
+  const base = (currentStaff && currentStaff.role || '').toLowerCase();
+  const email = (currentUser && currentUser.email || '').toLowerCase();
+  const isAdmin = base === 'admin' || ROLE_MAP_EMAIL[email] === 'admin' || roleOverrides[email] === 'admin';
+  return isAdmin || base === 'qa';
+}
+
+function openQARemarksModal(date) {
+  const qaNames = window._qaProdQaNames || [];
+  const dayRemarks = (window._qaProdRemarksByDate || {})[date] || {};
+  const canEdit = _qaProdCanEditRemark();
+
+  const dt = new Date(date);
+  document.getElementById('qaRemarksModalTitle').textContent =
+    'Remarks — ' + dt.toLocaleDateString('en-MY', { weekday:'long', day:'2-digit', month:'long', year:'numeric' });
+
+  const body = document.getElementById('qaRemarksModalBody');
+  if (!qaNames.length) {
+    body.innerHTML = '<p style="color:var(--text3);font-size:13px">No QA evaluators found for this period.</p>';
+  } else {
+    body.innerHTML = qaNames.map((q, i) => {
+      const existing = dayRemarks[q];
+      const val = (existing && existing.remark) || '';
+      const taId = `qaRemarkTa_${i}`;
+      const meta = existing && existing.updated_by
+        ? `<div style="font-size:10px;color:var(--text3);margin-top:3px" id="${taId}_meta">Last updated by ${escapeHtml(existing.updated_by)}</div>`
+        : `<div style="font-size:10px;color:var(--text3);margin-top:3px" id="${taId}_meta"></div>`;
+      return `<div style="margin-bottom:14px">
+        <label class="form-label" style="font-size:12px">${escapeHtml(q)}</label>
+        ${canEdit
+          ? `<textarea class="form-textarea" id="${taId}" rows="2" data-date="${date}" data-qa="${escapeHtml(q)}" placeholder="Add a remark for ${escapeHtml(q)}…" style="font-size:13px">${escapeHtml(val)}</textarea>
+             <div style="display:flex;justify-content:flex-end;margin-top:6px">
+               <button class="btn btn-primary btn-sm" onclick="saveQAProdRemarkForQA(document.getElementById('${taId}'))">💾 Save</button>
+             </div>`
+          : `<div style="font-size:13px;color:var(--text2);padding:8px 10px;background:var(--surface2);border-radius:6px">${val ? escapeHtml(val) : '<span style="color:var(--text3)">No remark</span>'}</div>`}
+        ${meta}
+      </div>`;
+    }).join('');
+  }
+
+  document.getElementById('qaRemarksModal').classList.remove('hidden');
+}
+
+async function saveQAProdRemarkForQA(textarea) {
+  const date = textarea.dataset.date;
+  const qaName = textarea.dataset.qa;
+  const value = textarea.value.trim();
+  const btn = textarea.nextElementSibling?.querySelector('button');
+  const metaEl = document.getElementById(textarea.id + '_meta');
+
+  if (!window._qaProdRemarksByDate) window._qaProdRemarksByDate = {};
+  if (!window._qaProdRemarksByDate[date]) window._qaProdRemarksByDate[date] = {};
+  const existing = window._qaProdRemarksByDate[date][qaName];
+
+  // No-op if nothing actually changed
+  if ((existing?.remark || '') === value) {
+    showToast('No changes', 'Nothing to save.', 'info');
+    return;
+  }
+
+  if (btn) { btn.disabled = true; btn.textContent = 'Saving…'; }
+  textarea.style.opacity = '0.6';
+  const payload = {
+    remark_date: date,
+    qa_name: qaName,
+    remark: value,
+    updated_by: currentStaff?.name || currentUser?.email || 'Unknown',
+  };
+
+  let error, data;
+  if (existing?.id) {
+    ({ error } = await supa.from('qa_productivity_remarks').update(payload).eq('id', existing.id));
+  } else {
+    ({ data, error } = await supa.from('qa_productivity_remarks').insert(payload).select().single());
+  }
+  textarea.style.opacity = '1';
+
+  if (error) {
+    console.error('[QA Productivity] remark save error:', error);
+    showToast('Save failed', error.message || 'Could not save remark.', 'error');
+    if (btn) { btn.disabled = false; btn.textContent = '💾 Save'; }
+    return;
+  }
+
+  window._qaProdRemarksByDate[date][qaName] = data || { ...(existing||{}), remark: value, remark_date: date, qa_name: qaName, updated_by: payload.updated_by };
+  if (btn) { btn.disabled = false; btn.textContent = '✅ Saved'; setTimeout(() => { if (btn) btn.textContent = '💾 Save'; }, 1500); }
+  if (metaEl) metaEl.textContent = value ? `Last updated by ${payload.updated_by} · just now` : '';
+  showToast('Saved', `Remark for ${qaName} updated.`, 'success');
+  loadQAProductivity(); // refresh the 💬 count shown on the table row (modal stays open, separate DOM)
+}
+
 async function loadQAProductivity() {
   const all = evaluations && evaluations.length > 0 ? evaluations : await loadEvals();
   evaluations = all;
@@ -6258,13 +6810,18 @@ async function loadQAProductivity() {
   });
   const moSel = document.getElementById('qaProdMonth');
   if (moSel && moSel.options.length <= 1) {
-    [...months].sort().reverse().forEach(m => {
+    const sortedMonths = [...months].sort().reverse();
+    sortedMonths.forEach(m => {
       const [yr,mo] = m.split('-');
       const o = document.createElement('option');
       o.value = m;
       o.textContent = new Date(yr, mo-1, 1).toLocaleDateString('en-MY', {month:'long', year:'numeric'});
       moSel.appendChild(o);
     });
+    // Default to the most recent month with data, so the table shows a
+    // full calendar month (1st–end of month) rather than "All Time" —
+    // "Clear" still switches back to All Time if that's actually wanted.
+    if (sortedMonths.length) moSel.value = sortedMonths[0];
   }
 
   const selMonth = moSel?.value || '';
@@ -6283,7 +6840,32 @@ async function loadQAProductivity() {
     if (!byDate[d]) byDate[d] = {};
     byDate[d][e.qa_user_name] = (byDate[d][e.qa_user_name] || 0) + 1;
   });
-  const dates = Object.keys(byDate).sort().reverse();
+  const dates = selMonth
+    ? (() => {
+        const [yr, mo] = selMonth.split('-').map(Number);
+        const daysInMonth = new Date(yr, mo, 0).getDate();
+        const list = [];
+        for (let day = daysInMonth; day >= 1; day--) {
+          const dstr = `${yr}-${String(mo).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+          const dow = new Date(yr, mo - 1, day).getDay(); // 0 = Sun, 6 = Sat
+          // Skip weekends — but only if nobody actually worked that day.
+          // If there IS data (e.g. rare overtime), still show it.
+          if ((dow === 0 || dow === 6) && !byDate[dstr]) continue;
+          list.push(dstr);
+        }
+        return list;
+      })()
+    : Object.keys(byDate).sort().reverse();
+
+  // Daily remarks (Admin/QA can leave a note per QA per day)
+  const { data: remarkRows, error: remarkErr } = await supa.from('qa_productivity_remarks').select('*');
+  if (remarkErr) console.error('[QA Productivity] remarks load error:', remarkErr);
+  const remarksByDate = {}; // remarksByDate[date][qaName] = row
+  (remarkRows || []).forEach(r => {
+    if (!remarksByDate[r.remark_date]) remarksByDate[r.remark_date] = {};
+    remarksByDate[r.remark_date][r.qa_name] = r;
+  });
+  window._qaProdRemarksByDate = remarksByDate;
 
   // Summary cards
   const summaryEl = document.getElementById('qaProdSummary');
@@ -6293,12 +6875,13 @@ async function loadQAProductivity() {
       totalByQA[q] = filtered.filter(e => e.qa_user_name === q).length;
     });
     const topQA   = qaNames.sort((a,b) => totalByQA[b] - totalByQA[a])[0];
-    const avgDaily = dates.length > 0 ? Math.round(filtered.length / dates.length * 10) / 10 : 0;
+    const activeDaysCount = Object.keys(byDate).length; // days with ≥1 eval, not the full calendar range
+    const avgDaily = activeDaysCount > 0 ? Math.round(filtered.length / activeDaysCount * 10) / 10 : 0;
 
     summaryEl.innerHTML = `
       <div class="stat-card blue"><div class="stat-num" style="font-size:22px">${filtered.length}</div><div class="stat-label">Total Evals</div></div>
       <div class="stat-card green"><div class="stat-num" style="font-size:22px">${qaNames.length}</div><div class="stat-label">QA Evaluators</div></div>
-      <div class="stat-card amber"><div class="stat-num" style="font-size:22px">${dates.length}</div><div class="stat-label">Active Days</div></div>
+      <div class="stat-card amber"><div class="stat-num" style="font-size:22px">${activeDaysCount}</div><div class="stat-label">Active Days</div></div>
       <div class="stat-card green"><div class="stat-num" style="font-size:22px">${avgDaily}</div><div class="stat-label">Avg per Day</div></div>`;
   }
 
@@ -6311,24 +6894,66 @@ async function loadQAProductivity() {
       // Short name helper
       const short = n => n ? n.split(' ')[0] : '--';
 
-      let html = '<table class="eval-table"><thead><tr>'
-        + '<th>Date</th>'
-        + qaNames.map(q => `<th style="text-align:center">${short(q)}</th>`).join('')
-        + '<th style="text-align:center">Total</th>'
+      let html = '<table class="eval-table" style="border-collapse:separate;border-spacing:0"><thead><tr style="position:sticky;top:0;z-index:2;background:var(--surface2)">'
+        + '<th style="padding:10px 12px">Date</th>'
+        + qaNames.map(q => `<th style="text-align:center;padding:10px 12px">${short(q)}</th>`).join('')
+        + '<th style="text-align:center;padding:10px 12px;min-width:130px">Total</th>'
+        + '<th style="min-width:220px;padding:10px 12px">Remarks</th>'
         + '</tr></thead><tbody>';
 
-      dates.forEach(d => {
-        const row = byDate[d];
+      window._qaProdQaNames = qaNames; // so the remarks modal knows who to list
+
+      const _now = new Date();
+      const todayStr = `${_now.getFullYear()}-${String(_now.getMonth()+1).padStart(2,'0')}-${String(_now.getDate()).padStart(2,'0')}`;
+      const maxDayTotal = Math.max(1, ...dates.map(d => Object.values(byDate[d] || {}).reduce((a,b)=>a+b,0)));
+
+      dates.forEach((d, idx) => {
+        const row = byDate[d] || {};
         const dayTotal = Object.values(row).reduce((a,b)=>a+b,0);
         const dt = new Date(d);
         const dayLabel = dt.toLocaleDateString('en-MY', {weekday:'short', day:'2-digit', month:'short'});
-        html += `<tr><td style="font-size:12px;white-space:nowrap">${dayLabel}</td>`
+        const dayRemarks = remarksByDate[d] || {};
+        const qasWithRemarks = qaNames.filter(q => dayRemarks[q] && dayRemarks[q].remark && dayRemarks[q].remark.trim());
+        const remarkCell = qasWithRemarks.length
+          ? `<td style="padding:8px 12px">
+              <div style="display:flex;flex-wrap:wrap;gap:4px;cursor:pointer" onclick="openQARemarksModal('${d}')">
+                ${qasWithRemarks.map(q => {
+                  const text = dayRemarks[q].remark.trim();
+                  const preview = text.length > 80 ? text.slice(0, 80) + '…' : text;
+                  const tooltip = escapeHtml(`${q}: ${preview}`);
+                  return `<span title="${tooltip}" style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;background:rgba(79,142,247,.16);color:var(--accent);border:1px solid rgba(79,142,247,.35);white-space:nowrap">💬 ${escapeHtml(q.split(' ').slice(0,2).join(' '))}</span>`;
+                }).join('')}
+              </div>
+            </td>`
+          : `<td style="padding:8px 12px">
+              <button class="btn btn-sm" onclick="openQARemarksModal('${d}')" style="font-size:11px;padding:4px 10px;border-radius:12px;background:transparent;color:var(--text3);border:1px dashed var(--border)">+ Add</button>
+            </td>`;
+        const isToday = d === todayStr;
+        const isZero = dayTotal === 0;
+        const zebra = !isToday && idx % 2 === 1 ? 'background:rgba(255,255,255,.015)' : '';
+        const rowStyle = isToday
+          ? 'background:rgba(79,142,247,.10);box-shadow:inset 3px 0 0 var(--accent)'
+          : (isZero ? `opacity:.55;${zebra}` : zebra);
+        const dateCellLabel = isToday
+          ? `${dayLabel} <span style="font-size:9px;font-weight:700;color:var(--accent);background:rgba(79,142,247,.18);padding:1px 6px;border-radius:8px;margin-left:4px;vertical-align:middle">TODAY</span>`
+          : dayLabel;
+        const barPct = Math.round((dayTotal / maxDayTotal) * 100);
+        const totalCell = `<td style="padding:8px 12px">
+          <div style="display:flex;align-items:center;gap:8px;justify-content:center">
+            <span style="font-weight:700;font-family:'JetBrains Mono',monospace;color:var(--accent);min-width:22px;text-align:right">${dayTotal}</span>
+            <div style="flex:1;max-width:60px;height:5px;background:var(--surface3);border-radius:3px;overflow:hidden">
+              <div style="width:${barPct}%;height:100%;background:var(--accent);opacity:${isZero?0:0.7}"></div>
+            </div>
+          </div>
+        </td>`;
+        html += `<tr style="${rowStyle};transition:background .15s" onmouseover="this.style.background='var(--row-hover)'" onmouseout="this.style.background='${isToday ? 'rgba(79,142,247,.10)' : (zebra ? 'rgba(255,255,255,.015)' : 'transparent')}'"><td style="font-size:12px;white-space:nowrap;padding:8px 12px">${dateCellLabel}</td>`
           + qaNames.map(q => {
               const count = row[q] || 0;
               const bg = count === 0 ? '' : count >= 5 ? 'background:rgba(34,197,94,.15)' : count >= 3 ? 'background:rgba(245,158,11,.1)' : '';
-              return `<td style="text-align:center;font-family:'JetBrains Mono',monospace;font-weight:${count?'700':'400'};color:${count?'var(--text)':'var(--text3)'};${bg}">${count || '—'}</td>`;
+              return `<td style="text-align:center;font-family:'JetBrains Mono',monospace;font-weight:${count?'700':'400'};color:${count?'var(--text)':'var(--text3)'};${bg};padding:8px 12px">${count || '—'}</td>`;
             }).join('')
-          + `<td style="text-align:center;font-weight:700;font-family:'JetBrains Mono',monospace;color:var(--accent)">${dayTotal}</td>`
+          + totalCell
+          + remarkCell
           + '</tr>';
       });
 
@@ -6337,11 +6962,12 @@ async function loadQAProductivity() {
         + '<td style="font-size:12px">AVG / DAY</td>'
         + qaNames.map(q => {
             const t = filtered.filter(e=>e.qa_user_name===q).length;
-            const activeDaysForQ = dates.filter(d => (byDate[d][q]||0) > 0).length;
+            const activeDaysForQ = dates.filter(d => ((byDate[d]||{})[q]||0) > 0).length;
             const avg = activeDaysForQ ? (t/activeDaysForQ) : 0;
             return `<td style="text-align:center;font-family:'JetBrains Mono',monospace;color:var(--text2)">${avg? avg.toFixed(1) : '—'}</td>`;
           }).join('')
-        + `<td style="text-align:center;font-family:'JetBrains Mono',monospace;color:var(--text2)">${dates.length ? (filtered.length/dates.length).toFixed(1) : '—'}</td>`
+        + `<td style="text-align:center;font-family:'JetBrains Mono',monospace;color:var(--text2)">${Object.keys(byDate).length ? (filtered.length/Object.keys(byDate).length).toFixed(1) : '—'}</td>`
+        + '<td></td>'
         + '</tr>';
 
       // Total row
@@ -6352,6 +6978,7 @@ async function loadQAProductivity() {
             return `<td style="text-align:center;font-family:'JetBrains Mono',monospace;color:var(--green)">${t}</td>`;
           }).join('')
         + `<td style="text-align:center;font-family:'JetBrains Mono',monospace;color:var(--accent)">${filtered.length}</td>`
+        + '<td></td>'
         + '</tr>';
 
       html += '</tbody></table>';
@@ -6373,7 +7000,7 @@ async function loadQAProductivity() {
       const medals = ['🥇','🥈','🥉'];
       return `<div style="display:grid;grid-template-columns:180px 1fr 60px;gap:12px;align-items:center">
         <div style="font-size:12px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">
-          ${medals[i]||'  '} ${t.name}
+          ${medals[i]||'  '} ${escapeHtml(t.name)}
         </div>
         <div style="height:24px;background:var(--surface3);border-radius:4px;overflow:hidden">
           <div style="height:100%;width:${pct}%;background:${color};border-radius:4px;transition:width .4s;display:flex;align-items:center;padding-left:8px">
@@ -6391,6 +7018,7 @@ async function loadQAProductivity() {
 
 let _kbArticles = [];
 let _kbAttachmentCounts = {};   // article_id -> count, for list badges
+let _kbOpenCategory = null;     // currently drilled-into category, or null for the top-level card grid
 let _kbEditNewFiles = [];        // File objects staged for upload on save
 let _kbEditExistingAttachments = []; // rows from kb_attachments for the article being edited
 let _kbEditRemovedAttachmentIds = []; // existing attachment ids marked for removal on save
@@ -6444,15 +7072,8 @@ async function loadKB() {
   const { data: attRows } = await supa.from('kb_attachments').select('article_id');
   (attRows || []).forEach(r => { _kbAttachmentCounts[r.article_id] = (_kbAttachmentCounts[r.article_id]||0) + 1; });
 
-  // Populate category filter + datalist
+  // Datalist for the category field in the create/edit modal
   const cats = [...new Set(_kbArticles.map(a => a.category).filter(Boolean))].sort();
-  const catFilter = document.getElementById('kbCategoryFilter');
-  if (catFilter) {
-    const cur = catFilter.value;
-    catFilter.innerHTML = '<option value="">All Categories</option>' +
-      cats.map(c => `<option value="${c}">${c}</option>`).join('');
-    catFilter.value = cur;
-  }
   const catList = document.getElementById('kbCategoryList');
   if (catList) catList.innerHTML = cats.map(c => `<option value="${c}">`).join('');
 
@@ -6463,46 +7084,116 @@ async function loadKB() {
   renderKBList();
 }
 
+function _kbFormatContent(text) {
+  // Content is often pasted straight from WhatsApp announcements, which use
+  // *asterisks* for bold rather than real HTML tags. Convert those to real
+  // <strong> tags at display time (doesn't touch what's actually stored).
+  // Line breaks are handled separately via white-space:pre-wrap on the
+  // container, so no need to convert them here.
+  return (text || '').replace(/\*([^*\n]+)\*/g, '<strong>$1</strong>');
+}
+
+const _kbCategoryIcons = {
+  'sop': '📋', 'process': '🔄', 'campaign': '📢', 'troubleshooting': '🛠️',
+  'compliance': '⚖️', 'system guide': '💻', 'general': '📄', 'training': '🎓',
+  'policy': '📜', 'faq': '❓'
+};
+function _kbCategoryIcon(cat) {
+  return _kbCategoryIcons[(cat||'general').toLowerCase()] || '📁';
+}
+
 function renderKBList() {
   const wrap = document.getElementById('kbListWrap');
   if (!wrap) return;
 
-  const q   = (document.getElementById('kbSearch')?.value || '').toLowerCase().trim();
-  const cat = document.getElementById('kbCategoryFilter')?.value || '';
+  const q = (document.getElementById('kbSearch')?.value || '').toLowerCase().trim();
 
-  let list = _kbArticles.filter(a => {
-    if (cat && a.category !== cat) return false;
-    if (!q) return true;
-    const hay = (a.title + ' ' + (a.tags||'') + ' ' + (a.content||'')).toLowerCase();
-    return hay.includes(q);
-  });
-
-  if (!list.length) {
-    wrap.innerHTML = '<div class="card" style="text-align:center;color:var(--text3);padding:30px">No articles found' + (q || cat ? ' matching your filters.' : ' yet. Click "+ New Article" to add the first one.') + '</div>';
+  // Searching always shows a flat, cross-category result list — easiest way
+  // to find something without knowing which folder it's filed under.
+  if (q) {
+    const results = _kbArticles.filter(a => {
+      const hay = (a.title + ' ' + (a.tags||'') + ' ' + (a.content||'') + ' ' + (a.category||'')).toLowerCase();
+      return hay.includes(q);
+    });
+    wrap.innerHTML = `<div style="font-size:12px;color:var(--text3);margin-bottom:4px">🔍 ${results.length} result${results.length!==1?'s':''} across all categories</div>`
+      + (results.length ? results.map(_kbArticleCardHtml).join('') : '<div class="card" style="text-align:center;color:var(--text3);padding:30px">No articles match your search.</div>');
     return;
   }
 
-  wrap.innerHTML = list.map(a => {
-    const snippet = (a.content || '').replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 160);
-    const tags = (a.tags || '').split(',').map(t => t.trim()).filter(Boolean);
-    const updated = a.updated_at ? new Date(a.updated_at).toLocaleDateString('en-MY', { day:'2-digit', month:'short', year:'numeric' }) : '';
-    const attCount = _kbAttachmentCounts[a.id] || 0;
-    return `<div class="card" style="cursor:pointer" onclick="viewKBArticle('${a.id}')">
-      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px">
-        <div style="flex:1;min-width:0">
-          <div style="font-weight:600;font-size:15px;display:flex;align-items:center;gap:6px">
-            ${a.pinned ? '📌' : ''} ${a.title} ${attCount ? `<span style="font-size:11px;color:var(--text3);font-weight:400">📎 ${attCount}</span>` : ''}
-          </div>
-          <div style="font-size:12px;color:var(--text3);margin:4px 0 8px">
-            <span style="background:var(--surface3);color:var(--text2);font-size:11px;font-weight:600;padding:2px 8px;border-radius:10px">${a.category || 'General'}</span>
-            ${tags.map(t => `<span style="background:var(--surface3);color:var(--text3);font-size:11px;padding:2px 8px;border-radius:10px;margin-left:4px">#${t}</span>`).join('')}
-          </div>
-          <div style="font-size:13px;color:var(--text2)">${snippet}${(a.content||'').length > 160 ? '…' : ''}</div>
+  // No search — either browsing a category's articles, or the top-level
+  // category card grid.
+  if (_kbOpenCategory !== null) {
+    const list = _kbArticles.filter(a => (a.category || 'General') === _kbOpenCategory);
+    wrap.innerHTML = `
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:4px">
+        <button class="btn btn-ghost btn-sm" onclick="backToKBCategories()">← All Categories</button>
+        <div style="font-weight:700;font-size:16px">${_kbCategoryIcon(_kbOpenCategory)} ${escapeHtml(_kbOpenCategory)}</div>
+        <span style="font-size:12px;color:var(--text3)">${list.length} article${list.length!==1?'s':''}</span>
+      </div>`
+      + (list.length ? list.map(_kbArticleCardHtml).join('') : '<div class="card" style="text-align:center;color:var(--text3);padding:30px">No articles in this category yet.</div>');
+    return;
+  }
+
+  // Top-level: category cards
+  if (!_kbArticles.length) {
+    wrap.innerHTML = '<div class="card" style="text-align:center;color:var(--text3);padding:30px">No articles yet. Click "+ New Article" to add the first one.</div>';
+    return;
+  }
+  const byCat = {};
+  _kbArticles.forEach(a => {
+    const c = a.category || 'General';
+    if (!byCat[c]) byCat[c] = [];
+    byCat[c].push(a);
+  });
+  const cats = Object.keys(byCat).sort((a,b) => byCat[b].length - byCat[a].length);
+
+  wrap.innerHTML = `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:14px">`
+    + cats.map(c => {
+        const arts = byCat[c];
+        const latest = arts.reduce((m,a) => (a.updated_at||'') > (m||'') ? a.updated_at : m, '');
+        const latestStr = latest ? new Date(latest).toLocaleDateString('en-MY', { day:'2-digit', month:'short', year:'numeric' }) : '';
+        const pinnedCount = arts.filter(a => a.pinned).length;
+        return `<div class="card" style="cursor:pointer;text-align:center;padding:22px 16px" onclick="openKBCategoryView('${c.replace(/'/g,"\\'")}')">
+          <div style="font-size:34px;margin-bottom:8px">${_kbCategoryIcon(c)}</div>
+          <div style="font-weight:700;font-size:15px;margin-bottom:4px">${escapeHtml(c)}</div>
+          <div style="font-size:12px;color:var(--text3)">${arts.length} article${arts.length!==1?'s':''}${pinnedCount?` · 📌 ${pinnedCount}`:''}</div>
+          <div style="font-size:11px;color:var(--text3);margin-top:6px">Updated ${latestStr}</div>
+        </div>`;
+      }).join('')
+    + `</div>`;
+}
+
+function _kbArticleCardHtml(a) {
+  const snippet = escapeHtml((a.content || '').replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 160));
+  const tags = (a.tags || '').split(',').map(t => t.trim()).filter(Boolean);
+  const updated = a.updated_at ? new Date(a.updated_at).toLocaleDateString('en-MY', { day:'2-digit', month:'short', year:'numeric' }) : '';
+  const attCount = _kbAttachmentCounts[a.id] || 0;
+  return `<div class="card" style="cursor:pointer" onclick="viewKBArticle('${a.id}')">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px">
+      <div style="flex:1;min-width:0">
+        <div style="font-weight:600;font-size:15px;display:flex;align-items:center;gap:6px">
+          ${a.pinned ? '📌' : ''} ${escapeHtml(a.title)} ${attCount ? `<span style="font-size:11px;color:var(--text3);font-weight:400">📎 ${attCount}</span>` : ''}
         </div>
-        <div style="font-size:11px;color:var(--text3);white-space:nowrap">Updated ${updated}</div>
+        <div style="font-size:12px;color:var(--text3);margin:4px 0 8px">
+          <span style="background:var(--surface3);color:var(--text2);font-size:11px;font-weight:600;padding:2px 8px;border-radius:10px">${escapeHtml(a.category || 'General')}</span>
+          ${tags.map(t => `<span style="background:var(--surface3);color:var(--text3);font-size:11px;padding:2px 8px;border-radius:10px;margin-left:4px">#${escapeHtml(t)}</span>`).join('')}
+        </div>
+        <div style="font-size:13px;color:var(--text2)">${snippet}${(a.content||'').length > 160 ? '…' : ''}</div>
       </div>
-    </div>`;
-  }).join('');
+      <div style="font-size:11px;color:var(--text3);white-space:nowrap">Updated ${updated}</div>
+    </div>
+  </div>`;
+}
+
+function openKBCategoryView(cat) {
+  _kbOpenCategory = cat;
+  const search = document.getElementById('kbSearch');
+  if (search) search.value = '';
+  renderKBList();
+}
+function backToKBCategories() {
+  _kbOpenCategory = null;
+  renderKBList();
 }
 
 async function viewKBArticle(id) {
@@ -6511,9 +7202,12 @@ async function viewKBArticle(id) {
   document.getElementById('kbViewTitle').textContent = (a.pinned ? '📌 ' : '') + a.title;
   const tags = (a.tags || '').split(',').map(t => t.trim()).filter(Boolean);
   document.getElementById('kbViewMeta').innerHTML =
-    `<span style="background:var(--surface3);color:var(--text2);font-size:11px;font-weight:600;padding:2px 8px;border-radius:10px">${a.category || 'General'}</span> ${tags.map(t => `<span style="background:var(--surface3);color:var(--text3);font-size:11px;padding:2px 8px;border-radius:10px;margin-left:4px">#${t}</span>`).join('')}` +
-    `<div style="margin-top:6px">By ${a.created_by || 'Unknown'} · Updated ${a.updated_at ? new Date(a.updated_at).toLocaleString('en-MY') : ''}</div>`;
-  document.getElementById('kbViewContent').innerHTML = a.content || '';
+    `<span style="background:var(--surface3);color:var(--text2);font-size:11px;font-weight:600;padding:2px 8px;border-radius:10px">${escapeHtml(a.category || 'General')}</span> ${tags.map(t => `<span style="background:var(--surface3);color:var(--text3);font-size:11px;padding:2px 8px;border-radius:10px;margin-left:4px">#${escapeHtml(t)}</span>`).join('')}` +
+    `<div style="margin-top:6px">By ${escapeHtml(a.created_by || 'Unknown')} · Updated ${a.updated_at ? new Date(a.updated_at).toLocaleString('en-MY') : ''}</div>`;
+  // Content intentionally allows some HTML formatting (bold, lists, etc.),
+  // so it goes through sanitizeHtml (strips scripts/handlers/dangerous
+  // URLs but keeps safe tags) rather than a blanket escape.
+  document.getElementById('kbViewContent').innerHTML = sanitizeHtml(_kbFormatContent(a.content || ''));
 
   const attWrap = document.getElementById('kbViewAttachments');
   attWrap.innerHTML = '<div style="font-size:12px;color:var(--text3)">Loading attachments…</div>';
@@ -6539,15 +7233,15 @@ async function viewKBArticle(id) {
   let html = '';
   if (images.length) {
     html += `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px;margin-bottom:${others.length?'14px':'0'}">` +
-      images.map(f => `<a href="${f.file_url}" target="_blank" rel="noopener" title="${f.file_name}">
-        <img src="${f.file_url}" alt="${f.file_name}" style="width:100%;height:110px;object-fit:cover;border-radius:8px;border:1px solid var(--border)">
+      images.map(f => `<a href="${escapeHtml(f.file_url)}" target="_blank" rel="noopener" title="${escapeHtml(f.file_name)}">
+        <img src="${escapeHtml(f.file_url)}" alt="${escapeHtml(f.file_name)}" style="width:100%;height:110px;object-fit:cover;border-radius:8px;border:1px solid var(--border)">
       </a>`).join('') + '</div>';
   }
   if (others.length) {
     html += `<div style="display:flex;flex-direction:column;gap:6px">` +
-      others.map(f => `<a href="${f.file_url}" target="_blank" rel="noopener" style="display:flex;align-items:center;gap:8px;padding:8px 10px;background:var(--surface2);border-radius:8px;text-decoration:none;color:var(--text)">
+      others.map(f => `<a href="${escapeHtml(f.file_url)}" target="_blank" rel="noopener" style="display:flex;align-items:center;gap:8px;padding:8px 10px;background:var(--surface2);border-radius:8px;text-decoration:none;color:var(--text)">
         <span>📄</span>
-        <span style="flex:1;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${f.file_name}</span>
+        <span style="flex:1;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escapeHtml(f.file_name)}</span>
         <span style="font-size:11px;color:var(--text3)">${kbFormatBytes(f.file_size)}</span>
       </a>`).join('') + '</div>';
   }
@@ -6559,7 +7253,7 @@ function openKBModal(id) {
   document.getElementById('kbEditModalTitle').textContent = a ? 'Edit Article' : 'New Article';
   document.getElementById('kbEditId').value = a ? a.id : '';
   document.getElementById('kbEditTitle').value = a ? a.title : '';
-  document.getElementById('kbEditCategory').value = a ? (a.category || '') : '';
+  document.getElementById('kbEditCategory').value = a ? (a.category || '') : (_kbOpenCategory || '');
   document.getElementById('kbEditTags').value = a ? (a.tags || '') : '';
   document.getElementById('kbEditContent').value = a ? a.content : '';
   document.getElementById('kbEditPinned').checked = a ? !!a.pinned : false;
@@ -6608,14 +7302,14 @@ function renderKBEditAttachmentsList() {
     .filter(f => !_kbEditRemovedAttachmentIds.includes(f.id))
     .map(f => `<div style="display:flex;align-items:center;gap:8px;padding:6px 10px;background:var(--surface2);border-radius:8px">
       <span>${kbIsImage(f.file_type) ? '🖼️' : '📄'}</span>
-      <span style="flex:1;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${f.file_name}</span>
+      <span style="flex:1;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escapeHtml(f.file_name)}</span>
       <span style="font-size:11px;color:var(--text3)">${kbFormatBytes(f.file_size)}</span>
       <button type="button" class="btn btn-ghost btn-sm" style="color:var(--red);padding:2px 8px" onclick="removeExistingKBAttachment('${f.id}')">✕</button>
     </div>`).join('');
 
   const newHtml = _kbEditNewFiles.map((f, i) => `<div style="display:flex;align-items:center;gap:8px;padding:6px 10px;background:var(--surface2);border-radius:8px">
       <span>${kbIsImage(f.type) ? '🖼️' : '📄'}</span>
-      <span style="flex:1;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${f.name}</span>
+      <span style="flex:1;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escapeHtml(f.name)}</span>
       <span style="font-size:11px;color:var(--accent)">new</span>
       <span style="font-size:11px;color:var(--text3)">${kbFormatBytes(f.size)}</span>
       <button type="button" class="btn btn-ghost btn-sm" style="color:var(--red);padding:2px 8px" onclick="removeNewKBFile(${i})">✕</button>
@@ -6728,6 +7422,1374 @@ async function deleteKBArticle(id) {
   closeModal('kbViewModal');
   showToast('Deleted', 'Article and its attachments removed.', 'success');
   loadKB();
+}
+
+// ===============================================
+//  SUPERIOR CALLBACK REQUESTS
+// ===============================================
+
+let _cbRequests = [];
+let _cbFilterStatus = '';
+let _cbDateFrom = '';   // yyyy-mm-dd, inclusive
+let _cbDateTo   = '';   // yyyy-mm-dd, inclusive
+let _cbActiveDatePreset = '';
+
+async function refreshCallbackBadgeOnly() {
+  // Lightweight fetch (status column only) so the sidebar badge is accurate
+  // right after login, without needing to visit the page or pull full data.
+  try {
+    const { data, error } = await supa.from('callback_requests').select('status').eq('status', 'pending');
+    if (error) { console.error('[Callback] badge refresh error:', error); return; }
+    const badge = document.getElementById('callbackPendingBadge');
+    if (!badge) return;
+    const n = (data || []).length;
+    if (n > 0) { badge.style.display = ''; badge.textContent = n; }
+    else { badge.style.display = 'none'; }
+  } catch (e) { console.error('[Callback] badge refresh exception:', e); }
+}
+
+async function loadCallbackRequests() {
+  const wrap = document.getElementById('callbackListWrap');
+  if (wrap) wrap.innerHTML = '<div style="text-align:center;color:var(--text3);padding:30px">📞 Loading requests…</div>';
+
+  const { data, error } = await supa.from('callback_requests').select('*').order('created_at', { ascending: false });
+
+  if (error) {
+    console.error('[Callback] load error:', error);
+    if (wrap) wrap.innerHTML = '<div style="text-align:center;color:var(--red);padding:30px">Failed to load callback requests. ' + (error.message||'') + '</div>';
+    return;
+  }
+
+  _cbRequests = data || [];
+  updateCallbackPendingBadge();
+  renderCallbackList();
+}
+
+function updateCallbackPendingBadge() {
+  const badge = document.getElementById('callbackPendingBadge');
+  if (!badge) return;
+  const n = _cbRequests.filter(r => r.status === 'pending').length;
+  if (n > 0) { badge.style.display = ''; badge.textContent = n; }
+  else { badge.style.display = 'none'; }
+}
+
+function setCallbackFilter(status) {
+  _cbFilterStatus = status;
+  document.querySelectorAll('#callbackStatusTabs .cb-tab').forEach(b => {
+    b.classList.toggle('active', b.dataset.status === status);
+  });
+  renderCallbackList();
+}
+
+function setCallbackDatePreset(preset) {
+  _cbActiveDatePreset = preset;
+  document.querySelectorAll('#callbackDateTabs .cb-tab').forEach(b => {
+    b.classList.toggle('active', b.dataset.preset === preset);
+  });
+
+  const pad = n => String(n).padStart(2, '0');
+  const fmt = d => `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+  const now = new Date();
+
+  if (preset === '') {
+    _cbDateFrom = ''; _cbDateTo = '';
+  } else if (preset === 'today') {
+    _cbDateFrom = _cbDateTo = fmt(now);
+  } else if (preset === 'yesterday') {
+    const y = new Date(now); y.setDate(now.getDate() - 1);
+    _cbDateFrom = _cbDateTo = fmt(y);
+  } else if (preset === 'thisweek') {
+    const dow = now.getDay();
+    const mon = new Date(now); mon.setDate(now.getDate() - (dow === 0 ? 6 : dow - 1));
+    const sun = new Date(mon); sun.setDate(mon.getDate() + 6);
+    _cbDateFrom = fmt(mon); _cbDateTo = fmt(sun);
+  } else if (preset === 'thismonth') {
+    _cbDateFrom = fmt(new Date(now.getFullYear(), now.getMonth(), 1));
+    _cbDateTo   = fmt(new Date(now.getFullYear(), now.getMonth()+1, 0));
+  } else if (preset === 'lastmonth') {
+    _cbDateFrom = fmt(new Date(now.getFullYear(), now.getMonth()-1, 1));
+    _cbDateTo   = fmt(new Date(now.getFullYear(), now.getMonth(), 0));
+  }
+
+  document.getElementById('callbackDateFrom').value = _cbDateFrom;
+  document.getElementById('callbackDateTo').value = _cbDateTo;
+  renderCallbackList();
+}
+
+function onCallbackCustomDateChange() {
+  _cbActiveDatePreset = '';
+  document.querySelectorAll('#callbackDateTabs .cb-tab').forEach(b => b.classList.remove('active'));
+  _cbDateFrom = document.getElementById('callbackDateFrom').value || '';
+  _cbDateTo = document.getElementById('callbackDateTo').value || '';
+  renderCallbackList();
+}
+
+function _cbStatusBadge(status) {
+  const map = {
+    pending:   ['⏳ Pending',    '#f59e0b'],
+    picked_up: ['📋 Picked Up',  '#3b82f6'],
+    completed: ['✅ Completed',  '#22c55e'],
+    cancelled: ['✕ Cancelled',   '#64748b'],
+  };
+  const [label, color] = map[status] || ['—', 'var(--text3)'];
+  return `<span style="font-size:11px;font-weight:700;padding:3px 10px;border-radius:12px;background:${color}22;color:${color};border:1px solid ${color}">${label}</span>`;
+}
+
+function _getFilteredCallbackRequests() {
+  const q = (document.getElementById('callbackSearch')?.value || '').toLowerCase().trim();
+  return _cbRequests.filter(r => {
+    if (_cbFilterStatus && r.status !== _cbFilterStatus) return false;
+    if (_cbDateFrom || _cbDateTo) {
+      const d = (r.created_at || '').slice(0, 10); // yyyy-mm-dd
+      if (!d) return false;
+      if (_cbDateFrom && d < _cbDateFrom) return false;
+      if (_cbDateTo && d > _cbDateTo) return false;
+    }
+    if (!q) return true;
+    const hay = (r.customer_name + ' ' + r.customer_phone + ' ' + r.issue_summary + ' ' + (r.requested_by||'')).toLowerCase();
+    return hay.includes(q);
+  });
+}
+
+function exportCallbackRequests() {
+  const list = _getFilteredCallbackRequests();
+  if (!list.length) {
+    showToast('Nothing to export', 'No callback requests match the current filters.', 'error');
+    return;
+  }
+
+  const fmt = (ts) => ts ? new Date(ts).toLocaleString('en-MY', { day:'2-digit', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit' }) : '';
+  const statusLabel = { pending:'Pending', picked_up:'Picked Up', completed:'Completed', cancelled:'Cancelled' };
+
+  const rows = list
+    .slice() // don't mutate the filtered array in place
+    .sort((a,b) => (b.created_at||'').localeCompare(a.created_at||''))
+    .map(r => ({
+      'Customer Name': r.customer_name || '',
+      'Customer Phone': r.customer_phone || '',
+      'Issue Summary': r.issue_summary || '',
+      'Status': statusLabel[r.status] || r.status || '',
+      'Requested By': r.requested_by || '',
+      'Requested At': fmt(r.created_at),
+      'Picked Up By': r.picked_up_by || '',
+      'Picked Up At': fmt(r.picked_up_at),
+      'Completed By': r.completed_by || '',
+      'Completed At': fmt(r.completed_at),
+      'Resolution Notes': r.resolution_notes || '',
+    }));
+
+  const dateStamp = new Date().toISOString().slice(0,10);
+  const filterTag = _cbFilterStatus ? `_${_cbFilterStatus}` : '';
+  dlXLSX(rows, `Callback_Requests${filterTag}_${dateStamp}.xlsx`);
+  showToast('Exported', `${rows.length} request${rows.length!==1?'s':''} exported.`, 'success');
+}
+
+function renderCallbackList() {
+  const wrap = document.getElementById('callbackListWrap');
+  if (!wrap) return;
+
+  const q = (document.getElementById('callbackSearch')?.value || '').toLowerCase().trim();
+  let list = _getFilteredCallbackRequests();
+
+  const hasFilters = q || _cbFilterStatus || _cbDateFrom || _cbDateTo;
+  if (!list.length) {
+    wrap.innerHTML = '<div class="card" style="text-align:center;color:var(--text3);padding:30px">No callback requests found' + (hasFilters ? ' matching your filters.' : ' yet. Click "+ New Request" to log one.') + '</div>';
+    return;
+  }
+
+  wrap.innerHTML = list.map(r => {
+    const created = r.created_at ? new Date(r.created_at).toLocaleString('en-MY', { day:'2-digit', month:'short', hour:'2-digit', minute:'2-digit' }) : '';
+    let actionsHtml = '';
+    if (r.status === 'pending') {
+      actionsHtml = `<button class="btn btn-primary btn-sm" onclick="event.stopPropagation();pickUpCallback('${r.id}')">📋 Pick Up</button>`;
+    } else if (r.status === 'picked_up') {
+      actionsHtml = `<button class="btn btn-primary btn-sm" onclick="event.stopPropagation();openCompleteCallbackModal('${r.id}')">✅ Mark Completed</button>`;
+    }
+    return `<div class="card" style="cursor:pointer" onclick="viewCallbackDetail('${r.id}')">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap">
+        <div style="flex:1;min-width:240px">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;flex-wrap:wrap">
+            <span style="font-weight:600;font-size:15px">${escapeHtml(r.customer_name)}</span>
+            <span style="font-size:12px;color:var(--text3)">📱 ${escapeHtml(r.customer_phone)}</span>
+            ${_cbStatusBadge(r.status)}
+          </div>
+          <div style="font-size:13px;color:var(--text2);margin-bottom:6px;white-space:pre-wrap">${escapeHtml(r.issue_summary)}</div>
+          <div style="font-size:11px;color:var(--text3)">
+            Requested by <strong>${escapeHtml(r.requested_by)}</strong> · ${created}
+            ${r.picked_up_by ? ` · Picked up by <strong>${escapeHtml(r.picked_up_by)}</strong>` : ''}
+          </div>
+          ${r.status==='completed' && r.resolution_notes ? `<div style="margin-top:8px;padding:8px 10px;background:var(--surface2);border-radius:6px;font-size:12px;color:var(--text2)"><strong>Resolution:</strong> ${escapeHtml(r.resolution_notes)}</div>` : ''}
+        </div>
+        <div style="display:flex;gap:6px;flex-shrink:0">${actionsHtml}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function viewCallbackDetail(id) {
+  const r = _cbRequests.find(x => x.id === id);
+  if (!r) return;
+
+  const fmt = (ts) => ts ? new Date(ts).toLocaleString('en-MY', { day:'2-digit', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit' }) : '';
+
+  document.getElementById('cbDetailTitle').textContent = r.customer_name;
+  document.getElementById('cbDetailStatus').innerHTML = _cbStatusBadge(r.status);
+
+  document.getElementById('cbDetailBody').innerHTML = `
+    <div style="margin-bottom:16px">
+      <div style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px">Customer</div>
+      <div style="font-size:14px">${escapeHtml(r.customer_name)} · 📱 ${escapeHtml(r.customer_phone)}</div>
+    </div>
+    <div style="margin-bottom:16px">
+      <div style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px">Issue Summary</div>
+      <div style="font-size:13px;color:var(--text2);white-space:pre-wrap">${escapeHtml(r.issue_summary)}</div>
+    </div>
+    <div style="margin-bottom:16px">
+      <div style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Timeline</div>
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <div style="display:flex;gap:10px;align-items:flex-start">
+          <span style="font-size:16px">📝</span>
+          <div><div style="font-size:13px"><strong>Requested</strong> by ${escapeHtml(r.requested_by)}</div><div style="font-size:11px;color:var(--text3)">${fmt(r.created_at)}</div></div>
+        </div>
+        ${r.picked_up_by ? `<div style="display:flex;gap:10px;align-items:flex-start">
+          <span style="font-size:16px">📋</span>
+          <div><div style="font-size:13px"><strong>Picked up</strong> by ${escapeHtml(r.picked_up_by)}</div><div style="font-size:11px;color:var(--text3)">${fmt(r.picked_up_at)}</div></div>
+        </div>` : ''}
+        ${r.status==='completed' ? `<div style="display:flex;gap:10px;align-items:flex-start">
+          <span style="font-size:16px">✅</span>
+          <div><div style="font-size:13px"><strong>Completed</strong> by ${escapeHtml(r.completed_by||r.picked_up_by||'—')}</div><div style="font-size:11px;color:var(--text3)">${fmt(r.completed_at)}</div></div>
+        </div>` : ''}
+      </div>
+    </div>
+    ${r.status==='completed' && r.resolution_notes ? `<div>
+      <div style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px">Resolution Notes</div>
+      <div style="font-size:13px;color:var(--text2);white-space:pre-wrap;padding:10px 12px;background:var(--surface2);border-radius:8px">${escapeHtml(r.resolution_notes)}</div>
+    </div>` : ''}`;
+
+  const footer = document.getElementById('cbDetailFooter');
+  const closeBtn = `<button class="btn btn-ghost" onclick="closeModal('cbDetailModal')">Close</button>`;
+  const deleteBtn = _cbIsAdmin() ? `<button class="btn btn-ghost" style="color:var(--red)" onclick="deleteCallbackRequest('${r.id}')">🗑️ Delete</button>` : '';
+  if (r.status === 'pending') {
+    footer.innerHTML = deleteBtn + closeBtn + `<button class="btn btn-primary" onclick="closeModal('cbDetailModal');pickUpCallback('${r.id}')">📋 Pick Up</button>`;
+  } else if (r.status === 'picked_up') {
+    footer.innerHTML = deleteBtn + closeBtn + `<button class="btn btn-primary" onclick="closeModal('cbDetailModal');openCompleteCallbackModal('${r.id}')">✅ Mark Completed</button>`;
+  } else {
+    footer.innerHTML = deleteBtn + closeBtn;
+  }
+
+  document.getElementById('cbDetailModal').classList.remove('hidden');
+}
+
+function _cbIsAdmin() {
+  const base = (currentStaff && currentStaff.role || '').toLowerCase();
+  const email = (currentUser && currentUser.email || '').toLowerCase();
+  return base === 'admin' || ROLE_MAP_EMAIL[email] === 'admin' || roleOverrides[email] === 'admin';
+}
+
+async function deleteCallbackRequest(id) {
+  const r = _cbRequests.find(x => x.id === id);
+  if (!r) return;
+  if (!confirm(`Delete this callback request for "${r.customer_name}"? This cannot be undone.`)) return;
+
+  setLoading(true, 'Deleting request…');
+  const { error } = await supa.from('callback_requests').delete().eq('id', id);
+  setLoading(false);
+
+  if (error) {
+    console.error('[Callback] delete error:', error);
+    showToast('Delete failed', error.message || 'Could not delete this request.', 'error');
+    return;
+  }
+
+  closeModal('cbDetailModal');
+  showToast('Deleted', 'Callback request removed.', 'success');
+  loadCallbackRequests();
+}
+
+function openNewCallbackModal() {
+  document.getElementById('cbCustName').value = '';
+  document.getElementById('cbCustPhone').value = '';
+  document.getElementById('cbIssueSummary').value = '';
+  document.getElementById('cbNewModal').classList.remove('hidden');
+}
+
+async function submitCallbackRequest() {
+  const custName = document.getElementById('cbCustName').value.trim();
+  const custPhone = document.getElementById('cbCustPhone').value.trim();
+  const issue = document.getElementById('cbIssueSummary').value.trim();
+
+  if (!custName || !custPhone || !issue) {
+    showToast('Missing info', 'Customer name, phone, and issue summary are all required.', 'error');
+    return;
+  }
+
+  const btn = document.getElementById('cbSubmitBtn');
+  if (btn) btn.disabled = true;
+  setLoading(true, 'Submitting request…');
+
+  const { error } = await supa.from('callback_requests').insert({
+    customer_name: custName,
+    customer_phone: custPhone,
+    issue_summary: issue,
+    status: 'pending',
+    requested_by: currentStaff?.name || currentUser?.email || 'Unknown',
+    requested_by_id: currentUser?.id || null,
+  });
+
+  setLoading(false);
+  if (btn) btn.disabled = false;
+
+  if (error) {
+    console.error('[Callback] submit error:', error);
+    showToast('Submit failed', error.message || 'Could not submit callback request.', 'error');
+    return;
+  }
+
+  closeModal('cbNewModal');
+  showToast('Submitted', 'Callback request logged — a team member will pick it up shortly.', 'success');
+  loadCallbackRequests();
+}
+
+async function pickUpCallback(id) {
+  const myName = currentStaff?.name || currentUser?.email || 'Unknown';
+  if (!confirm('Pick up this callback request? You will be responsible for calling the customer back.')) return;
+
+  setLoading(true, 'Picking up request…');
+
+  // Conditional update — only succeeds if the request is still 'pending' at
+  // the moment this runs, so two staff clicking Pick Up at the same time
+  // can't both claim the same request.
+  const { data, error } = await supa.from('callback_requests')
+    .update({ status: 'picked_up', picked_up_by: myName, picked_up_by_id: currentUser?.id || null, picked_up_at: new Date().toISOString() })
+    .eq('id', id).eq('status', 'pending')
+    .select();
+
+  setLoading(false);
+
+  if (error) {
+    console.error('[Callback] pick up error:', error);
+    showToast('Failed', error.message || 'Could not pick up this request.', 'error');
+    return;
+  }
+  if (!data || !data.length) {
+    showToast('Already taken', 'Someone else just picked up this request.', 'error');
+    loadCallbackRequests();
+    return;
+  }
+
+  showToast('Picked up', 'This callback is now assigned to you.', 'success');
+  loadCallbackRequests();
+}
+
+function openCompleteCallbackModal(id) {
+  const r = _cbRequests.find(x => x.id === id);
+  if (!r) return;
+  document.getElementById('cbCompleteId').value = id;
+  document.getElementById('cbCompleteSummary').innerHTML = `<strong>${escapeHtml(r.customer_name)}</strong> — 📱 ${escapeHtml(r.customer_phone)}<br>${escapeHtml(r.issue_summary)}`;
+  document.getElementById('cbResolutionNotes').value = '';
+  document.getElementById('cbCompleteModal').classList.remove('hidden');
+}
+
+async function submitCallbackComplete() {
+  const id = document.getElementById('cbCompleteId').value;
+  const notes = document.getElementById('cbResolutionNotes').value.trim();
+  if (!notes) {
+    showToast('Missing info', 'Resolution notes are required to mark this as completed.', 'error');
+    return;
+  }
+
+  const btn = document.getElementById('cbCompleteBtn');
+  if (btn) btn.disabled = true;
+  setLoading(true, 'Saving…');
+
+  const { error } = await supa.from('callback_requests').update({
+    status: 'completed',
+    resolution_notes: notes,
+    completed_by: currentStaff?.name || currentUser?.email || 'Unknown',
+    completed_at: new Date().toISOString(),
+  }).eq('id', id);
+
+  setLoading(false);
+  if (btn) btn.disabled = false;
+
+  if (error) {
+    console.error('[Callback] complete error:', error);
+    showToast('Failed', error.message || 'Could not mark this request as completed.', 'error');
+    return;
+  }
+
+  closeModal('cbCompleteModal');
+  showToast('Completed', 'Callback marked as resolved.', 'success');
+  loadCallbackRequests();
+}
+
+async function refreshMyQuizzesBadgeOnly() {
+  try {
+    const myName = currentStaff?.name || currentUser?.email || '';
+    if (!myName) return;
+    const { data, error } = await supa.from('quiz_assignments').select('status').eq('assigned_to', myName).in('status', ['assigned','in_progress']);
+    if (error) { console.error('[Quiz] badge refresh error:', error); return; }
+    const badge = document.getElementById('myQuizzesPendingBadge');
+    if (!badge) return;
+    const n = (data || []).length;
+    if (n > 0) { badge.style.display=''; badge.textContent = n; } else { badge.style.display='none'; }
+  } catch (e) { console.error('[Quiz] badge refresh exception:', e); }
+}
+
+// ===============================================
+//  QUIZ / ASSESSMENT SYSTEM
+// ===============================================
+
+let _quizQuestions = [];
+let _quizzes = [];
+let _quizFormSelectedIds = [];   // question ids selected while building a quiz
+let _assignSelectedStaff = [];   // staff names selected while assigning
+let _assignRoleFilter = '';
+let _myQuizAssignments = [];
+let _activeQuizAttempt = null;   // { assignment, quiz, questions, answers, startedAt, deadline }
+let _quizTimerInterval = null;
+
+function _quizCanManage() {
+  const base = (currentStaff && currentStaff.role || '').toLowerCase();
+  const email = (currentUser && currentUser.email || '').toLowerCase();
+  const isAdmin = base === 'admin' || ROLE_MAP_EMAIL[email] === 'admin' || roleOverrides[email] === 'admin';
+  const isManager = base === 'manager' || base === 'mgr';
+  return isAdmin || isManager;
+}
+
+function setQuizMgmtTab(tab) {
+  ['quizzes','bank','assignments','review'].forEach(t => {
+    const el = document.getElementById('qmTab-'+t);
+    if (el) el.style.display = (t===tab) ? '' : 'none';
+  });
+  document.querySelectorAll('#quizMgmtTabs .cb-tab').forEach(b => b.classList.toggle('active', b.dataset.tab===tab));
+  if (tab === 'assignments') loadQuizAssignmentsForManagement();
+  if (tab === 'review') loadPendingReviews();
+}
+
+/* ── QUIZ MANAGEMENT PAGE LOAD ─────────────────────────────────────── */
+async function loadQuizManagement() {
+  if (!_quizCanManage()) {
+    const wrap = document.getElementById('quizListWrap');
+    if (wrap) wrap.innerHTML = '<div class="card" style="text-align:center;color:var(--text3);padding:30px">Quiz Management is available to Admin and Manager only.</div>';
+    return;
+  }
+  await Promise.all([loadQuizQuestionBank(false), loadQuizzesList(false)]);
+  renderQuestionBank();
+  renderQuizList();
+}
+
+/* ── QUESTION BANK ──────────────────────────────────────────────────── */
+async function loadQuizQuestionBank(rerender) {
+  const { data, error } = await supa.from('quiz_questions').select('*').eq('is_active', true).order('created_at', { ascending: false });
+  if (error) { console.error('[Quiz] question bank load error:', error); return; }
+  _quizQuestions = data || [];
+  if (rerender !== false) renderQuestionBank();
+}
+
+function renderQuestionBank() {
+  const wrap = document.getElementById('questionBankWrap');
+  if (!wrap) return;
+  if (!_quizQuestions.length) {
+    wrap.innerHTML = '<div class="card" style="text-align:center;color:var(--text3);padding:30px">No questions yet. Click "+ New Question" to add the first one.</div>';
+    return;
+  }
+  const typeLabels = { mcq:'📻 MCQ', true_false:'✅❌ True/False', multi_select:'☑️ Multi-Select', subjective:'✍️ Subjective' };
+  const typeColors = { mcq:'#60a5fa', true_false:'#a78bfa', multi_select:'#fbbf24', subjective:'#34d399' };
+  wrap.innerHTML = _quizQuestions.map(q => {
+    const type = q.question_type || 'mcq';
+    const opts = Array.isArray(q.options) ? q.options : [];
+    const correctSet = type === 'multi_select'
+      ? new Set(Array.isArray(q.correct_indices) ? q.correct_indices : [])
+      : new Set([q.correct_index]);
+    let bodyHtml;
+    if (type === 'subjective') {
+      bodyHtml = `<div style="font-size:12px;color:var(--text3);margin-top:6px;font-style:italic">Open-text answer${q.requires_manual_grading ? ' — requires manual grading' : ' — reference only, not scored'}</div>`;
+    } else {
+      bodyHtml = `<div style="display:flex;flex-direction:column;gap:3px;margin-top:6px">
+        ${opts.map((o,i) => `<div style="font-size:12px;color:${correctSet.has(i)?'var(--green)':'var(--text3)'}">${correctSet.has(i)?'✅':'▫️'} ${escapeHtml(o)}</div>`).join('')}
+      </div>`;
+    }
+    return `<div class="card">
+      <div style="display:flex;justify-content:space-between;gap:12px">
+        <div style="flex:1;min-width:0">
+          <div style="font-weight:600;font-size:14px;margin-bottom:6px">${escapeHtml(q.question_text)}</div>
+          <span style="font-size:11px;background:${typeColors[type]}22;color:${typeColors[type]};padding:2px 8px;border-radius:10px;margin-bottom:6px;display:inline-block;font-weight:600">${typeLabels[type]||type}</span>
+          ${q.category ? `<span style="font-size:11px;background:var(--surface3);color:var(--text2);padding:2px 8px;border-radius:10px;margin-bottom:6px;margin-left:4px;display:inline-block">${escapeHtml(q.category)}</span>` : ''}
+          ${q.kb_article_id ? `<span style="font-size:11px;background:rgba(79,142,247,.12);color:var(--accent);padding:2px 8px;border-radius:10px;margin-bottom:6px;margin-left:4px;display:inline-block">📚 Linked to KB</span>` : ''}
+          ${bodyHtml}
+        </div>
+        <div style="display:flex;flex-direction:column;gap:6px;flex-shrink:0">
+          <button class="btn btn-ghost btn-sm" onclick="openQuestionFormModal('${q.id}')">Edit</button>
+          <button class="btn btn-ghost btn-sm" style="color:var(--red)" onclick="deleteQuizQuestion('${q.id}')">Delete</button>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+async function openQuestionFormModal(id) {
+  const q = id ? _quizQuestions.find(x => x.id === id) : null;
+  document.getElementById('questionFormTitle').textContent = q ? 'Edit Question' : 'New Question';
+  document.getElementById('qfId').value = q ? q.id : '';
+  document.getElementById('qfText').value = q ? q.question_text : '';
+  document.getElementById('qfCategory').value = q ? (q.category||'') : '';
+  document.getElementById('qfType').value = q ? (q.question_type || 'mcq') : 'mcq';
+  document.getElementById('qfRequiresGrading').checked = q ? (q.requires_manual_grading !== false) : true;
+
+  // Populate the KB article dropdown (lightweight fetch — id + title only)
+  const kbSel = document.getElementById('qfKbArticle');
+  if (kbSel && kbSel.options.length <= 1) {
+    const { data: kbList, error: kbErr } = await supa.from('kb_articles').select('id,title,category').order('title');
+    if (!kbErr && kbList) {
+      kbList.forEach(a => {
+        const o = document.createElement('option');
+        o.value = a.id; o.textContent = (a.category ? `[${a.category}] ` : '') + a.title;
+        kbSel.appendChild(o);
+      });
+    }
+  }
+  if (kbSel) kbSel.value = q && q.kb_article_id ? q.kb_article_id : '';
+
+  const qType = q ? (q.question_type || 'mcq') : 'mcq';
+  _renderQFOptionsForType(qType, q);
+  onQFTypeChange(); // sync visibility of sections to the loaded type
+
+  document.getElementById('questionFormModal').classList.remove('hidden');
+}
+
+function onQFTypeChange() {
+  const type = document.getElementById('qfType').value;
+  document.getElementById('qfSubjectiveWrap').style.display = type === 'subjective' ? '' : 'none';
+  document.getElementById('qfOptionsSection').style.display = type === 'subjective' ? 'none' : '';
+  document.getElementById('qfAddOptionBtn').style.display = type === 'true_false' ? 'none' : '';
+  const label = document.getElementById('qfOptionsLabel');
+  if (type === 'multi_select') label.innerHTML = 'Options — check ALL correct answers <span style="color:var(--red)">*</span>';
+  else label.innerHTML = 'Options — select the correct one <span style="color:var(--red)">*</span>';
+
+  // Re-render the options block appropriately when switching type in the
+  // UI (not just on initial load) — e.g. switching to True/False should
+  // reset to exactly those two fixed options; switching from single- to
+  // multi-select should switch the input type from radio to checkbox.
+  if (!_qfSuppressRerender) {
+    const existingVals = [...document.querySelectorAll('#qfOptionsWrap input[data-opt-idx]')].map(i => i.value);
+    _renderQFOptionsForType(type, null, existingVals);
+  }
+}
+
+let _qfSuppressRerender = false;
+function _renderQFOptionsForType(type, q, preserveValues) {
+  const wrap = document.getElementById('qfOptionsWrap');
+  if (type === 'subjective') { wrap.innerHTML = ''; return; }
+
+  if (type === 'true_false') {
+    const correctIdx = q ? (q.correct_index ?? 0) : 0;
+    wrap.innerHTML = ['True','False'].map((label,i) => `
+      <div style="display:flex;align-items:center;gap:8px">
+        <input type="radio" name="qfCorrect" value="${i}" ${i===correctIdx?'checked':''} style="accent-color:var(--green)">
+        <input class="form-input" data-opt-idx="${i}" value="${label}" readonly style="flex:1;opacity:.8">
+      </div>`).join('');
+    return;
+  }
+
+  const opts = preserveValues && preserveValues.length ? preserveValues
+    : (q && Array.isArray(q.options) && q.options.length ? q.options : ['','','','']);
+  const isMulti = type === 'multi_select';
+  const correctSet = isMulti
+    ? new Set(q && Array.isArray(q.correct_indices) ? q.correct_indices : [])
+    : new Set(q ? [q.correct_index ?? 0] : [0]);
+
+  wrap.innerHTML = opts.map((o,i) => `
+    <div style="display:flex;align-items:center;gap:8px">
+      <input type="${isMulti?'checkbox':'radio'}" ${isMulti?'':'name="qfCorrect"'} class="${isMulti?'qf-correct-cb':''}" value="${i}" ${correctSet.has(i)?'checked':''} style="accent-color:var(--green)">
+      <input class="form-input" data-opt-idx="${i}" value="${escapeHtml(o||'')}" placeholder="Option ${String.fromCharCode(65+i)}" style="flex:1">
+      ${opts.length>2 ? `<button type="button" class="btn btn-ghost btn-sm" onclick="this.parentElement.remove()">✕</button>` : ''}
+    </div>`).join('');
+}
+
+function addQFOption() {
+  const type = document.getElementById('qfType').value;
+  if (type === 'true_false') return; // fixed at exactly 2 options
+  const wrap = document.getElementById('qfOptionsWrap');
+  const idx = wrap.children.length;
+  const isMulti = type === 'multi_select';
+  const div = document.createElement('div');
+  div.style.cssText = 'display:flex;align-items:center;gap:8px';
+  div.innerHTML = `<input type="${isMulti?'checkbox':'radio'}" ${isMulti?'':'name="qfCorrect"'} class="${isMulti?'qf-correct-cb':''}" value="${idx}" style="accent-color:var(--green)">
+    <input class="form-input" data-opt-idx="${idx}" placeholder="Option ${String.fromCharCode(65+idx)}" style="flex:1">
+    <button type="button" class="btn btn-ghost btn-sm" onclick="this.parentElement.remove()">✕</button>`;
+  wrap.appendChild(div);
+}
+
+async function saveQuizQuestion() {
+  const id = document.getElementById('qfId').value;
+  const text = document.getElementById('qfText').value.trim();
+  const category = document.getElementById('qfCategory').value.trim();
+  const type = document.getElementById('qfType').value;
+
+  const payload = {
+    question_text: text,
+    category: category || null,
+    kb_article_id: document.getElementById('qfKbArticle').value || null,
+    question_type: type,
+    created_by: currentStaff?.name || currentUser?.email || 'Unknown',
+  };
+
+  if (!text) {
+    showToast('Missing info', 'Question text is required.', 'error');
+    return;
+  }
+
+  if (type === 'subjective') {
+    payload.options = null;
+    payload.correct_index = null;
+    payload.correct_indices = null;
+    payload.requires_manual_grading = document.getElementById('qfRequiresGrading').checked;
+  } else {
+    const optionInputs = [...document.querySelectorAll('#qfOptionsWrap input[data-opt-idx]')];
+    const options = optionInputs.map(i => i.value.trim());
+    if (options.some(o => !o)) {
+      showToast('Missing info', 'All options must be filled in.', 'error');
+      return;
+    }
+    payload.options = options;
+    payload.requires_manual_grading = true; // not applicable, harmless default
+
+    if (type === 'multi_select') {
+      const checkedBoxes = [...document.querySelectorAll('#qfOptionsWrap input.qf-correct-cb:checked')];
+      if (!checkedBoxes.length) {
+        showToast('Missing info', 'Select at least one correct answer.', 'error');
+        return;
+      }
+      payload.correct_indices = checkedBoxes.map(cb => parseInt(cb.value));
+      payload.correct_index = null;
+    } else {
+      const correctRadio = document.querySelector('#qfOptionsWrap input[name="qfCorrect"]:checked');
+      if (!correctRadio) {
+        showToast('Missing info', 'Select the correct answer.', 'error');
+        return;
+      }
+      payload.correct_index = parseInt(correctRadio.value);
+      payload.correct_indices = null;
+    }
+  }
+
+  let error;
+  if (id) ({ error } = await supa.from('quiz_questions').update(payload).eq('id', id));
+  else ({ error } = await supa.from('quiz_questions').insert(payload));
+
+  if (error) { showToast('Save failed', error.message, 'error'); return; }
+  closeModal('questionFormModal');
+  showToast('Saved', 'Question saved.', 'success');
+  await loadQuizQuestionBank();
+}
+
+async function deleteQuizQuestion(id) {
+  if (!confirm('Delete this question? Quizzes already using it will keep working, but it will no longer be selectable for new quizzes.')) return;
+  const { error } = await supa.from('quiz_questions').update({ is_active: false }).eq('id', id);
+  if (error) { showToast('Delete failed', error.message, 'error'); return; }
+  showToast('Deleted', 'Question removed from the bank.', 'success');
+  await loadQuizQuestionBank();
+}
+
+/* ── QUIZZES ─────────────────────────────────────────────────────────── */
+async function loadQuizzesList(rerender) {
+  const { data, error } = await supa.from('quizzes').select('*').eq('is_active', true).order('created_at', { ascending: false });
+  if (error) { console.error('[Quiz] quizzes load error:', error); return; }
+  _quizzes = data || [];
+  if (rerender !== false) renderQuizList();
+}
+
+function renderQuizList() {
+  const wrap = document.getElementById('quizListWrap');
+  if (!wrap) return;
+  if (!_quizzes.length) {
+    wrap.innerHTML = '<div class="card" style="text-align:center;color:var(--text3);padding:30px">No quizzes yet. Click "+ New Quiz" to create one.</div>';
+    return;
+  }
+  wrap.innerHTML = _quizzes.map(qz => {
+    const qCount = Array.isArray(qz.question_ids) ? qz.question_ids.length : 0;
+    return `<div class="card">
+      <div style="display:flex;justify-content:space-between;gap:12px;align-items:flex-start">
+        <div style="flex:1;min-width:0">
+          <div style="font-weight:600;font-size:15px">${escapeHtml(qz.title)}</div>
+          ${qz.description ? `<div style="font-size:12px;color:var(--text3);margin-top:2px">${escapeHtml(qz.description)}</div>` : ''}
+          <div style="font-size:11px;color:var(--text3);margin-top:8px">
+            📝 ${qCount} question${qCount!==1?'s':''} · ⏱️ ${qz.time_limit_min} min · 🎯 Pass at ${qz.passing_mark}%
+          </div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:6px;flex-shrink:0">
+          <button class="btn btn-primary btn-sm" onclick="openAssignQuizModal('${qz.id}')">📤 Assign</button>
+          <button class="btn btn-ghost btn-sm" onclick="openQuizFormModal('${qz.id}')">Edit</button>
+          <button class="btn btn-ghost btn-sm" style="color:var(--red)" onclick="deleteQuiz('${qz.id}')">Delete</button>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function openQuizFormModal(id) {
+  const qz = id ? _quizzes.find(x => x.id === id) : null;
+  document.getElementById('quizFormTitle').textContent = qz ? 'Edit Quiz' : 'New Quiz';
+  document.getElementById('qzId').value = qz ? qz.id : '';
+  document.getElementById('qzTitle').value = qz ? qz.title : '';
+  document.getElementById('qzDesc').value = qz ? (qz.description||'') : '';
+  document.getElementById('qzTimeLimit').value = qz ? qz.time_limit_min : 15;
+  document.getElementById('qzPassingMark').value = qz ? qz.passing_mark : 90;
+  document.getElementById('qzQuestionSearch').value = '';
+  _quizFormSelectedIds = qz && Array.isArray(qz.question_ids) ? [...qz.question_ids] : [];
+  renderQuizFormQuestionPicker();
+  document.getElementById('quizFormModal').classList.remove('hidden');
+}
+
+function renderQuizFormQuestionPicker() {
+  const wrap = document.getElementById('qzQuestionPicker');
+  const q = (document.getElementById('qzQuestionSearch')?.value || '').toLowerCase().trim();
+  const list = _quizQuestions.filter(x => !q || x.question_text.toLowerCase().includes(q) || (x.category||'').toLowerCase().includes(q));
+  wrap.innerHTML = list.length ? list.map(x => {
+    const checked = _quizFormSelectedIds.includes(x.id);
+    return `<label style="display:flex;align-items:center;gap:8px;padding:6px 8px;border-radius:6px;cursor:pointer;background:${checked?'rgba(79,142,247,.08)':'transparent'}">
+      <input type="checkbox" ${checked?'checked':''} onchange="toggleQuizFormQuestion('${x.id}')">
+      <span style="font-size:12px;flex:1">${escapeHtml(x.question_text)}</span>
+      ${x.category?`<span style="font-size:10px;color:var(--text3)">${escapeHtml(x.category)}</span>`:''}
+    </label>`;
+  }).join('') : '<div style="padding:12px;text-align:center;color:var(--text3);font-size:12px">No questions match.</div>';
+  const countEl = document.getElementById('qzQuestionCount');
+  if (countEl) countEl.textContent = `(${_quizFormSelectedIds.length} selected)`;
+}
+function toggleQuizFormQuestion(id) {
+  const idx = _quizFormSelectedIds.indexOf(id);
+  if (idx >= 0) _quizFormSelectedIds.splice(idx, 1);
+  else _quizFormSelectedIds.push(id);
+  renderQuizFormQuestionPicker();
+}
+
+async function saveQuiz() {
+  const id = document.getElementById('qzId').value;
+  const title = document.getElementById('qzTitle').value.trim();
+  const description = document.getElementById('qzDesc').value.trim();
+  const timeLimit = parseInt(document.getElementById('qzTimeLimit').value) || 0;
+  const passingMark = parseFloat(document.getElementById('qzPassingMark').value);
+
+  if (!title || !timeLimit || timeLimit < 1 || !_quizFormSelectedIds.length || isNaN(passingMark)) {
+    showToast('Missing info', 'Title, time limit, passing mark, and at least one question are required.', 'error');
+    return;
+  }
+
+  const payload = {
+    title, description: description || null,
+    time_limit_min: timeLimit, passing_mark: passingMark,
+    question_ids: _quizFormSelectedIds,
+    created_by: currentStaff?.name || currentUser?.email || 'Unknown',
+  };
+
+  let error;
+  if (id) ({ error } = await supa.from('quizzes').update(payload).eq('id', id));
+  else ({ error } = await supa.from('quizzes').insert({ ...payload, created_by_id: currentUser?.id || null }));
+
+  if (error) { showToast('Save failed', error.message, 'error'); return; }
+  closeModal('quizFormModal');
+  showToast('Saved', 'Quiz saved.', 'success');
+  await loadQuizzesList();
+}
+
+async function deleteQuiz(id) {
+  if (!confirm('Delete this quiz? Existing assignments and results for it will be kept but the quiz can no longer be assigned to anyone new.')) return;
+  const { error } = await supa.from('quizzes').update({ is_active: false }).eq('id', id);
+  if (error) { showToast('Delete failed', error.message, 'error'); return; }
+  showToast('Deleted', 'Quiz removed.', 'success');
+  await loadQuizzesList();
+}
+
+/* ── ASSIGN QUIZ ─────────────────────────────────────────────────────── */
+let _quizCcUsers = []; // cc_users roster — the ONLY source whose id reliably equals auth.uid()
+
+async function openAssignQuizModal(quizId) {
+  const qz = _quizzes.find(x => x.id === quizId);
+  if (!qz) return;
+  document.getElementById('asgQuizId').value = quizId;
+  document.getElementById('assignQuizTitle').textContent = qz.title;
+  document.getElementById('asgStaffSearch').value = '';
+  document.getElementById('asgAvailableFrom').value = '';
+  document.getElementById('asgDueDate').value = '';
+  _assignSelectedStaff = [];
+  _assignRoleFilter = '';
+  document.querySelectorAll('#assignQuizModal .cb-tab').forEach(b => b.classList.toggle('active', b.dataset.role===''));
+
+  if (!_quizCcUsers.length) {
+    const { data, error } = await supa.from('cc_users').select('id,name,role,active').eq('active', true).order('name');
+    if (error) { console.error('[Quiz] cc_users load error:', error); showToast('Error', 'Could not load staff list: ' + error.message, 'error'); }
+    _quizCcUsers = data || [];
+  }
+
+  renderAssignStaffPicker();
+  document.getElementById('assignQuizModal').classList.remove('hidden');
+}
+function setAssignRoleFilter(role) {
+  _assignRoleFilter = role;
+  document.querySelectorAll('#assignQuizModal .cb-tab').forEach(b => b.classList.toggle('active', b.dataset.role===role));
+  renderAssignStaffPicker();
+}
+function _quizStaffRoleBucket(role) {
+  if (isAgentRole(role)) return 'agent';
+  if (isTLRole(role)) return 'tl';
+  if ((role||'').toLowerCase().includes('qa')) return 'qa';
+  return '';
+}
+function renderAssignStaffPicker() {
+  const wrap = document.getElementById('asgStaffPicker');
+  const q = (document.getElementById('asgStaffSearch')?.value || '').toLowerCase().trim();
+  const eligible = _quizCcUsers.filter(s => {
+    const bucket = _quizStaffRoleBucket(s.role);
+    if (!bucket) return false; // only Agent/TL/QA are assignable, per spec
+    if (_assignRoleFilter && bucket !== _assignRoleFilter) return false;
+    if (q && !s.name.toLowerCase().includes(q)) return false;
+    return true;
+  });
+  wrap.innerHTML = eligible.length ? eligible.map(s => {
+    const checked = _assignSelectedStaff.includes(s.id);
+    return `<label style="display:flex;align-items:center;gap:8px;padding:6px 8px;border-radius:6px;cursor:pointer;background:${checked?'rgba(79,142,247,.08)':'transparent'}">
+      <input type="checkbox" ${checked?'checked':''} onchange="toggleAssignStaff('${s.id}')">
+      <span style="font-size:12px;flex:1">${escapeHtml(s.name)}</span>
+      <span style="font-size:10px;color:var(--text3);text-transform:capitalize">${_quizStaffRoleBucket(s.role)}</span>
+    </label>`;
+  }).join('') : '<div style="padding:12px;text-align:center;color:var(--text3);font-size:12px">No matching staff.</div>';
+  const cnt = document.getElementById('asgSelectedCount');
+  if (cnt) cnt.textContent = _assignSelectedStaff.length;
+}
+function toggleAssignStaff(userId) {
+  const idx = _assignSelectedStaff.indexOf(userId);
+  if (idx >= 0) _assignSelectedStaff.splice(idx, 1);
+  else _assignSelectedStaff.push(userId);
+  renderAssignStaffPicker();
+}
+
+async function submitQuizAssignment() {
+  const quizId = document.getElementById('asgQuizId').value;
+  const availableFrom = document.getElementById('asgAvailableFrom').value;
+  const dueDate = document.getElementById('asgDueDate').value;
+  if (!_assignSelectedStaff.length) {
+    showToast('No staff selected', 'Select at least one person to assign this quiz to.', 'error');
+    return;
+  }
+  if (availableFrom && dueDate && availableFrom > dueDate) {
+    showToast('Invalid dates', '"Available From" cannot be after the due date.', 'error');
+    return;
+  }
+
+  const rows = _assignSelectedStaff.map(userId => {
+    const staff = _quizCcUsers.find(s => s.id === userId);
+    return {
+      quiz_id: quizId,
+      assigned_to: staff ? staff.name : 'Unknown',
+      assigned_to_id: userId, // guaranteed to equal auth.uid(), sourced from cc_users directly
+      assigned_to_role: staff ? _quizStaffRoleBucket(staff.role) : null,
+      assigned_by: currentStaff?.name || currentUser?.email || 'Unknown',
+      available_from: availableFrom ? new Date(availableFrom+'T00:00:00').toISOString() : null,
+      due_at: dueDate ? new Date(dueDate+'T23:59:59').toISOString() : null,
+      status: 'assigned',
+    };
+  });
+
+  const { error } = await supa.from('quiz_assignments').insert(rows);
+  if (error) { showToast('Assign failed', error.message, 'error'); return; }
+  closeModal('assignQuizModal');
+  const availMsg = availableFrom ? ` (available from ${new Date(availableFrom+'T00:00:00').toLocaleDateString('en-MY',{day:'2-digit',month:'short',year:'numeric'})})` : '';
+  showToast('Assigned', `Quiz assigned to ${rows.length} staff member${rows.length!==1?'s':''}${availMsg}.`, 'success');
+}
+
+/* ── ASSIGNMENTS & RESULTS (Manager view) ───────────────────────────── */
+async function loadQuizAssignmentsForManagement() {
+  const filterSel = document.getElementById('qmAssignQuizFilter');
+  if (filterSel && filterSel.options.length <= 1) {
+    _quizzes.forEach(qz => {
+      const o = document.createElement('option'); o.value = qz.id; o.textContent = qz.title;
+      filterSel.appendChild(o);
+    });
+  }
+  const { data, error } = await supa.from('quiz_assignments').select('*, quiz_attempts(*)').order('assigned_at', { ascending: false });
+  if (error) { console.error('[Quiz] assignments load error:', error); return; }
+  window._quizAllAssignments = data || [];
+  renderQuizAssignments();
+}
+function renderQuizAssignments() {
+  const wrap = document.getElementById('quizAssignmentsWrap');
+  if (!wrap) return;
+  const quizFilter = document.getElementById('qmAssignQuizFilter')?.value || '';
+  const statusFilter = document.getElementById('qmAssignStatusFilter')?.value || '';
+  let list = (window._quizAllAssignments || []).filter(a => {
+    if (quizFilter && a.quiz_id !== quizFilter) return false;
+    if (statusFilter && a.status !== statusFilter) return false;
+    return true;
+  });
+  if (!list.length) {
+    wrap.innerHTML = '<div class="card" style="text-align:center;color:var(--text3);padding:30px">No assignments match this filter.</div>';
+    return;
+  }
+  const statusColors = { assigned:'#94a3b8', in_progress:'#fbbf24', pending_review:'#a78bfa', completed:'#34d399', expired:'#f87171' };
+  wrap.innerHTML = list.map(a => {
+    const qz = _quizzes.find(x => x.id === a.quiz_id);
+    const attempt = Array.isArray(a.quiz_attempts) && a.quiz_attempts.length ? a.quiz_attempts[a.quiz_attempts.length-1] : null;
+    const scoreHtml = attempt && attempt.score_pct != null
+      ? `<span style="color:${attempt.passed?'var(--green)':'var(--red)'};font-weight:700">${attempt.score_pct.toFixed(1)}% ${attempt.passed?'✅ Pass':'❌ Fail'}</span>`
+      : (a.status === 'pending_review' ? '<span style="color:var(--text3)">Awaiting grading</span>' : '<span style="color:var(--text3)">—</span>');
+    return `<div class="card" style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap">
+      <div>
+        <div style="font-weight:600;font-size:13px">${escapeHtml(a.assigned_to)} <span style="font-size:10px;color:var(--text3);text-transform:capitalize">(${escapeHtml(a.assigned_to_role||'—')})</span></div>
+        <div style="font-size:12px;color:var(--text3)">${qz?escapeHtml(qz.title):'(deleted quiz)'}</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:16px">
+        <span style="font-size:11px;font-weight:700;color:${statusColors[a.status]||'var(--text3)'};text-transform:uppercase">${a.status.replace('_',' ')}</span>
+        <span style="font-size:13px">${scoreHtml}</span>
+        ${a.status==='pending_review' && attempt ? `<button class="btn btn-primary btn-sm" onclick="openGradeSubjectiveModal('${attempt.id}')">Grade</button>` : ''}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+/* ── GRADE SUBMISSIONS (manual grading of subjective answers) ───────── */
+async function loadPendingReviews() {
+  const wrap = document.getElementById('pendingReviewsWrap');
+  if (wrap) wrap.innerHTML = '<div style="text-align:center;color:var(--text3);padding:30px">Loading…</div>';
+
+  const { data, error } = await supa.from('quiz_attempts')
+    .select('*, quiz_assignments!inner(id, assigned_to, assigned_to_role)')
+    .eq('status', 'pending_review')
+    .order('submitted_at', { ascending: true });
+
+  if (error) {
+    console.error('[Quiz] pending reviews load error:', error);
+    if (wrap) wrap.innerHTML = '<div class="card" style="text-align:center;color:var(--red);padding:30px">Failed to load pending reviews.</div>';
+    return;
+  }
+
+  window._pendingReviewAttempts = data || [];
+  const badge = document.getElementById('pendingReviewBadge');
+  if (badge) {
+    const n = window._pendingReviewAttempts.length;
+    if (n > 0) { badge.style.display=''; badge.textContent = n; } else { badge.style.display='none'; }
+  }
+  renderPendingReviews();
+}
+
+function renderPendingReviews() {
+  const wrap = document.getElementById('pendingReviewsWrap');
+  if (!wrap) return;
+  const list = window._pendingReviewAttempts || [];
+  if (!list.length) {
+    wrap.innerHTML = '<div class="card" style="text-align:center;color:var(--text3);padding:30px">Nothing waiting for review right now.</div>';
+    return;
+  }
+  wrap.innerHTML = list.map(att => {
+    const qz = _quizzes.find(x => x.id === att.quiz_id);
+    const assignment = att.quiz_assignments;
+    const submitted = att.submitted_at ? new Date(att.submitted_at).toLocaleString('en-MY', { day:'2-digit', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit' }) : '';
+    return `<div class="card" style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap">
+      <div>
+        <div style="font-weight:600;font-size:14px">${escapeHtml(assignment?.assigned_to || 'Unknown')}</div>
+        <div style="font-size:12px;color:var(--text3);margin-top:2px">${qz ? escapeHtml(qz.title) : '(quiz unavailable)'} · Submitted ${submitted}</div>
+      </div>
+      <button class="btn btn-primary btn-sm" onclick="openGradeSubjectiveModal('${att.id}')">📝 Grade</button>
+    </div>`;
+  }).join('');
+}
+
+async function openGradeSubjectiveModal(attemptId) {
+  let attempt = (window._pendingReviewAttempts || []).find(a => a.id === attemptId);
+  if (!attempt) {
+    const { data } = await supa.from('quiz_attempts').select('*, quiz_assignments!inner(id, assigned_to, assigned_to_role)').eq('id', attemptId).single();
+    attempt = data;
+  }
+  if (!attempt) { showToast('Error', 'Could not load this submission.', 'error'); return; }
+
+  const qz = _quizzes.find(x => x.id === attempt.quiz_id);
+  document.getElementById('gradeSubModalSubtitle').textContent =
+    (attempt.quiz_assignments?.assigned_to || 'Unknown') + ' — ' + (qz ? qz.title : 'Quiz');
+
+  if (!qz) {
+    document.getElementById('gradeSubModalBody').innerHTML = '<p style="color:var(--text3);font-size:13px">This quiz is no longer available, so its questions can\'t be shown here.</p>';
+    document.getElementById('gradeSubjectiveModal').classList.remove('hidden');
+    return;
+  }
+
+  if (!_quizQuestions.length) await loadQuizQuestionBank(false);
+  const subjectiveQs = (qz.question_ids || [])
+    .map(id => _quizQuestions.find(q => q.id === id))
+    .filter(q => q && q.question_type === 'subjective' && q.requires_manual_grading);
+
+  const grades = attempt.manual_grades || {};
+  const body = document.getElementById('gradeSubModalBody');
+
+  if (!subjectiveQs.length) {
+    body.innerHTML = '<p style="color:var(--text3);font-size:13px">No manually-graded questions found on this attempt.</p>';
+  } else {
+    body.innerHTML = subjectiveQs.map((q, i) => {
+      const answer = attempt.answers?.[q.id] || '';
+      const existingGrade = grades[q.id];
+      return `<div style="margin-bottom:18px;padding-bottom:16px;border-bottom:1px solid var(--border)">
+        <div style="font-weight:600;font-size:13px;margin-bottom:8px">${i+1}. ${escapeHtml(q.question_text)}</div>
+        <div style="font-size:13px;color:var(--text2);white-space:pre-wrap;padding:10px 12px;background:var(--surface2);border-radius:8px;margin-bottom:10px">${answer ? escapeHtml(answer) : '<span style="color:var(--text3);font-style:italic">No answer given</span>'}</div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <button class="btn btn-sm" style="background:${existingGrade?.correct===true?'rgba(34,197,94,.18)':'var(--surface2)'};color:${existingGrade?.correct===true?'var(--green)':'var(--text2)'};border:1px solid ${existingGrade?.correct===true?'var(--green)':'var(--border)'}" onclick="submitSubjectiveGrade('${attempt.id}','${q.id}',true)">✅ Correct</button>
+          <button class="btn btn-sm" style="background:${existingGrade?.correct===false?'rgba(239,68,68,.18)':'var(--surface2)'};color:${existingGrade?.correct===false?'var(--red)':'var(--text2)'};border:1px solid ${existingGrade?.correct===false?'var(--red)':'var(--border)'}" onclick="submitSubjectiveGrade('${attempt.id}','${q.id}',false)">❌ Incorrect</button>
+          ${existingGrade ? `<span style="font-size:11px;color:var(--text3)">Graded by ${escapeHtml(existingGrade.graded_by||'—')}</span>` : ''}
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  document.getElementById('gradeSubjectiveModal').classList.remove('hidden');
+}
+
+async function submitSubjectiveGrade(attemptId, questionId, isCorrect) {
+  const { data, error } = await supa.rpc('grade_subjective_answer', {
+    p_attempt_id: attemptId,
+    p_question_id: questionId,
+    p_is_correct: isCorrect,
+  });
+
+  if (error) { showToast('Grading failed', error.message, 'error'); return; }
+
+  const result = Array.isArray(data) ? data[0] : data;
+  if (result?.fully_graded) {
+    showToast('Fully graded ✓', `Final score: ${result.score_pct?.toFixed(1)}% — ${result.passed ? 'Passed' : 'Not Passed'}`, 'success');
+    closeModal('gradeSubjectiveModal');
+    loadPendingReviews();
+  } else {
+    showToast('Saved', 'Grade recorded. More answers on this attempt still need grading.', 'success');
+    openGradeSubjectiveModal(attemptId); // re-render this question's button state
+  }
+}
+
+/* ── MY QUIZZES (taking) ─────────────────────────────────────────────── */
+async function loadMyQuizzes() {
+  const myName = currentStaff?.name || currentUser?.email || '';
+  const wrap = document.getElementById('myQuizzesWrap');
+  if (wrap) wrap.innerHTML = '<div style="text-align:center;color:var(--text3);padding:30px">Loading…</div>';
+
+  const { data, error } = await supa.from('quiz_assignments').select('*, quiz_attempts(*)').eq('assigned_to', myName).order('assigned_at', { ascending: false });
+  if (error) { console.error('[Quiz] my quizzes load error:', error); if(wrap) wrap.innerHTML = '<div class="card" style="text-align:center;color:var(--red);padding:30px">Failed to load your quizzes.</div>'; return; }
+
+  // Ensure quiz definitions are loaded so titles/time limits are available
+  if (!_quizzes.length) await loadQuizzesList(false);
+
+  _myQuizAssignments = data || [];
+
+  // Auto-expire anything visibly past its time limit that never got submitted
+  for (const a of _myQuizAssignments) {
+    const attempt = Array.isArray(a.quiz_attempts) && a.quiz_attempts.length ? a.quiz_attempts[a.quiz_attempts.length-1] : null;
+    if (a.status === 'in_progress' && attempt && attempt.status === 'in_progress') {
+      const deadline = new Date(attempt.started_at).getTime() + attempt.time_limit_min*60000;
+      if (Date.now() > deadline) {
+        await _quizExpireAttempt(attempt, a);
+      }
+    }
+  }
+
+  updateMyQuizzesBadge();
+  renderMyQuizzesList();
+}
+function updateMyQuizzesBadge() {
+  const badge = document.getElementById('myQuizzesPendingBadge');
+  if (!badge) return;
+  const now = new Date();
+  const n = _myQuizAssignments.filter(a => {
+    if (a.status !== 'assigned' && a.status !== 'in_progress') return false;
+    if (a.available_from && new Date(a.available_from) > now) return false; // locked, don't count yet
+    return true;
+  }).length;
+  if (n > 0) { badge.style.display=''; badge.textContent = n; } else { badge.style.display='none'; }
+}
+function renderMyQuizzesList() {
+  const wrap = document.getElementById('myQuizzesWrap');
+  if (!wrap) return;
+  if (!_myQuizAssignments.length) {
+    wrap.innerHTML = '<div class="card" style="text-align:center;color:var(--text3);padding:30px">No quizzes assigned to you right now.</div>';
+    return;
+  }
+  const statusMeta = {
+    assigned:        { label:'Not Started',    color:'#94a3b8', icon:'⏳' },
+    in_progress:     { label:'In Progress',    color:'#fbbf24', icon:'▶️' },
+    completed:       { label:'Completed',      color:'#34d399', icon:'✅' },
+    expired:         { label:'Expired',        color:'#f87171', icon:'⏰' },
+    pending_review:  { label:'Pending Review', color:'#a78bfa', icon:'📝' },
+  };
+  const now = new Date();
+  wrap.innerHTML = _myQuizAssignments.map(a => {
+    const qz = _quizzes.find(x => x.id === a.quiz_id);
+    const attempt = Array.isArray(a.quiz_attempts) && a.quiz_attempts.length ? a.quiz_attempts[a.quiz_attempts.length-1] : null;
+    const isLocked = a.available_from && new Date(a.available_from) > now && (a.status === 'assigned');
+    const meta = isLocked ? { label:'Locked', color:'#818cf8', icon:'🔒' } : (statusMeta[a.status] || statusMeta.assigned);
+    const dueHtml = a.due_at ? `<span style="font-size:11px;color:var(--text3)"> · Due ${new Date(a.due_at).toLocaleDateString('en-MY',{day:'2-digit',month:'short',year:'numeric'})}</span>` : '';
+    const lockedHtml = isLocked ? `<div style="font-size:12px;color:#818cf8;margin-top:2px">🔒 Available from ${new Date(a.available_from).toLocaleDateString('en-MY',{day:'2-digit',month:'short',year:'numeric'})}</div>` : '';
+    let actionHtml = '';
+    if (isLocked) actionHtml = `<button class="btn btn-ghost btn-sm" disabled style="opacity:.5;cursor:not-allowed">🔒 Not Yet Available</button>`;
+    else if (a.status === 'assigned') actionHtml = `<button class="btn btn-primary btn-sm" onclick="startQuizAttempt('${a.id}')">▶️ Start Quiz</button>`;
+    else if (a.status === 'in_progress') actionHtml = `<button class="btn btn-primary btn-sm" onclick="startQuizAttempt('${a.id}')">⏱️ Resume</button>`;
+    else if (a.status === 'pending_review') actionHtml = `<span style="font-size:11px;color:var(--text3)">Awaiting grading…</span>`;
+    else if (a.status === 'completed' && attempt) actionHtml = `<button class="btn btn-ghost btn-sm" onclick="showQuizResultFromAttempt('${attempt.id}')">📊 View Result</button>`;
+    return `<div class="card" style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;${isLocked?'opacity:.75':''}">
+      <div>
+        <div style="font-weight:600;font-size:14px">${qz ? escapeHtml(qz.title) : '(quiz unavailable)'}</div>
+        <div style="font-size:12px;color:var(--text3);margin-top:2px">
+          <span style="color:${meta.color};font-weight:700">${meta.icon} ${meta.label}</span>
+          ${qz ? ` · ⏱️ ${qz.time_limit_min} min · 🎯 Pass at ${qz.passing_mark}%` : ''}
+          ${dueHtml}
+        </div>
+        ${lockedHtml}
+        ${attempt && attempt.score_pct != null ? `<div style="font-size:13px;margin-top:4px;color:${attempt.passed?'var(--green)':'var(--red)'};font-weight:700">${attempt.score_pct.toFixed(1)}% ${attempt.passed?'— Passed':'— Not Passed'}</div>` : ''}
+      </div>
+      <div>${actionHtml}</div>
+    </div>`;
+  }).join('');
+}
+
+async function startQuizAttempt(assignmentId) {
+  const assignment = _myQuizAssignments.find(a => a.id === assignmentId);
+  if (!assignment) return;
+  if (assignment.available_from && new Date(assignment.available_from) > new Date()) {
+    showToast('Not yet available', `This quiz unlocks on ${new Date(assignment.available_from).toLocaleDateString('en-MY',{day:'2-digit',month:'short',year:'numeric'})}.`, 'error');
+    return;
+  }
+  const qz = _quizzes.find(x => x.id === assignment.quiz_id);
+  if (!qz) { showToast('Error', 'This quiz is no longer available.', 'error'); return; }
+
+  // Fetch from the SAFE view — no correct_index included, so the answer
+  // key never reaches the browser for someone taking the quiz. Grading
+  // happens server-side via grade_and_submit_quiz_attempt().
+  const { data: safeQuestions, error: sqErr } = await supa
+    .from('quiz_questions_safe').select('*').in('id', qz.question_ids || []);
+  if (sqErr) { showToast('Error', 'Could not load quiz questions: ' + sqErr.message, 'error'); return; }
+  const questions = (qz.question_ids || []).map(id => (safeQuestions||[]).find(q => q.id === id)).filter(Boolean);
+  if (!questions.length) { showToast('Error', 'This quiz has no valid questions.', 'error'); return; }
+
+  let attempt = Array.isArray(assignment.quiz_attempts) && assignment.quiz_attempts.length
+    ? assignment.quiz_attempts[assignment.quiz_attempts.length-1] : null;
+
+  if (!attempt || attempt.status !== 'in_progress') {
+    const { data, error } = await supa.from('quiz_attempts').insert({
+      assignment_id: assignmentId, quiz_id: qz.id,
+      user_name: currentStaff?.name || currentUser?.email || 'Unknown',
+      user_id: currentUser?.id || null,
+      time_limit_min: qz.time_limit_min,
+      status: 'in_progress',
+    }).select().single();
+    if (error) { showToast('Could not start quiz', error.message, 'error'); return; }
+    attempt = data;
+    await supa.from('quiz_assignments').update({ status: 'in_progress' }).eq('id', assignmentId);
+  }
+
+  const deadline = new Date(attempt.started_at).getTime() + attempt.time_limit_min * 60000;
+  if (Date.now() > deadline) {
+    await _quizExpireAttempt(attempt, assignment);
+    showToast('Time expired', 'This quiz\'s time limit has already passed.', 'error');
+    loadMyQuizzes();
+    return;
+  }
+
+  _activeQuizAttempt = { assignment, quiz: qz, questions, attempt, answers: attempt.answers || {}, deadline };
+  document.getElementById('takeQuizTitle').textContent = qz.title;
+  renderTakeQuizQuestions();
+  document.getElementById('takeQuizModal').classList.remove('hidden');
+  if (_quizTimerInterval) clearInterval(_quizTimerInterval);
+  _quizTimerInterval = setInterval(_tickQuizTimer, 1000);
+  _tickQuizTimer();
+}
+
+function renderTakeQuizQuestions() {
+  const ctx = _activeQuizAttempt;
+  const body = document.getElementById('takeQuizBody');
+  body.innerHTML = ctx.questions.map((q, i) => {
+    const opts = Array.isArray(q.options) ? q.options : [];
+    const selected = ctx.answers[q.id];
+    const type = q.question_type || 'mcq';
+
+    let inputHtml;
+    if (type === 'subjective') {
+      inputHtml = `<textarea class="form-textarea" rows="4" placeholder="Type your answer…" onblur="setSubjectiveAnswer('${q.id}', this.value)">${escapeHtml(selected || '')}</textarea>
+        ${q.requires_manual_grading ? '<div style="font-size:11px;color:var(--text3);margin-top:4px">This answer will be reviewed by an Admin/QA after you submit.</div>' : '<div style="font-size:11px;color:var(--text3);margin-top:4px">This question isn\'t scored — your response is just collected for reference.</div>'}`;
+    } else if (type === 'multi_select') {
+      const selectedArr = Array.isArray(selected) ? selected : [];
+      inputHtml = `<div style="display:flex;flex-direction:column;gap:6px">
+        ${opts.map((o,oi) => `<label style="display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:6px;cursor:pointer;background:${selectedArr.includes(oi)?'rgba(79,142,247,.12)':'var(--surface2)'};border:1px solid ${selectedArr.includes(oi)?'var(--accent)':'transparent'}">
+          <input type="checkbox" ${selectedArr.includes(oi)?'checked':''} onchange="toggleMultiAnswer('${q.id}',${oi})">
+          <span style="font-size:13px">${escapeHtml(o)}</span>
+        </label>`).join('')}
+        <div style="font-size:11px;color:var(--text3);margin-top:2px">Select all that apply.</div>
+      </div>`;
+    } else {
+      // mcq / true_false — single answer, radio
+      inputHtml = `<div style="display:flex;flex-direction:column;gap:6px">
+        ${opts.map((o,oi) => `<label style="display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:6px;cursor:pointer;background:${selected===oi?'rgba(79,142,247,.12)':'var(--surface2)'};border:1px solid ${selected===oi?'var(--accent)':'transparent'}">
+          <input type="radio" name="quizq_${q.id}" ${selected===oi?'checked':''} onchange="selectQuizAnswer('${q.id}',${oi})">
+          <span style="font-size:13px">${escapeHtml(o)}</span>
+        </label>`).join('')}
+      </div>`;
+    }
+
+    return `<div style="margin-bottom:20px;padding-bottom:16px;border-bottom:1px solid var(--border)">
+      <div style="font-weight:600;font-size:14px;margin-bottom:10px">${i+1}. ${escapeHtml(q.question_text)}</div>
+      ${inputHtml}
+    </div>`;
+  }).join('');
+  _updateQuizProgress();
+}
+function selectQuizAnswer(questionId, optionIndex) {
+  _activeQuizAttempt.answers[questionId] = optionIndex;
+  _updateQuizProgress();
+  _persistQuizProgress();
+}
+function toggleMultiAnswer(questionId, optionIndex) {
+  const ctx = _activeQuizAttempt;
+  const current = Array.isArray(ctx.answers[questionId]) ? [...ctx.answers[questionId]] : [];
+  const idx = current.indexOf(optionIndex);
+  if (idx >= 0) current.splice(idx, 1); else current.push(optionIndex);
+  ctx.answers[questionId] = current;
+  renderTakeQuizQuestions(); // re-render so the selected-state styling updates
+  _persistQuizProgress();
+}
+function setSubjectiveAnswer(questionId, value) {
+  _activeQuizAttempt.answers[questionId] = value;
+  _updateQuizProgress();
+  _persistQuizProgress();
+}
+function _persistQuizProgress() {
+  // Persist progress silently so a refresh doesn't lose answers
+  supa.from('quiz_attempts').update({ answers: _activeQuizAttempt.answers }).eq('id', _activeQuizAttempt.attempt.id);
+}
+function _updateQuizProgress() {
+  const ctx = _activeQuizAttempt;
+  const answered = Object.keys(ctx.answers).filter(k => {
+    const v = ctx.answers[k];
+    return v !== '' && v !== null && v !== undefined && !(Array.isArray(v) && v.length === 0);
+  }).length;
+  const el = document.getElementById('takeQuizProgress');
+  if (el) el.textContent = `${answered} of ${ctx.questions.length} answered`;
+}
+
+function _tickQuizTimer() {
+  const ctx = _activeQuizAttempt;
+  if (!ctx) { clearInterval(_quizTimerInterval); return; }
+  const remainingMs = ctx.deadline - Date.now();
+  const timerEl = document.getElementById('takeQuizTimer');
+  if (remainingMs <= 0) {
+    if (timerEl) { timerEl.textContent = '00:00'; timerEl.style.color = 'var(--red)'; }
+    clearInterval(_quizTimerInterval);
+    submitQuizAttempt(true); // auto-submit when time runs out
+    return;
+  }
+  const totalSec = Math.floor(remainingMs / 1000);
+  const mm = String(Math.floor(totalSec / 60)).padStart(2,'0');
+  const ss = String(totalSec % 60).padStart(2,'0');
+  if (timerEl) {
+    timerEl.textContent = `${mm}:${ss}`;
+    timerEl.style.color = totalSec <= 60 ? 'var(--red)' : 'var(--accent)';
+  }
+}
+
+async function submitQuizAttempt(isAutoSubmit) {
+  const ctx = _activeQuizAttempt;
+  if (!ctx) return;
+  if (_quizTimerInterval) { clearInterval(_quizTimerInterval); _quizTimerInterval = null; }
+
+  if (!isAutoSubmit) {
+    const unanswered = ctx.questions.length - Object.keys(ctx.answers).length;
+    if (unanswered > 0 && !confirm(`You have ${unanswered} unanswered question(s). Submit anyway?`)) {
+      _quizTimerInterval = setInterval(_tickQuizTimer, 1000); // resume timer
+      return;
+    }
+  }
+
+  closeModal('takeQuizModal');
+
+  // Grading happens server-side now — the browser never had (and never
+  // needs) the correct answers at any point in this flow.
+  const { data, error } = await supa.rpc('grade_and_submit_quiz_attempt', {
+    p_attempt_id: ctx.attempt.id,
+    p_answers: ctx.answers,
+    p_is_auto_submit: !!isAutoSubmit,
+  });
+
+  if (error || !data || !data.length) {
+    showToast('Submit failed', error?.message || 'Could not grade this attempt.', 'error');
+    _activeQuizAttempt = null;
+    loadMyQuizzes();
+    return;
+  }
+
+  const result = data[0];
+  _showQuizResultModal(result.score_pct, result.passed, result.correct_count, result.total_count, isAutoSubmit, result.wrong_kb_ids, result.needs_review);
+  _activeQuizAttempt = null;
+  loadMyQuizzes();
+}
+
+async function _quizExpireAttempt(attempt, assignment) {
+  await supa.from('quiz_attempts').update({ status:'expired', submitted_at: new Date().toISOString(), score_pct:0, passed:false }).eq('id', attempt.id);
+  await supa.from('quiz_assignments').update({ status:'expired' }).eq('id', assignment.id);
+}
+
+async function _quizOpenKbArticle(id) {
+  closeModal('quizResultModal');
+  showPage('knowledge-base');
+  await loadKB();
+  viewKBArticle(id);
+}
+
+async function _showQuizResultModal(scorePct, passed, correct, total, wasAutoSubmit, wrongKbIds, needsReview) {
+  const body = document.getElementById('quizResultBody');
+
+  if (needsReview) {
+    body.innerHTML = `
+      <div style="text-align:center;padding:20px 0">
+        <div style="font-size:40px">📝</div>
+        <div style="font-size:16px;font-weight:700;color:var(--amber);margin-top:10px">Submitted — Pending Review</div>
+        <div style="font-size:13px;color:var(--text3);margin-top:10px;max-width:360px;margin-left:auto;margin-right:auto">
+          This quiz includes one or more written-answer questions that need to be reviewed by an Admin or QA before your final score is available.
+        </div>
+        ${total ? `<div style="font-size:12px;color:var(--text3);margin-top:12px">${correct} of ${total} auto-graded questions correct so far</div>` : ''}
+      </div>
+      <div id="quizReviewTopics"></div>`;
+    document.getElementById('quizResultModal').classList.remove('hidden');
+    return;
+  }
+
+  body.innerHTML = `
+    <div style="text-align:center;padding:10px 0 20px">
+      ${wasAutoSubmit ? '<div style="color:var(--red);font-size:13px;margin-bottom:10px">⏰ Time ran out — your quiz was submitted automatically.</div>' : ''}
+      <div style="font-size:48px;font-weight:800;color:${passed?'var(--green)':'var(--red)'}">${scorePct.toFixed(1)}%</div>
+      <div style="font-size:16px;font-weight:700;color:${passed?'var(--green)':'var(--red)'};margin-top:6px">${passed ? '✅ PASSED' : '❌ NOT PASSED'}</div>
+      <div style="font-size:13px;color:var(--text3);margin-top:10px">${correct} of ${total} questions correct</div>
+    </div>
+    <div id="quizReviewTopics"></div>`;
+  document.getElementById('quizResultModal').classList.remove('hidden');
+
+  const uniqueKbIds = [...new Set((wrongKbIds||[]).filter(Boolean))];
+  if (!uniqueKbIds.length) return;
+
+  const { data: kbRows } = await supa.from('kb_articles').select('id,title,category').in('id', uniqueKbIds);
+  const reviewEl = document.getElementById('quizReviewTopics');
+  if (reviewEl && kbRows && kbRows.length) {
+    reviewEl.innerHTML = `
+      <div style="border-top:1px solid var(--border);padding-top:14px;margin-top:6px">
+        <div style="font-size:12px;font-weight:600;color:var(--text2);margin-bottom:8px">📚 Worth reviewing based on what you missed:</div>
+        <div style="display:flex;flex-direction:column;gap:6px">
+          ${kbRows.map(a => `<button class="btn btn-ghost btn-sm" style="text-align:left;justify-content:flex-start" onclick="_quizOpenKbArticle('${a.id}')">
+            ${a.category?`[${escapeHtml(a.category)}] `:''}${escapeHtml(a.title)} →
+          </button>`).join('')}
+        </div>
+      </div>`;
+  }
+}
+async function showQuizResultFromAttempt(attemptId) {
+  const { data } = await supa.from('quiz_attempts').select('*').eq('id', attemptId).single();
+  if (!data) return;
+  const qz = _quizzes.find(x => x.id === data.quiz_id);
+  // Total should be the quiz's actual question count, not just how many
+  // were answered (an unanswered question is still part of the total).
+  const total = qz && Array.isArray(qz.question_ids) ? qz.question_ids.length : (data.answers ? Object.keys(data.answers).length : 0);
+  const correctCount = Math.round((data.score_pct||0)/100 * total);
+
+  _showQuizResultModal(data.score_pct||0, !!data.passed, correctCount, total, data.status==='expired', data.wrong_kb_ids||[]);
 }
 
 // ===============================================
@@ -7253,6 +9315,10 @@ const DEFAULT_PERMISSIONS = {
   'role_mgmt':         { label:'Role Management',              admin:true,  manager:false, qa:false, tl:false, agent:false, locked:['admin'] },
   'qa_consistency':    { label:'QA Consistency Report',        admin:true,  manager:true,  qa:true,  tl:false, agent:false, locked:['admin'] },
   'audit_log':         { label:'Audit Log',                    admin:true,  manager:true,  qa:false, tl:false, agent:false, locked:['admin'] },
+  'knowledge_base':    { label:'Knowledge Base',                admin:true,  manager:true,  qa:true,  tl:true,  agent:true,  locked:['admin'] },
+  'callback_requests': { label:'Superior Callback Requests',    admin:true,  manager:true,  qa:true,  tl:true,  agent:true,  locked:['admin'] },
+  'quiz_management':   { label:'Quiz Management',                admin:true,  manager:true,  qa:false, tl:false, agent:false, locked:['admin'] },
+  'my_quizzes':        { label:'My Quizzes',                     admin:true,  manager:true,  qa:true,  tl:true,  agent:true,  locked:['admin'] },
 };
 
 // In-memory permissions cache
