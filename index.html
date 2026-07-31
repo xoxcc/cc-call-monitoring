@@ -857,24 +857,41 @@
 
         <!-- Quizzes tab -->
         <div id="qmTab-quizzes">
-          <div style="margin-bottom:12px;text-align:right">
-            <button class="btn btn-primary btn-sm" onclick="openQuizFormModal()">+ New Quiz</button>
+          <div style="display:flex;gap:10px;margin-bottom:12px;align-items:center">
+            <input class="form-input" id="quizListSearch" placeholder="🔍 Search quizzes…" oninput="renderQuizList()" style="flex:1">
+            <button class="btn btn-primary btn-sm" onclick="openQuizFormModal()" style="white-space:nowrap">+ New Quiz</button>
           </div>
           <div id="quizListWrap" style="display:flex;flex-direction:column;gap:10px"></div>
         </div>
 
         <!-- Question Bank tab -->
         <div id="qmTab-bank" style="display:none">
-          <div style="margin-bottom:12px;text-align:right">
-            <button class="btn btn-primary btn-sm" onclick="openQuestionFormModal()">+ New Question</button>
+          <div style="display:flex;gap:10px;margin-bottom:12px;align-items:center;flex-wrap:wrap">
+            <input class="form-input" id="qBankSearch" placeholder="🔍 Search questions…" oninput="renderQuestionBank()" style="flex:1;min-width:160px">
+            <select class="form-select" id="qBankTypeFilter" onchange="renderQuestionBank()" style="width:170px">
+              <option value="">All Types</option>
+              <option value="mcq">📻 MCQ</option>
+              <option value="true_false">✅❌ True/False</option>
+              <option value="multi_select">☑️ Multi-Select</option>
+              <option value="subjective">✍️ Subjective</option>
+            </select>
+            <button class="btn btn-ghost btn-sm" onclick="downloadQuestionImportTemplate()" style="white-space:nowrap"><i class="ti ti-download"></i> Template</button>
+            <button class="btn btn-ghost btn-sm" onclick="document.getElementById('qBankImportFile').click()" style="white-space:nowrap"><i class="ti ti-file-spreadsheet"></i> Import</button>
+            <input type="file" id="qBankImportFile" accept=".xlsx,.xls" style="display:none" onchange="handleQuestionBankImport(this)">
+            <button class="btn btn-primary btn-sm" onclick="openQuestionFormModal()" style="white-space:nowrap">+ New Question</button>
           </div>
           <div id="questionBankWrap" style="display:flex;flex-direction:column;gap:8px"></div>
         </div>
 
         <!-- Assignments & Results tab -->
         <div id="qmTab-assignments" style="display:none">
+          <div style="text-align:right;margin-bottom:10px">
+            <button class="btn btn-ghost btn-sm" onclick="exportQuizAssignments()"><i class="ti ti-file-spreadsheet"></i> Export to Excel</button>
+          </div>
+          <div id="qmAssignSummary" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:10px;margin-bottom:14px"></div>
           <div class="card" style="margin-bottom:16px">
             <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
+              <input class="form-input" id="qmAssignSearch" placeholder="🔍 Search staff name…" oninput="renderQuizAssignments()" style="flex:1;min-width:160px">
               <select class="form-select" id="qmAssignQuizFilter" onchange="renderQuizAssignments()" style="width:220px">
                 <option value="">All Quizzes</option>
               </select>
@@ -904,6 +921,12 @@
           <div class="page-header-row">
             <div><h1>🎯 My Quizzes</h1><p>Quizzes assigned to you — complete before the timer runs out</p></div>
           </div>
+        </div>
+        <div id="myQuizzesSummary" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px;margin-bottom:16px"></div>
+        <div style="display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap" id="myQuizzesTabs">
+          <button class="btn btn-sm cb-tab active" data-filter="active" onclick="setMyQuizzesFilter('active')">⚡ To Do</button>
+          <button class="btn btn-sm cb-tab" data-filter="all" onclick="setMyQuizzesFilter('all')">All</button>
+          <button class="btn btn-sm cb-tab" data-filter="completed" onclick="setMyQuizzesFilter('completed')">✅ Completed</button>
         </div>
         <div id="myQuizzesWrap" style="display:flex;flex-direction:column;gap:10px"></div>
       </div>
@@ -1771,7 +1794,13 @@
           <button class="btn btn-sm cb-tab" data-role="qa" onclick="setAssignRoleFilter('qa')">QA</button>
         </div>
         <div id="asgStaffPicker" style="max-height:240px;overflow-y:auto;border:1px solid var(--border);border-radius:8px;padding:8px;display:flex;flex-direction:column;gap:4px"></div>
-        <div style="font-size:11px;color:var(--text3);margin-top:6px"><span id="asgSelectedCount">0</span> staff selected</div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-top:6px">
+          <span style="font-size:11px;color:var(--text3)"><span id="asgSelectedCount">0</span> staff selected</span>
+          <div style="display:flex;gap:8px">
+            <a href="#" onclick="event.preventDefault();selectAllShownStaff()" style="font-size:11px;color:var(--accent);text-decoration:none">Select all shown</a>
+            <a href="#" onclick="event.preventDefault();clearAssignSelection()" style="font-size:11px;color:var(--text3);text-decoration:none">Clear</a>
+          </div>
+        </div>
       </div>
       <div class="form-group">
         <label class="form-label">Available From <span style="color:var(--text3);font-weight:400">(optional — leave blank to make it available immediately)</span></label>
@@ -1797,6 +1826,7 @@
       <div class="modal-title" id="takeQuizTitle">Quiz</div>
       <div id="takeQuizTimer" style="font-family:'JetBrains Mono',monospace;font-size:18px;font-weight:700;padding:4px 14px;border-radius:8px;background:var(--surface2);color:var(--accent)">--:--</div>
     </div>
+    <div id="takeQuizNav" style="position:sticky;top:53px;background:var(--surface);z-index:1;padding:10px 20px;border-bottom:1px solid var(--border);display:flex;gap:6px;flex-wrap:wrap;align-items:center"></div>
     <div class="modal-body" id="takeQuizBody"></div>
     <div class="modal-footer">
       <span style="font-size:12px;color:var(--text3);margin-right:auto" id="takeQuizProgress"></span>
@@ -7874,9 +7904,57 @@ async function loadQuizManagement() {
     if (wrap) wrap.innerHTML = '<div class="card" style="text-align:center;color:var(--text3);padding:30px">Quiz Management is available to Admin and Manager only.</div>';
     return;
   }
-  await Promise.all([loadQuizQuestionBank(false), loadQuizzesList(false)]);
+  await Promise.all([loadQuizQuestionBank(false), loadQuizzesList(false), _loadAssignmentStatsQuietly()]);
   renderQuestionBank();
   renderQuizList();
+}
+async function _loadAssignmentStatsQuietly() {
+  // Lightweight fetch so quiz cards can show live "X assigned / Y
+  // completed" stats immediately, without needing to visit the
+  // Assignments & Results tab first. Reuses the same cache that tab uses.
+  const { data, error } = await supa.from('quiz_assignments').select('*, quiz_attempts(*)');
+  if (error) { console.error('[Quiz] assignment stats load error:', error); return; }
+  window._quizAllAssignments = data || [];
+}
+
+function _computeQuestionStats() {
+  // Per-question accuracy across every real attempt on record — reuses
+  // the same assignments+attempts data already loaded for the Quizzes
+  // tab stats, no extra query needed. { question_id: {correct, total} }
+  const stats = {};
+  const bump = (qid, isCorrect) => {
+    if (!stats[qid]) stats[qid] = { correct: 0, total: 0 };
+    stats[qid].total++;
+    if (isCorrect) stats[qid].correct++;
+  };
+  (window._quizAllAssignments || []).forEach(a => {
+    const attempts = Array.isArray(a.quiz_attempts) ? a.quiz_attempts : [];
+    attempts.forEach(att => {
+      if (!att.answers || (att.status !== 'submitted' && att.status !== 'expired' && att.status !== 'pending_review')) return;
+      const qz = _quizzes.find(x => x.id === att.quiz_id);
+      if (!qz) return;
+      (qz.question_ids || []).forEach(qid => {
+        const q = _quizQuestions.find(x => x.id === qid);
+        if (!q) return;
+        const selected = att.answers[qid];
+        if (q.question_type === 'subjective') {
+          if (!q.requires_manual_grading) return; // no correctness concept for ungraded subjective
+          const grade = att.manual_grades && att.manual_grades[qid];
+          if (!grade) return; // not graded yet
+          bump(qid, grade.correct === true);
+        } else if (q.question_type === 'multi_select') {
+          if (selected === undefined) return;
+          const sel = (Array.isArray(selected) ? [...selected] : []).sort((x,y)=>x-y);
+          const correct = (Array.isArray(q.correct_indices) ? [...q.correct_indices] : []).sort((x,y)=>x-y);
+          bump(qid, JSON.stringify(sel) === JSON.stringify(correct));
+        } else {
+          if (selected === undefined) return;
+          bump(qid, selected === q.correct_index);
+        }
+      });
+    });
+  });
+  return stats;
 }
 
 /* ── QUESTION BANK ──────────────────────────────────────────────────── */
@@ -7887,6 +7965,106 @@ async function loadQuizQuestionBank(rerender) {
   if (rerender !== false) renderQuestionBank();
 }
 
+function downloadQuestionImportTemplate() {
+  const rows = [
+    { 'Question Text': 'Example: What is the passing mark for compliance quizzes?', 'Type': 'mcq', 'Category': 'Compliance', 'Option A': '70%', 'Option B': '90%', 'Option C': '50%', 'Option D': '100%', 'Correct Answer': 'B', 'Requires Manual Grading': '' },
+    { 'Question Text': 'Example: Agents must verify caller identity before disclosing account details.', 'Type': 'true_false', 'Category': 'PDPA', 'Option A': '', 'Option B': '', 'Option C': '', 'Option D': '', 'Correct Answer': 'True', 'Requires Manual Grading': '' },
+    { 'Question Text': 'Example: Which of these are valid reasons to drop a call? (select all that apply)', 'Type': 'multi_select', 'Category': 'Call Handling', 'Option A': 'Abusive caller', 'Option B': 'Bored of the call', 'Option C': 'Technical failure', 'Option D': 'Caller asked a hard question', 'Correct Answer': 'A,C', 'Requires Manual Grading': '' },
+    { 'Question Text': 'Example: Describe how you would handle an angry customer.', 'Type': 'subjective', 'Category': 'Soft Skills', 'Option A': '', 'Option B': '', 'Option C': '', 'Option D': '', 'Correct Answer': '', 'Requires Manual Grading': 'Yes' },
+  ];
+  dlXLSX(rows, 'Quiz_Question_Import_Template.xlsx');
+  showToast('Template downloaded', 'Fill it in and use "Import" to bulk-add questions.', 'success');
+}
+
+async function handleQuestionBankImport(input) {
+  const file = input.files[0];
+  if (!file) return;
+  input.value = '';
+
+  const reader = new FileReader();
+  reader.onload = async (e) => {
+    let raw;
+    try {
+      const wb = XLSX.read(e.target.result, { type: 'binary' });
+      raw = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { defval: '' });
+    } catch (err) {
+      showToast('Import failed', 'Could not read this file: ' + err.message, 'error');
+      return;
+    }
+    if (!raw.length) { showToast('Empty file', 'No rows found in the uploaded file.', 'error'); return; }
+
+    const getCol = (row, ...names) => {
+      for (const n of names) {
+        const key = Object.keys(row).find(k => k.toLowerCase().trim() === n.toLowerCase());
+        if (key && String(row[key]).trim() !== '') return String(row[key]).trim();
+      }
+      return '';
+    };
+    const letterToIndex = { a:0, b:1, c:2, d:3 };
+
+    const toInsert = [];
+    const skipped = [];
+
+    raw.forEach((row, i) => {
+      const text = getCol(row, 'Question Text', 'Question');
+      if (!text) { skipped.push(`Row ${i+2}: missing question text`); return; }
+
+      let type = getCol(row, 'Type').toLowerCase().replace(/[\s-]/g, '_');
+      if (!['mcq','true_false','multi_select','subjective'].includes(type)) type = 'mcq';
+      const category = getCol(row, 'Category') || null;
+      const manualGradingRaw = getCol(row, 'Requires Manual Grading', 'Manual Grading').toLowerCase();
+      const requiresManualGrading = type === 'subjective' ? (manualGradingRaw === 'yes' || manualGradingRaw === 'y' || manualGradingRaw === 'true') : null;
+
+      if (type === 'subjective') {
+        toInsert.push({ question_text: text, question_type: type, category, requires_manual_grading: requiresManualGrading, options: null, correct_index: null, correct_indices: null, created_by: currentStaff?.name || currentUser?.email || 'Unknown' });
+        return;
+      }
+
+      if (type === 'true_false') {
+        const ans = getCol(row, 'Correct Answer').toLowerCase();
+        if (ans !== 'true' && ans !== 'false') { skipped.push(`Row ${i+2}: True/False question needs Correct Answer of "True" or "False"`); return; }
+        toInsert.push({ question_text: text, question_type: type, category, options: ['True','False'], correct_index: ans === 'true' ? 0 : 1, correct_indices: null, requires_manual_grading: null, created_by: currentStaff?.name || currentUser?.email || 'Unknown' });
+        return;
+      }
+
+      // mcq / multi_select
+      const options = ['A','B','C','D'].map(l => getCol(row, `Option ${l}`)).filter(Boolean);
+      if (options.length < 2) { skipped.push(`Row ${i+2}: needs at least 2 non-empty options`); return; }
+      const ansRaw = getCol(row, 'Correct Answer');
+      if (!ansRaw) { skipped.push(`Row ${i+2}: missing Correct Answer`); return; }
+
+      if (type === 'multi_select') {
+        const letters = ansRaw.split(',').map(s => s.trim().toLowerCase()).filter(Boolean);
+        const indices = letters.map(l => letterToIndex[l]).filter(i => i !== undefined && i < options.length);
+        if (!indices.length) { skipped.push(`Row ${i+2}: Correct Answer letters (e.g. "A,C") didn't match any option`); return; }
+        toInsert.push({ question_text: text, question_type: type, category, options, correct_indices: indices, correct_index: null, requires_manual_grading: null, created_by: currentStaff?.name || currentUser?.email || 'Unknown' });
+      } else {
+        const idx = letterToIndex[ansRaw.trim().toLowerCase()];
+        if (idx === undefined || idx >= options.length) { skipped.push(`Row ${i+2}: Correct Answer "${ansRaw}" doesn't match any option letter`); return; }
+        toInsert.push({ question_text: text, question_type: 'mcq', category, options, correct_index: idx, correct_indices: null, requires_manual_grading: null, created_by: currentStaff?.name || currentUser?.email || 'Unknown' });
+      }
+    });
+
+    if (!toInsert.length) {
+      showToast('Nothing to import', `All ${raw.length} row(s) were skipped. Check the console for details.`, 'error');
+      console.warn('[Quiz] Import skipped every row:', skipped);
+      return;
+    }
+
+    const { error } = await supa.from('quiz_questions').insert(toInsert);
+    if (error) { showToast('Import failed', error.message, 'error'); return; }
+
+    if (skipped.length) {
+      console.warn('[Quiz] Import — skipped rows:', skipped);
+      showToast('Imported with some skipped', `${toInsert.length} question${toInsert.length!==1?'s':''} added, ${skipped.length} row${skipped.length!==1?'s':''} skipped (see console for why).`, 'success');
+    } else {
+      showToast('Imported', `${toInsert.length} question${toInsert.length!==1?'s':''} added to the bank.`, 'success');
+    }
+    await loadQuizQuestionBank();
+  };
+  reader.readAsBinaryString(file);
+}
+
 function renderQuestionBank() {
   const wrap = document.getElementById('questionBankWrap');
   if (!wrap) return;
@@ -7894,9 +8072,21 @@ function renderQuestionBank() {
     wrap.innerHTML = '<div class="card" style="text-align:center;color:var(--text3);padding:30px">No questions yet. Click "+ New Question" to add the first one.</div>';
     return;
   }
+  const q = (document.getElementById('qBankSearch')?.value || '').toLowerCase().trim();
+  const typeFilter = document.getElementById('qBankTypeFilter')?.value || '';
+  const filtered = _quizQuestions.filter(x => {
+    if (typeFilter && (x.question_type || 'mcq') !== typeFilter) return false;
+    if (q && !x.question_text.toLowerCase().includes(q) && !(x.category||'').toLowerCase().includes(q)) return false;
+    return true;
+  });
+  if (!filtered.length) {
+    wrap.innerHTML = '<div class="card" style="text-align:center;color:var(--text3);padding:30px">No questions match your search.</div>';
+    return;
+  }
   const typeLabels = { mcq:'📻 MCQ', true_false:'✅❌ True/False', multi_select:'☑️ Multi-Select', subjective:'✍️ Subjective' };
   const typeColors = { mcq:'#60a5fa', true_false:'#a78bfa', multi_select:'#fbbf24', subjective:'#34d399' };
-  wrap.innerHTML = _quizQuestions.map(q => {
+  const qStats = _computeQuestionStats();
+  wrap.innerHTML = filtered.map(q => {
     const type = q.question_type || 'mcq';
     const opts = Array.isArray(q.options) ? q.options : [];
     const correctSet = type === 'multi_select'
@@ -7910,6 +8100,13 @@ function renderQuestionBank() {
         ${opts.map((o,i) => `<div style="font-size:12px;color:${correctSet.has(i)?'var(--green)':'var(--text3)'}">${correctSet.has(i)?'✅':'▫️'} ${escapeHtml(o)}</div>`).join('')}
       </div>`;
     }
+    const stat = qStats[q.id];
+    let statHtml = '';
+    if (stat && stat.total > 0) {
+      const pct = Math.round((stat.correct / stat.total) * 100);
+      const color = pct < 50 ? 'var(--red)' : pct < 80 ? '#fbbf24' : 'var(--green)';
+      statHtml = `<span style="font-size:11px;background:${color}22;color:${color};padding:2px 8px;border-radius:10px;margin-bottom:6px;margin-left:4px;display:inline-block;font-weight:600" title="Answered correctly ${stat.correct} of ${stat.total} times across all attempts">📊 ${pct}% correct (${stat.total} attempt${stat.total!==1?'s':''})</span>`;
+    }
     return `<div class="card">
       <div style="display:flex;justify-content:space-between;gap:12px">
         <div style="flex:1;min-width:0">
@@ -7917,6 +8114,7 @@ function renderQuestionBank() {
           <span style="font-size:11px;background:${typeColors[type]}22;color:${typeColors[type]};padding:2px 8px;border-radius:10px;margin-bottom:6px;display:inline-block;font-weight:600">${typeLabels[type]||type}</span>
           ${q.category ? `<span style="font-size:11px;background:var(--surface3);color:var(--text2);padding:2px 8px;border-radius:10px;margin-bottom:6px;margin-left:4px;display:inline-block">${escapeHtml(q.category)}</span>` : ''}
           ${q.kb_article_id ? `<span style="font-size:11px;background:rgba(79,142,247,.12);color:var(--accent);padding:2px 8px;border-radius:10px;margin-bottom:6px;margin-left:4px;display:inline-block">📚 Linked to KB</span>` : ''}
+          ${statHtml}
           ${bodyHtml}
         </div>
         <div style="display:flex;flex-direction:column;gap:6px;flex-shrink:0">
@@ -8107,8 +8305,35 @@ function renderQuizList() {
     wrap.innerHTML = '<div class="card" style="text-align:center;color:var(--text3);padding:30px">No quizzes yet. Click "+ New Quiz" to create one.</div>';
     return;
   }
-  wrap.innerHTML = _quizzes.map(qz => {
+  const q = (document.getElementById('quizListSearch')?.value || '').toLowerCase().trim();
+  const list = _quizzes.filter(qz => !q || qz.title.toLowerCase().includes(q) || (qz.description||'').toLowerCase().includes(q));
+  if (!list.length) {
+    wrap.innerHTML = '<div class="card" style="text-align:center;color:var(--text3);padding:30px">No quizzes match your search.</div>';
+    return;
+  }
+  const allAssignments = window._quizAllAssignments || [];
+  wrap.innerHTML = list.map(qz => {
     const qCount = Array.isArray(qz.question_ids) ? qz.question_ids.length : 0;
+
+    // Live tracking stats, pulled from the shared assignments cache —
+    // this is the "at a glance" tracking the Quiz tab was missing.
+    const forThisQuiz = allAssignments.filter(a => a.quiz_id === qz.id);
+    const assignedCount = forThisQuiz.length;
+    const completedCount = forThisQuiz.filter(a => a.status === 'completed').length;
+    const passedCount = forThisQuiz.filter(a => {
+      const att = Array.isArray(a.quiz_attempts) && a.quiz_attempts.length ? a.quiz_attempts[a.quiz_attempts.length-1] : null;
+      return att && att.passed === true;
+    }).length;
+    const pendingReviewCount = forThisQuiz.filter(a => a.status === 'pending_review').length;
+    const statsHtml = assignedCount > 0
+      ? `<div style="display:flex;gap:14px;margin-top:10px;flex-wrap:wrap">
+          <span style="font-size:11px;color:var(--text2)">👥 ${assignedCount} assigned</span>
+          <span style="font-size:11px;color:var(--green)">✅ ${completedCount} completed</span>
+          <span style="font-size:11px;color:var(--green)">🎯 ${passedCount} passed</span>
+          ${pendingReviewCount ? `<span style="font-size:11px;color:#a78bfa">📝 ${pendingReviewCount} pending review</span>` : ''}
+        </div>`
+      : `<div style="font-size:11px;color:var(--text3);margin-top:10px">Not assigned to anyone yet</div>`;
+
     return `<div class="card">
       <div style="display:flex;justify-content:space-between;gap:12px;align-items:flex-start">
         <div style="flex:1;min-width:0">
@@ -8117,15 +8342,36 @@ function renderQuizList() {
           <div style="font-size:11px;color:var(--text3);margin-top:8px">
             📝 ${qCount} question${qCount!==1?'s':''} · ⏱️ ${qz.time_limit_min} min · 🎯 Pass at ${qz.passing_mark}%
           </div>
+          ${statsHtml}
         </div>
         <div style="display:flex;flex-direction:column;gap:6px;flex-shrink:0">
           <button class="btn btn-primary btn-sm" onclick="openAssignQuizModal('${qz.id}')">📤 Assign</button>
           <button class="btn btn-ghost btn-sm" onclick="openQuizFormModal('${qz.id}')">Edit</button>
+          <button class="btn btn-ghost btn-sm" onclick="duplicateQuiz('${qz.id}')">📋 Duplicate</button>
           <button class="btn btn-ghost btn-sm" style="color:var(--red)" onclick="deleteQuiz('${qz.id}')">Delete</button>
         </div>
       </div>
     </div>`;
   }).join('');
+}
+
+async function duplicateQuiz(quizId) {
+  const qz = _quizzes.find(x => x.id === quizId);
+  if (!qz) return;
+
+  const { error } = await supa.from('quizzes').insert({
+    title: qz.title + ' (Copy)',
+    description: qz.description,
+    time_limit_min: qz.time_limit_min,
+    passing_mark: qz.passing_mark,
+    question_ids: qz.question_ids,
+    created_by: currentStaff?.name || currentUser?.email || 'Unknown',
+    created_by_id: currentUser?.id || null,
+  });
+
+  if (error) { showToast('Duplicate failed', error.message, 'error'); return; }
+  showToast('Duplicated', `"${qz.title} (Copy)" created — same ${Array.isArray(qz.question_ids)?qz.question_ids.length:0} questions, ready to edit.`, 'success');
+  await loadQuizzesList();
 }
 
 function openQuizFormModal(id) {
@@ -8202,8 +8448,6 @@ async function deleteQuiz(id) {
 }
 
 /* ── ASSIGN QUIZ ─────────────────────────────────────────────────────── */
-let _quizCcUsers = []; // cc_users roster — the ONLY source whose id reliably equals auth.uid()
-
 async function openAssignQuizModal(quizId) {
   const qz = _quizzes.find(x => x.id === quizId);
   if (!qz) return;
@@ -8215,13 +8459,6 @@ async function openAssignQuizModal(quizId) {
   _assignSelectedStaff = [];
   _assignRoleFilter = '';
   document.querySelectorAll('#assignQuizModal .cb-tab').forEach(b => b.classList.toggle('active', b.dataset.role===''));
-
-  if (!_quizCcUsers.length) {
-    const { data, error } = await supa.from('cc_users').select('id,name,role,active').eq('active', true).order('name');
-    if (error) { console.error('[Quiz] cc_users load error:', error); showToast('Error', 'Could not load staff list: ' + error.message, 'error'); }
-    _quizCcUsers = data || [];
-  }
-
   renderAssignStaffPicker();
   document.getElementById('assignQuizModal').classList.remove('hidden');
 }
@@ -8231,31 +8468,57 @@ function setAssignRoleFilter(role) {
   renderAssignStaffPicker();
 }
 function _quizStaffRoleBucket(role) {
+  // Checks QA first — isTLRole()'s keyword list (built for a different
+  // part of the app) also matches 'qa' and 'manager', which would
+  // otherwise misclassify them as Team Leaders here.
+  const r = (role || '').toLowerCase();
+  if (r.includes('qa') || r.includes('quality')) return 'qa';
+  if (r.includes('manager') || r.includes('mgr') || r.includes('admin')) return ''; // assigners, not assignable targets
   if (isAgentRole(role)) return 'agent';
   if (isTLRole(role)) return 'tl';
-  if ((role||'').toLowerCase().includes('qa')) return 'qa';
   return '';
 }
-function renderAssignStaffPicker() {
-  const wrap = document.getElementById('asgStaffPicker');
+function _getEligibleAssignStaff() {
   const q = (document.getElementById('asgStaffSearch')?.value || '').toLowerCase().trim();
-  const eligible = _quizCcUsers.filter(s => {
+  // Same source and matching approach as the working Agent Name
+  // autocomplete on New Evaluation (filterAgents) — allStaff directly,
+  // no separate table to bridge.
+  return (allStaff || []).filter(s => {
     const bucket = _quizStaffRoleBucket(s.role);
-    if (!bucket) return false; // only Agent/TL/QA are assignable, per spec
+    if (!bucket) return false;
     if (_assignRoleFilter && bucket !== _assignRoleFilter) return false;
     if (q && !s.name.toLowerCase().includes(q)) return false;
     return true;
-  });
+  }).slice(0, 100);
+}
+function renderAssignStaffPicker() {
+  const wrap = document.getElementById('asgStaffPicker');
+  const eligible = _getEligibleAssignStaff();
   wrap.innerHTML = eligible.length ? eligible.map(s => {
     const checked = _assignSelectedStaff.includes(s.id);
+    const bucket = _quizStaffRoleBucket(s.role);
     return `<label style="display:flex;align-items:center;gap:8px;padding:6px 8px;border-radius:6px;cursor:pointer;background:${checked?'rgba(79,142,247,.08)':'transparent'}">
       <input type="checkbox" ${checked?'checked':''} onchange="toggleAssignStaff('${s.id}')">
       <span style="font-size:12px;flex:1">${escapeHtml(s.name)}</span>
-      <span style="font-size:10px;color:var(--text3);text-transform:capitalize">${_quizStaffRoleBucket(s.role)}</span>
+      <span style="font-size:10px;color:var(--text3);text-transform:capitalize">${bucket}</span>
     </label>`;
-  }).join('') : '<div style="padding:12px;text-align:center;color:var(--text3);font-size:12px">No matching staff.</div>';
+  }).join('') : `<div style="padding:12px;text-align:center;color:var(--text3);font-size:12px">No matching staff.</div>`;
   const cnt = document.getElementById('asgSelectedCount');
   if (cnt) cnt.textContent = _assignSelectedStaff.length;
+}
+function selectAllShownStaff() {
+  // Adds everyone currently visible (respects the active role filter and
+  // search box) to the selection — e.g. click "Team Leader" then this, to
+  // select every Team Leader in one go, without touching anyone already
+  // selected from a different filter/search pass.
+  const eligible = _getEligibleAssignStaff();
+  eligible.forEach(s => { if (!_assignSelectedStaff.includes(s.id)) _assignSelectedStaff.push(s.id); });
+  renderAssignStaffPicker();
+  if (eligible.length) showToast('Selected', `${eligible.length} staff added to the selection.`, 'success');
+}
+function clearAssignSelection() {
+  _assignSelectedStaff = [];
+  renderAssignStaffPicker();
 }
 function toggleAssignStaff(userId) {
   const idx = _assignSelectedStaff.indexOf(userId);
@@ -8278,11 +8541,11 @@ async function submitQuizAssignment() {
   }
 
   const rows = _assignSelectedStaff.map(userId => {
-    const staff = _quizCcUsers.find(s => s.id === userId);
+    const staff = (allStaff || []).find(s => s.id === userId);
     return {
       quiz_id: quizId,
       assigned_to: staff ? staff.name : 'Unknown',
-      assigned_to_id: userId, // guaranteed to equal auth.uid(), sourced from cc_users directly
+      assigned_to_id: userId,
       assigned_to_role: staff ? _quizStaffRoleBucket(staff.role) : null,
       assigned_by: currentStaff?.name || currentUser?.email || 'Unknown',
       available_from: availableFrom ? new Date(availableFrom+'T00:00:00').toISOString() : null,
@@ -8312,14 +8575,81 @@ async function loadQuizAssignmentsForManagement() {
   window._quizAllAssignments = data || [];
   renderQuizAssignments();
 }
+function exportQuizAssignments() {
+  const quizFilter = document.getElementById('qmAssignQuizFilter')?.value || '';
+  const statusFilter = document.getElementById('qmAssignStatusFilter')?.value || '';
+  const search = (document.getElementById('qmAssignSearch')?.value || '').toLowerCase().trim();
+  const all = window._quizAllAssignments || [];
+
+  const list = all.filter(a => {
+    if (quizFilter && a.quiz_id !== quizFilter) return false;
+    if (statusFilter && a.status !== statusFilter) return false;
+    if (search && !a.assigned_to.toLowerCase().includes(search)) return false;
+    return true;
+  });
+  if (!list.length) { showToast('Nothing to export', 'No assignments match the current filters.', 'error'); return; }
+
+  const statusLabel = { assigned:'Not Started', in_progress:'In Progress', pending_review:'Pending Review', completed:'Completed', expired:'Expired' };
+  const fmt = ts => ts ? new Date(ts).toLocaleString('en-MY', { day:'2-digit', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit' }) : '';
+
+  const rows = list.slice().sort((a,b) => (b.assigned_at||'').localeCompare(a.assigned_at||'')).map(a => {
+    const qz = _quizzes.find(x => x.id === a.quiz_id);
+    const attempt = Array.isArray(a.quiz_attempts) && a.quiz_attempts.length ? a.quiz_attempts[a.quiz_attempts.length-1] : null;
+    return {
+      'Quiz': qz ? qz.title : '(deleted quiz)',
+      'Assigned To': a.assigned_to || '',
+      'Role': a.assigned_to_role || '',
+      'Status': statusLabel[a.status] || a.status,
+      'Score %': attempt && attempt.score_pct != null ? attempt.score_pct : '',
+      'Passed': attempt && attempt.passed != null ? (attempt.passed ? 'Yes' : 'No') : '',
+      'Assigned By': a.assigned_by || '',
+      'Assigned At': fmt(a.assigned_at),
+      'Submitted At': fmt(attempt?.submitted_at),
+      'Due Date': a.due_at ? new Date(a.due_at).toLocaleDateString('en-MY',{day:'2-digit',month:'short',year:'numeric'}) : '',
+    };
+  });
+
+  const dateStamp = new Date().toISOString().slice(0,10);
+  const filterTag = statusFilter ? `_${statusFilter}` : '';
+  dlXLSX(rows, `Quiz_Results${filterTag}_${dateStamp}.xlsx`);
+  showToast('Exported', `${rows.length} record${rows.length!==1?'s':''} exported.`, 'success');
+}
 function renderQuizAssignments() {
   const wrap = document.getElementById('quizAssignmentsWrap');
   if (!wrap) return;
   const quizFilter = document.getElementById('qmAssignQuizFilter')?.value || '';
   const statusFilter = document.getElementById('qmAssignStatusFilter')?.value || '';
-  let list = (window._quizAllAssignments || []).filter(a => {
+  const search = (document.getElementById('qmAssignSearch')?.value || '').toLowerCase().trim();
+  const all = window._quizAllAssignments || [];
+
+  // Summary cards always reflect the quiz filter (if any) but ignore
+  // status/search, so switching status tabs doesn't make the totals
+  // jump around — same pattern used elsewhere in this app.
+  const summaryEl = document.getElementById('qmAssignSummary');
+  if (summaryEl) {
+    const scoped = quizFilter ? all.filter(a => a.quiz_id === quizFilter) : all;
+    const completed = scoped.filter(a => a.status === 'completed').length;
+    const passed = scoped.filter(a => {
+      const att = Array.isArray(a.quiz_attempts) && a.quiz_attempts.length ? a.quiz_attempts[a.quiz_attempts.length-1] : null;
+      return att && att.passed === true;
+    }).length;
+    const pendingReview = scoped.filter(a => a.status === 'pending_review').length;
+    const notStarted = scoped.filter(a => a.status === 'assigned').length;
+    const card = (label, val, color) => `<div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:10px 12px">
+      <div style="font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px">${label}</div>
+      <div style="font-size:18px;font-weight:700;color:${color}">${val}</div>
+    </div>`;
+    summaryEl.innerHTML = card('Total Assigned', scoped.length, 'var(--text)')
+      + card('Not Started', notStarted, 'var(--text2)')
+      + card('Completed', completed, 'var(--green)')
+      + card('Passed', passed, 'var(--green)')
+      + card('Pending Review', pendingReview, pendingReview>0?'#a78bfa':'var(--text2)');
+  }
+
+  let list = all.filter(a => {
     if (quizFilter && a.quiz_id !== quizFilter) return false;
     if (statusFilter && a.status !== statusFilter) return false;
+    if (search && !a.assigned_to.toLowerCase().includes(search)) return false;
     return true;
   });
   if (!list.length) {
@@ -8342,9 +8672,30 @@ function renderQuizAssignments() {
         <span style="font-size:11px;font-weight:700;color:${statusColors[a.status]||'var(--text3)'};text-transform:uppercase">${a.status.replace('_',' ')}</span>
         <span style="font-size:13px">${scoreHtml}</span>
         ${a.status==='pending_review' && attempt ? `<button class="btn btn-primary btn-sm" onclick="openGradeSubjectiveModal('${attempt.id}')">Grade</button>` : ''}
+        ${(a.status==='completed' || a.status==='expired') ? `<button class="btn btn-ghost btn-sm" onclick="reassignQuiz('${a.id}')" title="Give this person a fresh attempt">🔄 Reassign</button>` : ''}
       </div>
     </div>`;
   }).join('');
+}
+
+async function reassignQuiz(assignmentId) {
+  const a = (window._quizAllAssignments || []).find(x => x.id === assignmentId);
+  if (!a) return;
+  const qz = _quizzes.find(x => x.id === a.quiz_id);
+  if (!confirm(`Give ${a.assigned_to} a new attempt at "${qz ? qz.title : 'this quiz'}"? Their previous result stays on record — this creates a fresh, separate attempt.`)) return;
+
+  const { error } = await supa.from('quiz_assignments').insert({
+    quiz_id: a.quiz_id,
+    assigned_to: a.assigned_to,
+    assigned_to_id: a.assigned_to_id,
+    assigned_to_role: a.assigned_to_role,
+    assigned_by: currentStaff?.name || currentUser?.email || 'Unknown',
+    status: 'assigned',
+  });
+
+  if (error) { showToast('Reassign failed', error.message, 'error'); return; }
+  showToast('Reassigned', `${a.assigned_to} can now retake this quiz.`, 'success');
+  loadQuizAssignmentsForManagement();
 }
 
 /* ── GRADE SUBMISSIONS (manual grading of subjective answers) ───────── */
@@ -8487,7 +8838,36 @@ async function loadMyQuizzes() {
   }
 
   updateMyQuizzesBadge();
+  renderMyQuizzesSummary();
   renderMyQuizzesList();
+}
+let _myQuizzesFilter = 'active';
+function setMyQuizzesFilter(f) {
+  _myQuizzesFilter = f;
+  document.querySelectorAll('#myQuizzesTabs .cb-tab').forEach(b => b.classList.toggle('active', b.dataset.filter===f));
+  renderMyQuizzesList();
+}
+function renderMyQuizzesSummary() {
+  const el = document.getElementById('myQuizzesSummary');
+  if (!el) return;
+  const now = new Date();
+  const isLockedFn = a => a.available_from && new Date(a.available_from) > now && a.status === 'assigned';
+  const toDo = _myQuizAssignments.filter(a => !isLockedFn(a) && (a.status === 'assigned' || a.status === 'in_progress')).length;
+  const completed = _myQuizAssignments.filter(a => a.status === 'completed').length;
+  const passed = _myQuizAssignments.filter(a => {
+    const att = Array.isArray(a.quiz_attempts) && a.quiz_attempts.length ? a.quiz_attempts[a.quiz_attempts.length-1] : null;
+    return att && att.passed === true;
+  }).length;
+  const pending = _myQuizAssignments.filter(a => a.status === 'pending_review').length;
+
+  const card = (label, val, color) => `<div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:12px 14px">
+    <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px">${label}</div>
+    <div style="font-size:22px;font-weight:700;color:${color}">${val}</div>
+  </div>`;
+  el.innerHTML = card('To Do', toDo, toDo>0?'#fbbf24':'var(--text2)')
+    + card('Completed', completed, 'var(--green)')
+    + card('Passed', passed, 'var(--green)')
+    + card('Pending Review', pending, pending>0?'#a78bfa':'var(--text2)');
 }
 function updateMyQuizzesBadge() {
   const badge = document.getElementById('myQuizzesPendingBadge');
@@ -8515,29 +8895,58 @@ function renderMyQuizzesList() {
     pending_review:  { label:'Pending Review', color:'#a78bfa', icon:'📝' },
   };
   const now = new Date();
-  wrap.innerHTML = _myQuizAssignments.map(a => {
+  const isLockedFn = a => a.available_from && new Date(a.available_from) > now && a.status === 'assigned';
+
+  // Filter tabs: "active" = anything not yet finished (To Do + In Progress
+  // + Pending Review + Locked, i.e. everything worth checking on),
+  // "completed" = done/expired, "all" = everything.
+  let list = _myQuizAssignments.filter(a => {
+    if (_myQuizzesFilter === 'completed') return a.status === 'completed' || a.status === 'expired';
+    if (_myQuizzesFilter === 'active') return a.status !== 'completed' && a.status !== 'expired';
+    return true;
+  });
+
+  // Sort by urgency: In Progress (you're mid-quiz) → Not Started → Pending
+  // Review → Locked → Completed/Expired last, since those need no action.
+  const priority = { in_progress:0, assigned:1, pending_review:2, completed:4, expired:4 };
+  list = list.slice().sort((a,b) => {
+    const pa = isLockedFn(a) ? 3 : (priority[a.status] ?? 5);
+    const pb = isLockedFn(b) ? 3 : (priority[b.status] ?? 5);
+    if (pa !== pb) return pa - pb;
+    // Within the same priority, most recently assigned first
+    return (b.assigned_at||'').localeCompare(a.assigned_at||'');
+  });
+
+  if (!list.length) {
+    wrap.innerHTML = `<div class="card" style="text-align:center;color:var(--text3);padding:30px">${_myQuizzesFilter==='completed' ? "You haven't completed any quizzes yet." : "Nothing to do right now — you're all caught up 🎉"}</div>`;
+    return;
+  }
+
+  wrap.innerHTML = list.map(a => {
     const qz = _quizzes.find(x => x.id === a.quiz_id);
     const attempt = Array.isArray(a.quiz_attempts) && a.quiz_attempts.length ? a.quiz_attempts[a.quiz_attempts.length-1] : null;
-    const isLocked = a.available_from && new Date(a.available_from) > now && (a.status === 'assigned');
+    const isLocked = isLockedFn(a);
     const meta = isLocked ? { label:'Locked', color:'#818cf8', icon:'🔒' } : (statusMeta[a.status] || statusMeta.assigned);
-    const dueHtml = a.due_at ? `<span style="font-size:11px;color:var(--text3)"> · Due ${new Date(a.due_at).toLocaleDateString('en-MY',{day:'2-digit',month:'short',year:'numeric'})}</span>` : '';
-    const lockedHtml = isLocked ? `<div style="font-size:12px;color:#818cf8;margin-top:2px">🔒 Available from ${new Date(a.available_from).toLocaleDateString('en-MY',{day:'2-digit',month:'short',year:'numeric'})}</div>` : '';
+    const isUrgent = a.due_at && (a.status==='assigned'||a.status==='in_progress') && new Date(a.due_at) < new Date(now.getTime()+2*86400000);
+    const dueHtml = a.due_at ? `<span style="font-size:11px;color:${isUrgent?'var(--red)':'var(--text3)'};font-weight:${isUrgent?700:400}">${isUrgent?'⚠️ ':''}Due ${new Date(a.due_at).toLocaleDateString('en-MY',{day:'2-digit',month:'short',year:'numeric'})}</span>` : '';
+    const lockedHtml = isLocked ? `<div style="font-size:12px;color:#818cf8;margin-top:4px">🔒 Unlocks ${new Date(a.available_from).toLocaleDateString('en-MY',{day:'2-digit',month:'short',year:'numeric'})}</div>` : '';
     let actionHtml = '';
-    if (isLocked) actionHtml = `<button class="btn btn-ghost btn-sm" disabled style="opacity:.5;cursor:not-allowed">🔒 Not Yet Available</button>`;
+    if (isLocked) actionHtml = `<button class="btn btn-ghost btn-sm" disabled style="opacity:.5;cursor:not-allowed">🔒 Not Yet</button>`;
     else if (a.status === 'assigned') actionHtml = `<button class="btn btn-primary btn-sm" onclick="startQuizAttempt('${a.id}')">▶️ Start Quiz</button>`;
-    else if (a.status === 'in_progress') actionHtml = `<button class="btn btn-primary btn-sm" onclick="startQuizAttempt('${a.id}')">⏱️ Resume</button>`;
-    else if (a.status === 'pending_review') actionHtml = `<span style="font-size:11px;color:var(--text3)">Awaiting grading…</span>`;
+    else if (a.status === 'in_progress') actionHtml = `<button class="btn btn-primary btn-sm" onclick="startQuizAttempt('${a.id}')" style="background:var(--amber);border-color:var(--amber)">⏱️ Resume</button>`;
+    else if (a.status === 'pending_review') actionHtml = `<span style="font-size:11px;color:var(--text3);white-space:nowrap">Awaiting grading…</span>`;
     else if (a.status === 'completed' && attempt) actionHtml = `<button class="btn btn-ghost btn-sm" onclick="showQuizResultFromAttempt('${attempt.id}')">📊 View Result</button>`;
-    return `<div class="card" style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;${isLocked?'opacity:.75':''}">
-      <div>
-        <div style="font-weight:600;font-size:14px">${qz ? escapeHtml(qz.title) : '(quiz unavailable)'}</div>
-        <div style="font-size:12px;color:var(--text3);margin-top:2px">
+    const leftBorder = a.status==='in_progress' ? 'var(--amber)' : a.status==='assigned' && !isLocked ? 'var(--accent)' : a.status==='pending_review' ? '#a78bfa' : 'transparent';
+    return `<div class="card" style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;border-left:3px solid ${leftBorder};${isLocked||a.status==='completed'||a.status==='expired'?'opacity:.8':''}">
+      <div style="flex:1;min-width:200px">
+        <div style="font-weight:700;font-size:15px">${qz ? escapeHtml(qz.title) : '(quiz unavailable)'}</div>
+        <div style="font-size:12px;color:var(--text3);margin-top:4px;display:flex;gap:8px;align-items:center;flex-wrap:wrap">
           <span style="color:${meta.color};font-weight:700">${meta.icon} ${meta.label}</span>
-          ${qz ? ` · ⏱️ ${qz.time_limit_min} min · 🎯 Pass at ${qz.passing_mark}%` : ''}
+          ${qz ? `<span>⏱️ ${qz.time_limit_min} min</span><span>🎯 Pass ${qz.passing_mark}%</span>` : ''}
           ${dueHtml}
         </div>
         ${lockedHtml}
-        ${attempt && attempt.score_pct != null ? `<div style="font-size:13px;margin-top:4px;color:${attempt.passed?'var(--green)':'var(--red)'};font-weight:700">${attempt.score_pct.toFixed(1)}% ${attempt.passed?'— Passed':'— Not Passed'}</div>` : ''}
+        ${attempt && attempt.score_pct != null ? `<div style="font-size:14px;margin-top:6px;font-weight:700;color:${attempt.passed?'var(--green)':'var(--red)'}">${attempt.score_pct.toFixed(1)}% ${attempt.passed?'✅ Passed':'❌ Not Passed'}</div>` : ''}
       </div>
       <div>${actionHtml}</div>
     </div>`;
@@ -8560,24 +8969,41 @@ async function startQuizAttempt(assignmentId) {
   const { data: safeQuestions, error: sqErr } = await supa
     .from('quiz_questions_safe').select('*').in('id', qz.question_ids || []);
   if (sqErr) { showToast('Error', 'Could not load quiz questions: ' + sqErr.message, 'error'); return; }
-  const questions = (qz.question_ids || []).map(id => (safeQuestions||[]).find(q => q.id === id)).filter(Boolean);
-  if (!questions.length) { showToast('Error', 'This quiz has no valid questions.', 'error'); return; }
+  if (!(safeQuestions||[]).length) { showToast('Error', 'This quiz has no valid questions.', 'error'); return; }
 
   let attempt = Array.isArray(assignment.quiz_attempts) && assignment.quiz_attempts.length
     ? assignment.quiz_attempts[assignment.quiz_attempts.length-1] : null;
 
   if (!attempt || attempt.status !== 'in_progress') {
+    // Shuffle question order per attempt — anti-cheating (different
+    // people see questions in a different order, so "Q3 is B" doesn't
+    // travel). Grading is unaffected: it checks answers by question_id,
+    // never by display position.
+    const shuffledOrder = [...(qz.question_ids||[])];
+    for (let i = shuffledOrder.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [shuffledOrder[i], shuffledOrder[j]] = [shuffledOrder[j], shuffledOrder[i]];
+    }
     const { data, error } = await supa.from('quiz_attempts').insert({
       assignment_id: assignmentId, quiz_id: qz.id,
       user_name: currentStaff?.name || currentUser?.email || 'Unknown',
       user_id: currentUser?.id || null,
       time_limit_min: qz.time_limit_min,
+      question_order: shuffledOrder,
       status: 'in_progress',
     }).select().single();
     if (error) { showToast('Could not start quiz', error.message, 'error'); return; }
     attempt = data;
     await supa.from('quiz_assignments').update({ status: 'in_progress' }).eq('id', assignmentId);
   }
+
+  // Use this attempt's saved order if present (resuming keeps the same
+  // order); fall back to the quiz's default order for attempts created
+  // before this feature existed.
+  const orderIds = Array.isArray(attempt.question_order) && attempt.question_order.length
+    ? attempt.question_order : (qz.question_ids || []);
+  const questions = orderIds.map(id => (safeQuestions||[]).find(q => q.id === id)).filter(Boolean);
+  if (!questions.length) { showToast('Error', 'This quiz has no valid questions.', 'error'); return; }
 
   const deadline = new Date(attempt.started_at).getTime() + attempt.time_limit_min * 60000;
   if (Date.now() > deadline) {
@@ -8627,12 +9053,30 @@ function renderTakeQuizQuestions() {
       </div>`;
     }
 
-    return `<div style="margin-bottom:20px;padding-bottom:16px;border-bottom:1px solid var(--border)">
+    return `<div id="takeQuizQ_${i}" style="margin-bottom:20px;padding-bottom:16px;border-bottom:1px solid var(--border);scroll-margin-top:110px">
       <div style="font-weight:600;font-size:14px;margin-bottom:10px">${i+1}. ${escapeHtml(q.question_text)}</div>
       ${inputHtml}
     </div>`;
   }).join('');
   _updateQuizProgress();
+}
+function _isQuestionAnswered(q, ctx) {
+  const v = ctx.answers[q.id];
+  if (v === undefined || v === null || v === '') return false;
+  if (Array.isArray(v)) return v.length > 0;
+  return true;
+}
+function _renderTakeQuizNav() {
+  const ctx = _activeQuizAttempt;
+  const nav = document.getElementById('takeQuizNav');
+  if (!ctx || !nav) return;
+  nav.innerHTML = ctx.questions.map((q, i) => {
+    const answered = _isQuestionAnswered(q, ctx);
+    return `<button onclick="_scrollToQuizQuestion(${i})" title="Question ${i+1}${answered?' — answered':''}" style="width:28px;height:28px;border-radius:50%;font-size:11px;font-weight:700;cursor:pointer;border:1px solid ${answered?'var(--green)':'var(--border)'};background:${answered?'rgba(34,197,94,.18)':'var(--surface2)'};color:${answered?'var(--green)':'var(--text3)'}">${i+1}</button>`;
+  }).join('');
+}
+function _scrollToQuizQuestion(i) {
+  document.getElementById('takeQuizQ_'+i)?.scrollIntoView({ behavior:'smooth', block:'start' });
 }
 function selectQuizAnswer(questionId, optionIndex) {
   _activeQuizAttempt.answers[questionId] = optionIndex;
@@ -8665,6 +9109,7 @@ function _updateQuizProgress() {
   }).length;
   const el = document.getElementById('takeQuizProgress');
   if (el) el.textContent = `${answered} of ${ctx.questions.length} answered`;
+  _renderTakeQuizNav();
 }
 
 function _tickQuizTimer() {
