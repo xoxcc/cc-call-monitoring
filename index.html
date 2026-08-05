@@ -1273,6 +1273,9 @@
           <!-- Rendered by JS -->
         </div>
 
+        <!-- Per-TL pending breakdown -->
+        <div id="pipelineTLSummary" style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:20px"></div>
+
         <!-- Full pipeline table -->
         <div class="card">
           <div class="card-header" style="margin-bottom:12px">
@@ -1341,6 +1344,25 @@
             <div><h1>🔐 Role Management</h1><p>Manage staff roles and system access</p></div>
             <button class="btn btn-primary" onclick="openAddRoleModal()">+ Add / Update User</button>
           </div>
+        </div>
+
+        <!-- Reset User Password -->
+        <div class="card" style="margin-bottom:16px">
+          <div class="card-title">🔑 Reset User Password</div>
+          <div class="card-subtitle" style="margin-bottom:12px">Set a new password for any staff member — no self-service reset exists, this is the only way</div>
+          <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end">
+            <div style="flex:1;min-width:220px">
+              <label class="form-label" style="font-size:12px">Staff Member</label>
+              <input class="form-input" id="rpwSearch" placeholder="🔍 Search by name or email…" oninput="renderResetPwPicker()" onfocus="renderResetPwPicker()" autocomplete="off">
+              <div id="rpwPicker" style="position:relative"></div>
+            </div>
+            <div style="flex:1;min-width:180px">
+              <label class="form-label" style="font-size:12px">New Password</label>
+              <input class="form-input" id="rpwNewPassword" type="text" placeholder="e.g. Xox@2026">
+            </div>
+            <button class="btn btn-primary" onclick="submitResetUserPassword()">Set Password</button>
+          </div>
+          <div id="rpwSelectedInfo" style="font-size:12px;color:var(--text3);margin-top:8px"></div>
         </div>
 
         <!-- Passing Mark Setting -->
@@ -2138,6 +2160,9 @@ const TEAM_ROSTER_OVERRIDE = {
     'Johari Bin Bahardin', 'Siti Nursafwanah Binti Daim', "Mu'ammar Ilham Bin Hairol Bakti",
     'Maria Afifah Binti Hamir', 'Muhammad Nazam Bin Muhammad Nasir'
   ],
+  'Syahrul Nizam Bin Kamaruzaman': [
+    'Siti Ruqaiyah Binti Hussain'
+  ],
 };
 
 // Agents that don't (yet) report to a specific Team Leader but belong to a
@@ -2146,7 +2171,6 @@ const TEAM_ROSTER_OVERRIDE = {
 // display them without falsely implying a TL relationship, and so they
 // don't get flagged as a data error in the "Unassigned" warning.
 const NON_TL_AGENT_GROUPS = {
-  'Operation (Outbound)': ['Siti Ruqaiyah Binti Hussain'],
 };
 
 // Normalize a name for comparison: lowercase, trim, strip apostrophes and
@@ -4374,7 +4398,9 @@ async function loadPendingTL() {
   // Team filtering only applies to TL's own "submitted" queue — QA review
   // items must stay visible to any QA evaluator regardless of team,
   // otherwise a resolved dispute can end up with nobody able to see it.
-  let rows = [...filterByMyTeam(submitted), ...qaReview].sort((a,b) => new Date(b.created_at)-new Date(a.created_at));
+  const tlQueue = filterByMyTeam(submitted);
+  let rows = [...tlQueue, ...qaReview].sort((a,b) => new Date(b.created_at)-new Date(a.created_at));
+
   const tbody = document.getElementById('pendingTLBody');
   if (!rows.length) { tbody.innerHTML = '<tr><td colspan="7"><div class="empty-state"><div class="icon">✅</div><p>Nothing pending TL review.</p></div></td></tr>'; return; }
   tbody.innerHTML = rows.map(e => {
@@ -9220,11 +9246,11 @@ async function startQuizAttempt(assignmentId) {
   const qz = _quizzes.find(x => x.id === assignment.quiz_id);
   if (!qz) { showToast('Error', 'This quiz is no longer available.', 'error'); return; }
 
-  // Fetch from the SAFE view — no correct_index included, so the answer
-  // key never reaches the browser for someone taking the quiz. Grading
-  // happens server-side via grade_and_submit_quiz_attempt().
+  // Fetch via the SAFE function — no correct_index included, so the
+  // answer key never reaches the browser for someone taking the quiz.
+  // Grading happens server-side via grade_and_submit_quiz_attempt().
   const { data: safeQuestions, error: sqErr } = await supa
-    .from('quiz_questions_safe').select('*').in('id', qz.question_ids || []);
+    .rpc('get_safe_quiz_questions', { p_question_ids: qz.question_ids || [] });
   if (sqErr) { showToast('Error', 'Could not load quiz questions: ' + sqErr.message, 'error'); return; }
   if (!(safeQuestions||[]).length) { showToast('Error', 'This quiz has no valid questions.', 'error'); return; }
 
@@ -9528,12 +9554,12 @@ async function showQuizResultFromAttempt(attemptId, wasAutoSubmit) {
   // answer was right or wrong.
   let breakdown = [];
   if (qz && Array.isArray(qz.question_ids) && qz.question_ids.length) {
-    const { data: safeQs, error: safeErr } = await supa.from('quiz_questions_safe').select('*').in('id', qz.question_ids);
-    if (safeErr) console.error('[Quiz] showQuizResultFromAttempt: could not load quiz_questions_safe', safeErr);
+    const { data: safeQs, error: safeErr } = await supa.rpc('get_safe_quiz_questions', { p_question_ids: qz.question_ids });
+    if (safeErr) console.error('[Quiz] showQuizResultFromAttempt: could not load safe questions', safeErr);
     const results = data.question_results || {};
     breakdown = qz.question_ids.map(qid => {
       const q = (safeQs||[]).find(x => x.id === qid);
-      if (!q) { console.warn('[Quiz] question', qid, 'from this quiz not found in quiz_questions_safe — skipped from breakdown.'); return null; }
+      if (!q) { console.warn('[Quiz] question', qid, 'from this quiz not found via get_safe_quiz_questions — skipped from breakdown.'); return null; }
       const yourVal = data.answers ? data.answers[qid] : undefined;
       let status;
       if (q.question_type === 'subjective' && !q.requires_manual_grading) status = 'ungraded';
@@ -9542,7 +9568,7 @@ async function showQuizResultFromAttempt(attemptId, wasAutoSubmit) {
       const points = q.points ?? 1;
       return { text: q.question_text, yourAnswer: _formatQuizAnswerDisplay(q, yourVal), status, points };
     }).filter(Boolean);
-    if (!breakdown.length) console.warn('[Quiz] Breakdown ended up empty. If question_results is missing from quiz_attempts or points is missing from quiz_questions_safe, run the latest quiz SQL migrations.');
+    if (!breakdown.length) console.warn('[Quiz] Breakdown ended up empty. If question_results is missing from quiz_attempts or points is missing from get_safe_quiz_questions, run the latest quiz SQL migrations.');
   }
 
   _showQuizResultModal(data.score_pct||0, !!data.passed, correctCount, total, wasAutoSubmit || data.status==='expired', data.wrong_kb_ids||[], data.status==='pending_review', breakdown);
@@ -9929,6 +9955,25 @@ function renderPipeline() {
         ${count>0&&s.key!=='closed'?`<div style="font-size:9px;color:${s.color};margin-top:4px">Waiting: ${s.waitingOn}</div>`:''}
       </div>`;
     }).join('');
+  }
+
+  // ── Per-TL pending breakdown ──
+  // Consistent with the stage cards above: uses the full unfiltered
+  // pipelineData so these numbers stay stable regardless of whatever
+  // the table below is currently filtered to.
+  const tlSummaryEl = document.getElementById('pipelineTLSummary');
+  if (tlSummaryEl) {
+    const pendingTLRows = pipelineData.filter(e => e.status === 'submitted');
+    const counts = {};
+    pendingTLRows.forEach(e => { const tl = e.tl_name || 'Unassigned'; counts[tl] = (counts[tl]||0) + 1; });
+    const sorted = Object.entries(counts).sort((a,b) => b[1]-a[1]);
+    tlSummaryEl.innerHTML = sorted.length ? `<div style="width:100%;font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:2px">Pending TL Review — by Team Leader</div>` +
+      sorted.map(([tl, n]) => `
+      <div class="card" style="margin-bottom:0;padding:10px 16px;display:flex;align-items:center;gap:10px;cursor:pointer"
+        onclick="document.getElementById('pipelineTLFilter').value='${tl.replace(/'/g,"\\'")}';document.getElementById('pipelineStatusFilter').value='submitted';renderPipeline()">
+        <div style="font-size:20px;font-weight:700;color:${n>=5?'var(--red)':n>=3?'#fbbf24':'var(--text)'}">${n}</div>
+        <div style="font-size:12px;color:var(--text2)">${escapeHtml(tl)}</div>
+      </div>`).join('') : '';
   }
 
   // ── Pipeline table ──
@@ -10386,6 +10431,62 @@ function renderTeamRoster(rows) {
 
   el.innerHTML = tlHTML + nonTLHTML + unassignedHTML;
 }
+
+/* ── RESET USER PASSWORD (Role Management) ──────────────────────────── */
+let _rpwCcUsers = [];
+let _rpwSelectedUser = null;
+
+async function renderResetPwPicker() {
+  const wrap = document.getElementById('rpwPicker');
+  const q = (document.getElementById('rpwSearch')?.value || '').toLowerCase().trim();
+  if (!q) { wrap.innerHTML = ''; return; }
+
+  if (!_rpwCcUsers.length) {
+    const { data, error } = await supa.from('cc_users').select('id,name,email,active').order('name');
+    if (error) { console.error('[RolePw] cc_users load error:', error); return; }
+    _rpwCcUsers = data || [];
+  }
+
+  const matches = _rpwCcUsers.filter(u =>
+    (u.name||'').toLowerCase().includes(q) || (u.email||'').toLowerCase().includes(q)
+  ).slice(0, 8);
+
+  wrap.innerHTML = matches.length ? `
+    <div style="position:absolute;top:2px;left:0;right:0;background:var(--surface2);border:1px solid var(--border);border-radius:8px;z-index:50;max-height:220px;overflow-y:auto;box-shadow:0 8px 24px rgba(0,0,0,.35)">
+      ${matches.map(u => `<div onclick="selectResetPwUser('${u.id}')" style="padding:8px 12px;cursor:pointer;border-bottom:1px solid var(--border)" onmouseover="this.style.background='var(--surface3)'" onmouseout="this.style.background=''">
+        <div style="font-size:13px;font-weight:600">${escapeHtml(u.name)}${u.active===false?' <span style=\"color:var(--red);font-size:10px\">(inactive)</span>':''}</div>
+        <div style="font-size:11px;color:var(--text3)">${escapeHtml(u.email)}</div>
+      </div>`).join('')}
+    </div>` : `<div style="position:absolute;top:2px;left:0;right:0;background:var(--surface2);border:1px solid var(--border);border-radius:8px;z-index:50;padding:10px 12px;font-size:12px;color:var(--text3)">No matching staff.</div>`;
+}
+function selectResetPwUser(id) {
+  _rpwSelectedUser = _rpwCcUsers.find(u => u.id === id) || null;
+  document.getElementById('rpwPicker').innerHTML = '';
+  document.getElementById('rpwSearch').value = _rpwSelectedUser ? _rpwSelectedUser.name : '';
+  const info = document.getElementById('rpwSelectedInfo');
+  info.textContent = _rpwSelectedUser ? `Selected: ${_rpwSelectedUser.name} (${_rpwSelectedUser.email})` : '';
+}
+async function submitResetUserPassword() {
+  if (!_rpwSelectedUser) { showToast('No staff selected', 'Search and pick a staff member first.', 'error'); return; }
+  const newPw = document.getElementById('rpwNewPassword').value;
+  if (!newPw || newPw.length < 6) { showToast('Password too short', 'Use at least 6 characters.', 'error'); return; }
+
+  if (!confirm(`Set a new password for ${_rpwSelectedUser.name}?\n\nThey'll need to use this new password immediately — their old one will stop working.`)) return;
+
+  const { error } = await supa.rpc('set_user_password', { uid: _rpwSelectedUser.id, new_password: newPw });
+  if (error) { showToast('Reset failed', error.message, 'error'); return; }
+
+  showToast('Password reset', `${_rpwSelectedUser.name}'s password has been updated.`, 'success');
+  document.getElementById('rpwNewPassword').value = '';
+  document.getElementById('rpwSearch').value = '';
+  document.getElementById('rpwSelectedInfo').textContent = '';
+  _rpwSelectedUser = null;
+}
+document.addEventListener('click', (e) => {
+  const picker = document.getElementById('rpwPicker');
+  const search = document.getElementById('rpwSearch');
+  if (picker && search && !picker.contains(e.target) && e.target !== search) picker.innerHTML = '';
+});
 
 function openAddRoleModal() {
   document.getElementById('rmStaffName').value = '';
