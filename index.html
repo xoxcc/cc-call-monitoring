@@ -704,14 +704,14 @@
               <option value="calibration">⚖️ Calibration</option>
               <option value="">No Tag</option>
             </select>
-            <input class="form-input" id="evFilter_search" placeholder="Search agent..." oninput="loadAllEvals()" style="width:140px;padding:6px 10px">
+            <input class="form-input" id="evFilter_search" placeholder="Search agent, MSISDN, case ID..." oninput="loadAllEvals()" style="width:180px;padding:6px 10px">
             <button class="btn btn-ghost btn-sm" onclick="clearEvFilters()">✕ Clear</button>
           </div>
         </div>
 
         <div class="card" style="overflow-x:auto">
-          <table class="eval-table"><thead><tr><th>Ref</th><th>Agent</th><th>TL</th><th>Template</th><th>Tag</th><th>Score</th><th>Fatal</th><th>Status</th><th>Call Date</th><th>Eval Date/Time</th><th>QA</th><th>TL Approved</th><th>Disputed</th><th>Closed</th><th>Actions</th></tr></thead>
-          <tbody id="allEvalsBody"><tr><td colspan="14"><div class="empty-state"><div class="icon">⏳</div><p>Loading…</p></div></td></tr></tbody></table>
+          <table class="eval-table"><thead><tr><th>Ref</th><th>Agent</th><th>TL</th><th>Template</th><th>Tag</th><th>Score</th><th>Fatal</th><th>Status</th><th>Call Date</th><th>Eval Date/Time</th><th>QA</th><th>Subscriber MSISDN</th><th>Contact/Case ID</th><th>TL Approved</th><th>Disputed</th><th>Closed</th><th>Actions</th></tr></thead>
+          <tbody id="allEvalsBody"><tr><td colspan="17"><div class="empty-state"><div class="icon">⏳</div><p>Loading…</p></div></td></tr></tbody></table>
         </div>
       </div>
 
@@ -747,11 +747,18 @@
         <div class="page-header">
           <div class="page-header-row">
             <div><h1>📈 QA Productivity</h1><p>Daily evaluation count per QA evaluator — monthly view</p></div>
-            <div style="display:flex;gap:8px;align-items:center">
+            <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+              <select class="form-select" id="qaProdDateType" onchange="loadQAProductivity()" style="width:130px;padding:7px 10px">
+                <option value="eval">Eval Date</option>
+                <option value="call">Call Date</option>
+              </select>
+              <input class="form-input" type="date" id="qaProdDateFrom" onchange="loadQAProductivity()" style="padding:7px 10px;width:150px">
+              <span style="font-size:12px;color:var(--text3)">to</span>
+              <input class="form-input" type="date" id="qaProdDateTo" onchange="loadQAProductivity()" style="padding:7px 10px;width:150px">
               <select class="form-select" id="qaProdMonth" onchange="loadQAProductivity()" style="width:170px;padding:7px 10px">
                 <option value="">All Time</option>
               </select>
-              <button class="btn btn-ghost btn-sm" onclick="document.getElementById('qaProdMonth').value='';loadQAProductivity()">✕ Clear</button>
+              <button class="btn btn-ghost btn-sm" onclick="clearQAProdFilters()">✕ Clear</button>
             </div>
           </div>
         </div>
@@ -1084,8 +1091,15 @@
           <div class="page-header-row">
             <div><h1>📅 Monthly Performance</h1><p>Average scores by Team Leader and Agent on a monthly basis</p></div>
             <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+              <select class="form-select" id="mpDateType" onchange="initMonthlyPerf()" style="width:130px;padding:7px 10px">
+                <option value="call">Call Date</option>
+                <option value="eval">Eval Date</option>
+              </select>
               <select class="form-select" id="mpMonth" onchange="loadMonthlyPerf()" style="width:160px;padding:7px 10px">
               </select>
+              <input class="form-input" type="date" id="mpDateFrom" onchange="loadMonthlyPerf()" style="padding:7px 10px;width:150px">
+              <span style="font-size:12px;color:var(--text3)">to</span>
+              <input class="form-input" type="date" id="mpDateTo" onchange="loadMonthlyPerf()" style="padding:7px 10px;width:150px">
               <select class="form-select" id="mpTL" onchange="loadMonthlyPerf()" style="width:200px;padding:7px 10px">
                 <option value="">All Team Leaders</option>
               </select>
@@ -1094,6 +1108,7 @@
                 <option value="agent">By Agent</option>
                 <option value="both" selected>Both</option>
               </select>
+              <button class="btn btn-ghost btn-sm" onclick="clearMonthlyPerfFilters()">✕ Clear</button>
             </div>
           </div>
         </div>
@@ -4194,7 +4209,11 @@ async function loadAllEvals() {
     if (tl     && e.tl_name !== tl) return false;
     if (qa     && e.qa_user_name !== qa) return false;
     if (tagF   && e.eval_tag !== tagF) return false;
-    if (search && !(e.agent_name||'').toLowerCase().includes(search)) return false;
+    if (search && !(
+      (e.agent_name||'').toLowerCase().includes(search) ||
+      (e.msisdn||'').toLowerCase().includes(search) ||
+      (e.contact_id||'').toLowerCase().includes(search)
+    )) return false;
     if (dateFrom || dateTo) {
       const dateStr = getEvalDateStr(e, dateType);
       const d = dateStr ? new Date(dateStr) : null;
@@ -4208,7 +4227,7 @@ async function loadAllEvals() {
   const tbody = document.getElementById('allEvalsBody');
   const _email2 = (currentUser?.email || '').toLowerCase();
   const _isAdminForDelete = (currentStaff?.role||'').toLowerCase()==='admin' || ROLE_MAP_EMAIL[_email2]==='admin' || roleOverrides[_email2]==='admin';
-  if (!filtered.length) { tbody.innerHTML = '<tr><td colspan="12"><div class="empty-state"><div class="icon">🔍</div><p>No evaluations match the selected filters.</p></div></td></tr>'; return; }
+  if (!filtered.length) { tbody.innerHTML = '<tr><td colspan="17"><div class="empty-state"><div class="icon">🔍</div><p>No evaluations match the selected filters.</p></div></td></tr>'; return; }
   tbody.innerHTML = filtered.map(e => {
     const evalDT   = e.created_at ? new Date(e.created_at) : null;
     const evalDate = evalDT ? evalDT.toLocaleDateString('en-MY',{day:'2-digit',month:'2-digit',year:'numeric'})
@@ -4228,6 +4247,8 @@ async function loadAllEvals() {
     <td style="font-size:11px;color:var(--text3);white-space:nowrap">${e.date||'--'}</td>
     <td style="font-size:11px;color:var(--text3);white-space:nowrap">${evalDate}</td>
     <td style="font-size:11px;color:var(--accent)">${e.qa_user_name||'--'}</td>
+    <td style="font-size:11px;color:var(--text2);white-space:nowrap">${escapeHtml(e.msisdn||'--')}</td>
+    <td style="font-size:11px;color:var(--text2);white-space:nowrap">${escapeHtml(e.contact_id||'--')}</td>
     <td style="font-size:11px;color:var(--purple);white-space:nowrap">${approvedTs}</td>
     <td style="font-size:11px;color:var(--amber);white-space:nowrap">${disputedTs}</td>
     <td style="font-size:11px;color:var(--green);white-space:nowrap">${closedTs}</td>
@@ -6349,39 +6370,40 @@ async function initMonthlyPerf() {
     setLoading(false);
   }
 
-  // Build month list from call dates
+  const mpDateType = document.getElementById('mpDateType')?.value || 'call';
+
+  // Build month list from the selected date type (Call Date or Eval Date —
+  // explicitly chosen, not a silent fallback, since the two can genuinely
+  // diverge — e.g. evaluations entered late for calls from before the
+  // system went live).
   const months = new Set();
   mpAllEvals.forEach(e => {
-    const dateStr = e.date || '';
+    const dateStr = getEvalDateStr(e, mpDateType);
     if (dateStr) {
       const d = new Date(dateStr);
       if (!isNaN(d)) months.add(`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`);
     }
   });
-  // Fallback to created_at if no call dates
-  if (!months.size) {
-    mpAllEvals.forEach(e => {
-      if (e.created_at) {
-        const d = new Date(e.created_at);
-        months.add(`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`);
-      }
-    });
-  }
 
   const sortedMonths = [...months].sort().reverse();
   const mpMonth = document.getElementById('mpMonth');
   if (mpMonth) {
+    const prevValue = mpMonth.value;
     mpMonth.innerHTML = '<option value="">-- Select Month --</option>'
       + sortedMonths.map(m => {
           const [yr, mo] = m.split('-');
           const label = new Date(yr, mo-1, 1).toLocaleDateString('en-MY',{month:'long',year:'numeric'});
           return `<option value="${m}">${label}</option>`;
         }).join('');
-    // Auto-select current month if available
-    const now = new Date();
-    const curMonth = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
-    if (sortedMonths.includes(curMonth)) mpMonth.value = curMonth;
-    else if (sortedMonths.length) mpMonth.value = sortedMonths[0];
+    if (prevValue && sortedMonths.includes(prevValue)) {
+      mpMonth.value = prevValue; // keep the same month selected across a date-type switch
+    } else {
+      // Auto-select current month if available, else most recent with data
+      const now = new Date();
+      const curMonth = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
+      if (sortedMonths.includes(curMonth)) mpMonth.value = curMonth;
+      else if (sortedMonths.length) mpMonth.value = sortedMonths[0];
+    }
   }
 
   // Populate TL filter
@@ -6396,16 +6418,31 @@ async function initMonthlyPerf() {
 }
 
 function getMonthEvals(month, tlFilter) {
+  const mpDateType = document.getElementById('mpDateType')?.value || 'call';
+  const dateFrom = document.getElementById('mpDateFrom')?.value || '';
+  const dateTo   = document.getElementById('mpDateTo')?.value || '';
   return mpAllEvals.filter(e => {
-    // Match by call date first, fall back to eval date
-    const dateStr = e.date || (e.created_at ? e.created_at.slice(0,10) : '');
+    const dateStr = getEvalDateStr(e, mpDateType);
     const d = new Date(dateStr);
     if (isNaN(d)) return false;
     const eMonth = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
     const matchMonth = eMonth === month;
     const matchTL    = !tlFilter || e.tl_name === tlFilter;
+    // Custom From/To narrows further within the selected month — e.g.
+    // "just the 10th–20th of this month" — rather than replacing the
+    // month selection entirely (trend-vs-previous-month below depends on
+    // a real month being selected).
+    if (dateFrom && dateStr < dateFrom) return false;
+    if (dateTo   && dateStr > dateTo) return false;
     return matchMonth && matchTL && e.status !== 'draft';
   });
+}
+
+function clearMonthlyPerfFilters() {
+  document.getElementById('mpDateFrom').value = '';
+  document.getElementById('mpDateTo').value = '';
+  document.getElementById('mpTL').value = '';
+  loadMonthlyPerf();
 }
 
 function loadMonthlyPerf() {
@@ -6888,18 +6925,30 @@ async function saveQAProdRemarkForQA(textarea) {
   loadQAProductivity(); // refresh the 💬 count shown on the table row (modal stays open, separate DOM)
 }
 
+function clearQAProdFilters() {
+  document.getElementById('qaProdMonth').value = '';
+  document.getElementById('qaProdDateFrom').value = '';
+  document.getElementById('qaProdDateTo').value = '';
+  loadQAProductivity();
+}
 async function loadQAProductivity() {
   const all = evaluations && evaluations.length > 0 ? evaluations : await loadEvals();
   evaluations = all;
 
-  // Populate month filter
+  const dateType = document.getElementById('qaProdDateType')?.value || 'eval';
+
+  // Populate month filter — rebuilt whenever the date-type toggle changes
+  // (not just on first load), since Call Date vs Eval Date can have a
+  // genuinely different set of months with data.
   const months = new Set();
   all.forEach(e => {
-    const d = e.created_at ? e.created_at.slice(0,7) : '';
+    const d = getEvalDateStr(e, dateType).slice(0,7);
     if (d) months.add(d);
   });
   const moSel = document.getElementById('qaProdMonth');
-  if (moSel && moSel.options.length <= 1) {
+  if (moSel && moSel.dataset.builtForType !== dateType) {
+    const prevValue = moSel.value;
+    moSel.innerHTML = '<option value="">All Time</option>';
     const sortedMonths = [...months].sort().reverse();
     sortedMonths.forEach(m => {
       const [yr,mo] = m.split('-');
@@ -6908,16 +6957,31 @@ async function loadQAProductivity() {
       o.textContent = new Date(yr, mo-1, 1).toLocaleDateString('en-MY', {month:'long', year:'numeric'});
       moSel.appendChild(o);
     });
-    // Default to the most recent month with data, so the table shows a
-    // full calendar month (1st–end of month) rather than "All Time" —
-    // "Clear" still switches back to All Time if that's actually wanted.
-    if (sortedMonths.length) moSel.value = sortedMonths[0];
+    moSel.dataset.builtForType = dateType;
+    // Keep the same month selected if it still exists under the new date
+    // type; otherwise default to the most recent month with data, so the
+    // table shows a full calendar month rather than "All Time".
+    if (prevValue && sortedMonths.includes(prevValue)) moSel.value = prevValue;
+    else if (sortedMonths.length) moSel.value = sortedMonths[0];
   }
 
   const selMonth = moSel?.value || '';
-  const filtered = selMonth
-    ? all.filter(e => (e.created_at||'').startsWith(selMonth))
+  const dateFrom = document.getElementById('qaProdDateFrom')?.value || '';
+  const dateTo   = document.getElementById('qaProdDateTo')?.value || '';
+  const hasCustomRange = !!(dateFrom || dateTo);
+
+  let filtered = selMonth
+    ? all.filter(e => getEvalDateStr(e, dateType).startsWith(selMonth))
     : all;
+  if (hasCustomRange) {
+    filtered = filtered.filter(e => {
+      const d = getEvalDateStr(e, dateType);
+      if (!d) return false;
+      if (dateFrom && d < dateFrom) return false;
+      if (dateTo   && d > dateTo) return false;
+      return true;
+    });
+  }
 
   // Group by QA name
   const qaNames = [...new Set(filtered.map(e => e.qa_user_name).filter(Boolean))].sort();
@@ -6925,12 +6989,18 @@ async function loadQAProductivity() {
   // Group by date then QA
   const byDate = {};
   filtered.forEach(e => {
-    const d = (e.created_at||'').slice(0,10);
+    const d = getEvalDateStr(e, dateType);
     if (!d) return;
     if (!byDate[d]) byDate[d] = {};
     byDate[d][e.qa_user_name] = (byDate[d][e.qa_user_name] || 0) + 1;
   });
-  const dates = selMonth
+  // With a custom From/To range active, show exactly those days rather
+  // than a full calendar-month grid — a range can be partial or span
+  // multiple months, so the "fill in every day of one month" approach
+  // doesn't apply the same way.
+  const dates = hasCustomRange
+    ? Object.keys(byDate).sort().reverse()
+    : selMonth
     ? (() => {
         const [yr, mo] = selMonth.split('-').map(Number);
         const daysInMonth = new Date(yr, mo, 0).getDate();
