@@ -860,7 +860,7 @@
           <button class="btn btn-sm cb-tab" data-tab="bank" onclick="setQuizMgmtTab('bank')">🗂️ Question Bank</button>
           <button class="btn btn-sm cb-tab" data-tab="assignments" onclick="setQuizMgmtTab('assignments')">👥 Assignments &amp; Results</button>
           <button class="btn btn-sm cb-tab" data-tab="review" onclick="setQuizMgmtTab('review')">📝 Grade Submissions<span class="badge" id="pendingReviewBadge" style="display:none">0</span></button>
-          <button class="btn btn-sm cb-tab" data-tab="staff" onclick="setQuizMgmtTab('staff')">👤 By Staff</button>
+          <button class="btn btn-sm cb-tab" data-tab="staffstatus" onclick="setQuizMgmtTab('staffstatus')">👥 Staff Status</button>
         </div>
 
         <!-- Quizzes tab -->
@@ -897,6 +897,7 @@
             <button class="btn btn-ghost btn-sm" onclick="exportQuizAssignments()"><i class="ti ti-file-spreadsheet"></i> Export to Excel</button>
           </div>
           <div id="qmAssignSummary" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:10px;margin-bottom:14px"></div>
+          <div id="qmNudges" style="margin-bottom:16px"></div>
           <div class="card" style="margin-bottom:16px">
             <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
               <input class="form-input" id="qmAssignSearch" placeholder="🔍 Search staff name…" oninput="renderQuizAssignments()" style="flex:1;min-width:160px">
@@ -905,6 +906,7 @@
               </select>
               <select class="form-select" id="qmAssignStatusFilter" onchange="renderQuizAssignments()" style="width:160px">
                 <option value="">All Statuses</option>
+                <option value="not_completed">⏳ Not Completed (any)</option>
                 <option value="assigned">Assigned</option>
                 <option value="in_progress">In Progress</option>
                 <option value="pending_review">Pending Review</option>
@@ -923,14 +925,37 @@
         </div>
 
         <!-- By Staff tab -->
-        <div id="qmTab-staff" style="display:none">
+        <!-- Staff Status tab -->
+        <div id="qmTab-staffstatus" style="display:none">
           <div class="card" style="margin-bottom:16px">
-            <label class="form-label" style="font-size:12px">Select Staff</label>
-            <select class="form-select" id="staffFailureSelect" onchange="renderStaffFailureDetail()" style="width:100%;max-width:360px">
-              <option value="">— Choose a staff member —</option>
-            </select>
+            <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end">
+              <div style="flex:1;min-width:220px">
+                <label class="form-label" style="font-size:12px">Quiz</label>
+                <select class="form-select" id="ssQuizSelect" onchange="setStaffStatusQuiz()" style="width:100%">
+                  <option value="">— Choose a quiz —</option>
+                </select>
+              </div>
+              <div style="flex:1;min-width:160px">
+                <label class="form-label" style="font-size:12px">Search Staff</label>
+                <input class="form-input" id="ssSearch" placeholder="🔍 Search staff…" oninput="renderStaffStatus()">
+              </div>
+              <select class="form-select" id="ssRoleFilter" onchange="renderStaffStatus()" style="width:140px">
+                <option value="">All Roles</option>
+                <option value="agent">Agent</option>
+                <option value="tl">Team Leader</option>
+                <option value="qa">QA</option>
+              </select>
+              <select class="form-select" id="ssStatusFilter" onchange="renderStaffStatus()" style="width:170px">
+                <option value="">All Statuses</option>
+                <option value="not_assigned">Not Assigned</option>
+                <option value="in_progress">In Progress</option>
+                <option value="pending_review">Completed (Pending Review)</option>
+                <option value="completed">Fully Completed</option>
+              </select>
+            </div>
           </div>
-          <div id="staffFailureWrap"></div>
+          <div id="ssStats" style="display:flex;gap:14px;margin-bottom:14px;font-size:12px;flex-wrap:wrap"></div>
+          <div id="ssList" style="display:flex;flex-direction:column;gap:6px"></div>
         </div>
       </div>
 
@@ -1865,8 +1890,9 @@
         <div style="font-size:11px;color:var(--text3);margin-top:4px">The quiz will be assigned now, but staff won't be able to see or start it until this date.</div>
       </div>
       <div class="form-group">
-        <label class="form-label">Due Date <span style="color:var(--text3);font-weight:400">(optional)</span></label>
+        <label class="form-label">Due Date <span style="color:var(--text3);font-weight:400">(optional — hard deadline)</span></label>
         <input type="date" class="form-input" id="asgDueDate">
+        <div style="font-size:11px;color:var(--text3);margin-top:4px">Once this date passes, staff can no longer start or submit this quiz — enforced, not just a reminder.</div>
       </div>
     </div>
     <div class="modal-footer">
@@ -7007,10 +7033,6 @@ async function loadQAProductivity() {
         const list = [];
         for (let day = daysInMonth; day >= 1; day--) {
           const dstr = `${yr}-${String(mo).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
-          const dow = new Date(yr, mo - 1, day).getDay(); // 0 = Sun, 6 = Sat
-          // Skip weekends — but only if nobody actually worked that day.
-          // If there IS data (e.g. rare overtime), still show it.
-          if ((dow === 0 || dow === 6) && !byDate[dstr]) continue;
           list.push(dstr);
         }
         return list;
@@ -8023,27 +8045,14 @@ function _quizCanManage() {
 }
 
 function setQuizMgmtTab(tab) {
-  ['quizzes','bank','assignments','review','staff'].forEach(t => {
+  ['quizzes','bank','assignments','review','staffstatus'].forEach(t => {
     const el = document.getElementById('qmTab-'+t);
     if (el) el.style.display = (t===tab) ? '' : 'none';
   });
   document.querySelectorAll('#quizMgmtTabs .cb-tab').forEach(b => b.classList.toggle('active', b.dataset.tab===tab));
   if (tab === 'assignments') loadQuizAssignmentsForManagement();
   if (tab === 'review') loadPendingReviews();
-  if (tab === 'staff') loadStaffFailureView();
-}
-
-/* ── BY STAFF (failed quizzes + which questions they missed) ────────── */
-async function loadStaffFailureView() {
-  if (!window._quizAllAssignments) await _loadAssignmentStatsQuietly();
-  if (!_quizQuestions.length) await loadQuizQuestionBank(false);
-
-  const sel = document.getElementById('staffFailureSelect');
-  const prevValue = sel.value;
-  const names = [...new Set((window._quizAllAssignments||[]).map(a => a.assigned_to).filter(Boolean))].sort();
-  sel.innerHTML = '<option value="">— Choose a staff member —</option>' + names.map(n => `<option value="${escapeHtml(n)}">${escapeHtml(n)}</option>`).join('');
-  if (names.includes(prevValue)) sel.value = prevValue;
-  renderStaffFailureDetail();
+  if (tab === 'staffstatus') loadStaffStatusTab();
 }
 
 function _formatQuizAnswerDisplay(q, val) {
@@ -8111,83 +8120,6 @@ async function openAssignmentDetailModal(assignmentId) {
 
   document.getElementById('assignDetailBody').innerHTML = scoreHtml + (questionsHtml || '<p style="color:var(--text3);font-size:13px">No questions found for this quiz.</p>');
   document.getElementById('assignmentDetailModal').classList.remove('hidden');
-}
-
-function renderStaffFailureDetail() {
-  const wrap = document.getElementById('staffFailureWrap');
-  const staffName = document.getElementById('staffFailureSelect')?.value || '';
-  if (!wrap) return;
-  if (!staffName) { wrap.innerHTML = ''; return; }
-
-  const theirAssignments = (window._quizAllAssignments || []).filter(a => a.assigned_to === staffName);
-  const failedList = [];
-  theirAssignments.forEach(a => {
-    const attempts = Array.isArray(a.quiz_attempts) ? a.quiz_attempts : [];
-    const last = attempts.length ? attempts[attempts.length-1] : null;
-    if (last && last.passed === false) failedList.push({ assignment: a, attempt: last });
-  });
-
-  const totalTaken = theirAssignments.filter(a => {
-    const last = Array.isArray(a.quiz_attempts) && a.quiz_attempts.length ? a.quiz_attempts[a.quiz_attempts.length-1] : null;
-    return last && last.passed !== null && last.passed !== undefined;
-  }).length;
-
-  const summaryHtml = `<div style="display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap">
-    <div class="card" style="padding:10px 16px"><div style="font-size:10px;color:var(--text3);text-transform:uppercase">Quizzes Taken</div><div style="font-size:22px;font-weight:700">${totalTaken}</div></div>
-    <div class="card" style="padding:10px 16px"><div style="font-size:10px;color:var(--text3);text-transform:uppercase">Failed</div><div style="font-size:22px;font-weight:700;color:var(--red)">${failedList.length}</div></div>
-  </div>`;
-
-  if (!failedList.length) {
-    wrap.innerHTML = summaryHtml + `<div class="card" style="text-align:center;color:var(--text3);padding:30px">${totalTaken ? 'No failed quizzes on record for ' + escapeHtml(staffName) + ' 🎉' : escapeHtml(staffName) + " hasn't completed any graded quizzes yet."}</div>`;
-    return;
-  }
-
-  const cardsHtml = failedList.map(({ assignment: a, attempt }) => {
-    const qz = _quizzes.find(x => x.id === a.quiz_id);
-    const submitted = attempt.submitted_at ? new Date(attempt.submitted_at).toLocaleDateString('en-MY',{day:'2-digit',month:'short',year:'numeric'}) : '';
-
-    const questions = qz ? (qz.question_ids||[]).map(id => _quizQuestions.find(q => q.id === id)).filter(Boolean) : [];
-    const wrongRows = [];
-    questions.forEach(q => {
-      const selected = attempt.answers ? attempt.answers[q.id] : undefined;
-      let isWrong = false, correctDisplay = '';
-      if (q.question_type === 'subjective') {
-        if (!q.requires_manual_grading) return; // no right/wrong concept
-        const grade = attempt.manual_grades && attempt.manual_grades[q.id];
-        if (!grade) return; // not graded yet, skip
-        isWrong = grade.correct !== true;
-        correctDisplay = '(manually graded — no single correct answer)';
-      } else if (q.question_type === 'multi_select') {
-        const sel = (Array.isArray(selected)?[...selected]:[]).sort((x,y)=>x-y);
-        const correct = (Array.isArray(q.correct_indices)?[...q.correct_indices]:[]).sort((x,y)=>x-y);
-        isWrong = JSON.stringify(sel) !== JSON.stringify(correct);
-        correctDisplay = (q.correct_indices||[]).map(i => q.options?.[i] ?? '?').join(', ');
-      } else {
-        isWrong = selected !== q.correct_index;
-        correctDisplay = q.options?.[q.correct_index] ?? '?';
-      }
-      if (isWrong) {
-        wrongRows.push(`<div style="padding:8px 10px;background:rgba(239,68,68,.06);border-radius:6px;margin-bottom:6px">
-          <div style="font-size:12px;font-weight:600">${escapeHtml(q.question_text)}</div>
-          <div style="font-size:11px;color:var(--red);margin-top:3px">Their answer: ${escapeHtml(_formatQuizAnswerDisplay(q, selected))}</div>
-          <div style="font-size:11px;color:var(--green)">Correct answer: ${escapeHtml(correctDisplay)}</div>
-        </div>`);
-      }
-    });
-
-    return `<div class="card" style="margin-bottom:12px">
-      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:10px">
-        <div>
-          <div style="font-weight:700;font-size:14px">${qz ? escapeHtml(qz.title) : '(deleted quiz)'}</div>
-          <div style="font-size:11px;color:var(--text3)">Submitted ${submitted}</div>
-        </div>
-        <div style="font-size:16px;font-weight:700;color:var(--red)">${attempt.score_pct != null ? attempt.score_pct.toFixed(1)+'%' : '—'} ❌</div>
-      </div>
-      ${wrongRows.length ? wrongRows.join('') : '<div style="font-size:12px;color:var(--text3)">No specific wrong answers on record for this attempt (may include ungraded subjective questions only).</div>'}
-    </div>`;
-  }).join('');
-
-  wrap.innerHTML = summaryHtml + cardsHtml;
 }
 
 /* ── QUIZ MANAGEMENT PAGE LOAD ─────────────────────────────────────── */
@@ -8599,6 +8531,127 @@ async function loadQuizzesList(rerender) {
   if (rerender !== false) renderQuizList();
 }
 
+function _jumpToQuizAssignments(quizId, statusFilter) {
+  setQuizMgmtTab('assignments');
+  // Wait a tick for loadQuizAssignmentsForManagement (triggered by the
+  // tab switch) to finish populating the quiz dropdown before setting it.
+  setTimeout(() => {
+    const quizSel = document.getElementById('qmAssignQuizFilter');
+    const statusSel = document.getElementById('qmAssignStatusFilter');
+    const searchEl = document.getElementById('qmAssignSearch');
+    if (quizSel) quizSel.value = quizId || '';
+    if (statusSel) statusSel.value = statusFilter || '';
+    if (searchEl) searchEl.value = '';
+    renderQuizAssignments();
+  }, 150);
+}
+
+function openQuizStaffStatus(quizId) {
+  setQuizMgmtTab('staffstatus');
+  setTimeout(() => {
+    const sel = document.getElementById('ssQuizSelect');
+    if (sel) { sel.value = quizId; setStaffStatusQuiz(); }
+  }, 50);
+}
+function loadStaffStatusTab() {
+  const sel = document.getElementById('ssQuizSelect');
+  if (sel && sel.options.length <= 1) {
+    _quizzes.forEach(qz => {
+      const o = document.createElement('option'); o.value = qz.id; o.textContent = qz.title;
+      sel.appendChild(o);
+    });
+  }
+  // Keep whatever quiz was already selected (if any) when revisiting
+  if (sel && sel.value) renderStaffStatus();
+  else { document.getElementById('ssStats').innerHTML = ''; document.getElementById('ssList').innerHTML = '<div style="text-align:center;color:var(--text3);padding:20px;font-size:12px">Choose a quiz above to see every staff member\'s status.</div>'; }
+}
+function setStaffStatusQuiz() {
+  window._staffStatusQuizId = document.getElementById('ssQuizSelect')?.value || '';
+  renderStaffStatus();
+}
+
+function renderStaffStatus() {
+  const quizId = window._staffStatusQuizId;
+  const search = (document.getElementById('ssSearch')?.value || '').toLowerCase().trim();
+  const roleFilter = document.getElementById('ssRoleFilter')?.value || '';
+  const statusFilter = document.getElementById('ssStatusFilter')?.value || '';
+
+  // Full eligible roster — every Agent/TL/QA, whether or not they've
+  // ever been assigned this specific quiz. Matched to their assignment
+  // (if any) by name, since that's what's stored on the assignment row.
+  const assignmentsForQuiz = (window._quizAllAssignments || []).filter(a => a.quiz_id === quizId);
+  const roster = (allStaff || [])
+    .map(s => ({ name: s.name, bucket: _quizStaffRoleBucket(s.role) }))
+    .filter(s => s.bucket);
+
+  const statusMeta = {
+    not_assigned:   { label: 'Not Assigned',              color: 'var(--text3)', icon: '➖' },
+    assigned:       { label: 'Not Started',               color: '#94a3b8', icon: '⏳' },
+    in_progress:    { label: 'In Progress',                color: '#fbbf24', icon: '▶️' },
+    pending_review: { label: 'Completed — Pending Review', color: '#a78bfa', icon: '📝' },
+    completed:      { label: 'Fully Completed',            color: '#34d399', icon: '✅' },
+    expired:        { label: 'Expired',                    color: '#f87171', icon: '⏰' },
+  };
+
+  let rows = roster.map(s => {
+    const assignment = assignmentsForQuiz.find(a => a.assigned_to === s.name);
+    const statusKey = assignment ? assignment.status : 'not_assigned';
+    const attempt = assignment && Array.isArray(assignment.quiz_attempts) && assignment.quiz_attempts.length
+      ? assignment.quiz_attempts[assignment.quiz_attempts.length-1] : null;
+    return { name: s.name, bucket: s.bucket, statusKey, assignment, attempt };
+  });
+
+  if (roleFilter) rows = rows.filter(r => r.bucket === roleFilter);
+  if (search) rows = rows.filter(r => r.name.toLowerCase().includes(search));
+  if (statusFilter) rows = rows.filter(r => r.statusKey === statusFilter);
+
+  // Most-actionable first: not assigned, then not started/in progress,
+  // pending review, then fully done.
+  const sortOrder = { not_assigned: 0, assigned: 1, in_progress: 2, pending_review: 3, expired: 4, completed: 5 };
+  rows.sort((a,b) => (sortOrder[a.statusKey]??9) - (sortOrder[b.statusKey]??9) || a.name.localeCompare(b.name));
+
+  const statsEl = document.getElementById('ssStats');
+  if (statsEl) {
+    const total = roster.length;
+    const notAssigned = roster.filter(s => !assignmentsForQuiz.find(a => a.assigned_to === s.name)).length;
+    const completed = assignmentsForQuiz.filter(a => a.status === 'completed').length;
+    const pendingReview = assignmentsForQuiz.filter(a => a.status === 'pending_review').length;
+    statsEl.innerHTML = `
+      <span style="color:var(--text2)">👥 ${total} eligible staff</span>
+      <span style="color:${notAssigned?'var(--amber)':'var(--text3)'}">➖ ${notAssigned} not assigned</span>
+      ${pendingReview ? `<span style="color:#a78bfa">📝 ${pendingReview} pending review</span>` : ''}
+      <span style="color:var(--green)">✅ ${completed} fully completed</span>`;
+  }
+
+  const listEl = document.getElementById('ssList');
+  if (!listEl) return;
+  listEl.innerHTML = rows.length ? rows.map(r => {
+    const meta = statusMeta[r.statusKey];
+    // Deliberately distinct wording per your two "has a score" states:
+    // pending_review shows a CURRENT score (auto-graded portion only,
+    // may still change once manual grading finishes); completed shows
+    // the FINAL score with pass/fail.
+    let scoreHtml = '';
+    if (r.statusKey === 'pending_review' && r.attempt && r.attempt.score_pct != null) {
+      scoreHtml = `<span style="font-size:11px;color:#a78bfa;font-weight:700">Current: ${r.attempt.score_pct.toFixed(1)}%</span>`;
+    } else if (r.statusKey === 'completed' && r.attempt && r.attempt.score_pct != null) {
+      scoreHtml = `<span style="font-size:11px;color:${r.attempt.passed?'var(--green)':'var(--red)'};font-weight:700">Final: ${r.attempt.score_pct.toFixed(1)}% ${r.attempt.passed?'✅':'❌'}</span>`;
+    }
+    return `<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 10px;background:var(--surface2);border-radius:6px">
+      <div>
+        <span style="font-size:13px;font-weight:600">${escapeHtml(r.name)}</span>
+        <span style="font-size:10px;color:var(--text3);text-transform:capitalize"> (${r.bucket})</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px">
+        ${scoreHtml}
+        <span style="font-size:11px;font-weight:700;color:${meta.color}">${meta.icon} ${meta.label}</span>
+        ${r.statusKey === 'not_assigned' ? `<button class="btn btn-primary btn-sm" onclick="openAssignQuizModal('${window._staffStatusQuizId}')">Assign</button>` : ''}
+        ${r.statusKey === 'pending_review' && r.attempt ? `<button class="btn btn-ghost btn-sm" onclick="openGradeSubjectiveModal('${r.attempt.id}')">Grade</button>` : ''}
+      </div>
+    </div>`;
+  }).join('') : '<div style="text-align:center;color:var(--text3);padding:20px;font-size:12px">No staff match this filter.</div>';
+}
+
 function renderQuizList() {
   const wrap = document.getElementById('quizListWrap');
   if (!wrap) return;
@@ -8632,12 +8685,14 @@ function renderQuizList() {
     const avgScore = scoredAttempts.length
       ? scoredAttempts.reduce((sum, att) => sum + att.score_pct, 0) / scoredAttempts.length
       : null;
+    const notCompletedCount = forThisQuiz.filter(a => a.status === 'assigned' || a.status === 'in_progress').length;
     const statsHtml = assignedCount > 0
       ? `<div style="display:flex;gap:14px;margin-top:10px;flex-wrap:wrap">
-          <span style="font-size:11px;color:var(--text2)">👥 ${assignedCount} assigned</span>
-          <span style="font-size:11px;color:var(--green)">✅ ${completedCount} completed</span>
+          <span style="font-size:11px;color:var(--text2);cursor:pointer;text-decoration:underline dotted" onclick="_jumpToQuizAssignments('${qz.id}','')" title="See everyone this quiz is assigned to">👥 ${assignedCount} assigned</span>
+          ${notCompletedCount ? `<span style="font-size:11px;color:#fbbf24;cursor:pointer;text-decoration:underline dotted;font-weight:600" onclick="_jumpToQuizAssignments('${qz.id}','not_completed')" title="See who hasn't completed this yet">⏳ ${notCompletedCount} not completed</span>` : ''}
+          <span style="font-size:11px;color:var(--green);cursor:pointer;text-decoration:underline dotted" onclick="_jumpToQuizAssignments('${qz.id}','completed')">✅ ${completedCount} completed</span>
           <span style="font-size:11px;color:var(--green)">🎯 ${passedCount} passed</span>
-          ${pendingReviewCount ? `<span style="font-size:11px;color:#a78bfa">📝 ${pendingReviewCount} pending review</span>` : ''}
+          ${pendingReviewCount ? `<span style="font-size:11px;color:#a78bfa;cursor:pointer;text-decoration:underline dotted" onclick="_jumpToQuizAssignments('${qz.id}','pending_review')">📝 ${pendingReviewCount} pending review</span>` : ''}
           ${avgScore != null ? `<span style="font-size:11px;color:${avgScore>=qz.passing_mark?'var(--green)':'var(--amber)'};font-weight:600">📊 Avg ${avgScore.toFixed(1)}%</span>` : ''}
         </div>`
       : `<div style="font-size:11px;color:var(--text3);margin-top:10px">Not assigned to anyone yet</div>`;
@@ -8654,6 +8709,8 @@ function renderQuizList() {
         </div>
         <div style="display:flex;flex-direction:column;gap:6px;flex-shrink:0">
           <button class="btn btn-primary btn-sm" onclick="openAssignQuizModal('${qz.id}')">📤 Assign</button>
+          <button class="btn btn-ghost btn-sm" onclick="openQuizStaffStatus('${qz.id}')">👥 Staff Status</button>
+          <button class="btn btn-ghost btn-sm" onclick="openQuizPreview('${qz.id}')">👁️ Preview</button>
           <button class="btn btn-ghost btn-sm" onclick="openQuizFormModal('${qz.id}')">Edit</button>
           <button class="btn btn-ghost btn-sm" onclick="duplicateQuiz('${qz.id}')">📋 Duplicate</button>
           <button class="btn btn-ghost btn-sm" style="color:var(--red)" onclick="deleteQuiz('${qz.id}')">Delete</button>
@@ -8827,12 +8884,25 @@ function _getEligibleAssignStaff() {
 function renderAssignStaffPicker() {
   const wrap = document.getElementById('asgStaffPicker');
   const eligible = _getEligibleAssignStaff();
+  const quizId = document.getElementById('asgQuizId')?.value || '';
+  const existingForQuiz = (window._quizAllAssignments || []).filter(a => a.quiz_id === quizId);
+  const statusMeta = {
+    assigned:       { label: 'Not Started',    color: '#94a3b8' },
+    in_progress:    { label: 'In Progress',    color: '#fbbf24' },
+    pending_review: { label: 'Pending Review', color: '#a78bfa' },
+    completed:      { label: 'Completed',      color: '#34d399' },
+    expired:        { label: 'Expired',        color: '#f87171' },
+  };
+
   wrap.innerHTML = eligible.length ? eligible.map(s => {
     const checked = _assignSelectedStaff.includes(s.id);
     const bucket = _quizStaffRoleBucket(s.role);
+    const existing = existingForQuiz.find(a => a.assigned_to === s.name);
+    const meta = existing ? statusMeta[existing.status] : null;
     return `<label style="display:flex;align-items:center;gap:8px;padding:6px 8px;border-radius:6px;cursor:pointer;background:${checked?'rgba(79,142,247,.08)':'transparent'}">
       <input type="checkbox" ${checked?'checked':''} onchange="toggleAssignStaff('${s.id}')">
       <span style="font-size:12px;flex:1">${escapeHtml(s.name)}</span>
+      ${meta ? `<span style="font-size:10px;font-weight:700;color:${meta.color};background:${meta.color}1a;padding:2px 7px;border-radius:8px;white-space:nowrap">Already assigned — ${meta.label}</span>` : ''}
       <span style="font-size:10px;color:var(--text3);text-transform:capitalize">${bucket}</span>
     </label>`;
   }).join('') : `<div style="padding:12px;text-align:center;color:var(--text3);font-size:12px">No matching staff.</div>`;
@@ -8883,6 +8953,7 @@ async function submitQuizAssignment() {
       assigned_by: currentStaff?.name || currentUser?.email || 'Unknown',
       available_from: availableFrom ? new Date(availableFrom+'T00:00:00').toISOString() : null,
       due_at: dueDate ? new Date(dueDate+'T23:59:59').toISOString() : null,
+      available_until: dueDate ? new Date(dueDate+'T23:59:59').toISOString() : null, // enforced hard cutoff
       status: 'assigned',
     };
   });
@@ -8906,7 +8977,41 @@ async function loadQuizAssignmentsForManagement() {
   const { data, error } = await supa.from('quiz_assignments').select('*, quiz_attempts(*)').order('assigned_at', { ascending: false });
   if (error) { console.error('[Quiz] assignments load error:', error); return; }
   window._quizAllAssignments = data || [];
+  renderQuizNudges();
   renderQuizAssignments();
+}
+function renderQuizNudges() {
+  const wrap = document.getElementById('qmNudges');
+  if (!wrap) return;
+  const all = window._quizAllAssignments || [];
+  const now = new Date();
+  const threeDaysMs = 3 * 24 * 60 * 60 * 1000;
+
+  const notStarted = a => a.status === 'assigned' || a.status === 'in_progress';
+
+  const overdue = all.filter(a => notStarted(a) && a.due_at && new Date(a.due_at) < now);
+  const dueSoon = all.filter(a => notStarted(a) && a.due_at && !overdue.includes(a)
+    && (new Date(a.due_at) - now) <= threeDaysMs && (new Date(a.due_at) - now) > 0);
+
+  if (!overdue.length && !dueSoon.length) { wrap.innerHTML = ''; return; }
+
+  const fmtDue = d => new Date(d).toLocaleDateString('en-MY', {day:'2-digit',month:'short'});
+  const rowsHtml = (list, isOverdue) => list.map(a => {
+    const qz = _quizzes.find(x => x.id === a.quiz_id);
+    return `<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid ${isOverdue?'rgba(239,68,68,.15)':'rgba(251,191,36,.15)'}">
+      <div>
+        <span style="font-weight:600;font-size:12px">${escapeHtml(a.assigned_to)}</span>
+        <span style="font-size:11px;color:var(--text3)"> — ${qz?escapeHtml(qz.title):'(quiz)'} </span>
+      </div>
+      <span style="font-size:11px;font-weight:700;color:${isOverdue?'var(--red)':'#fbbf24'}">${isOverdue?'⏰ Overdue':'📅 Due'} ${fmtDue(a.due_at)}</span>
+    </div>`;
+  }).join('');
+
+  wrap.innerHTML = `<div class="card" style="border-color:${overdue.length?'rgba(239,68,68,.35)':'rgba(251,191,36,.35)'}">
+    <div style="font-size:13px;font-weight:700;color:${overdue.length?'var(--red)':'#fbbf24'};margin-bottom:10px">⏰ Needs Follow-Up (${overdue.length + dueSoon.length})</div>
+    ${overdue.length ? `<div style="font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;margin-bottom:4px">Overdue — not yet completed</div>${rowsHtml(overdue, true)}` : ''}
+    ${dueSoon.length ? `<div style="font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;margin:${overdue.length?'12px':'0'} 0 4px">Due within 3 days</div>${rowsHtml(dueSoon, false)}` : ''}
+  </div>`;
 }
 function exportQuizAssignments() {
   const quizFilter = document.getElementById('qmAssignQuizFilter')?.value || '';
@@ -8916,7 +9021,9 @@ function exportQuizAssignments() {
 
   const list = all.filter(a => {
     if (quizFilter && a.quiz_id !== quizFilter) return false;
-    if (statusFilter && a.status !== statusFilter) return false;
+    if (statusFilter === 'not_completed') {
+      if (a.status !== 'assigned' && a.status !== 'in_progress') return false;
+    } else if (statusFilter && a.status !== statusFilter) return false;
     if (search && !a.assigned_to.toLowerCase().includes(search)) return false;
     return true;
   });
@@ -8981,7 +9088,9 @@ function renderQuizAssignments() {
 
   let list = all.filter(a => {
     if (quizFilter && a.quiz_id !== quizFilter) return false;
-    if (statusFilter && a.status !== statusFilter) return false;
+    if (statusFilter === 'not_completed') {
+      if (a.status !== 'assigned' && a.status !== 'in_progress') return false;
+    } else if (statusFilter && a.status !== statusFilter) return false;
     if (search && !a.assigned_to.toLowerCase().includes(search)) return false;
     return true;
   });
@@ -9311,6 +9420,32 @@ function renderMyQuizzesList() {
   }).join('');
 }
 
+async function openQuizPreview(quizId) {
+  const qz = _quizzes.find(x => x.id === quizId);
+  if (!qz) { showToast('Error', 'Quiz not found.', 'error'); return; }
+  if (!_quizQuestions.length) await loadQuizQuestionBank(false);
+
+  const questions = (qz.question_ids || []).map(id => _quizQuestions.find(q => q.id === id)).filter(Boolean);
+  if (!questions.length) { showToast('Nothing to preview', 'This quiz has no questions yet.', 'error'); return; }
+
+  _activeQuizAttempt = {
+    isPreview: true,
+    quiz: qz, questions,
+    answers: {}, optionOrder: {}, currentIndex: 0,
+    attempt: { id: null }, // no real attempt — nothing gets persisted or graded
+  };
+  document.getElementById('takeQuizTitle').textContent = `Preview: ${qz.title}`;
+  document.getElementById('takeQuizTimer').textContent = `⏱️ ${qz.time_limit_min} min (not counting down)`;
+  renderTakeQuizQuestions();
+  document.getElementById('takeQuizModal').classList.remove('hidden');
+  // No countdown timer in preview — nothing to auto-submit or expire.
+  if (_quizTimerInterval) { clearInterval(_quizTimerInterval); _quizTimerInterval = null; }
+}
+function closeQuizPreview() {
+  closeModal('takeQuizModal');
+  _activeQuizAttempt = null;
+}
+
 async function startQuizAttempt(assignmentId) {
   const assignment = _myQuizAssignments.find(a => a.id === assignmentId);
   if (!assignment) return;
@@ -9321,57 +9456,34 @@ async function startQuizAttempt(assignmentId) {
   const qz = _quizzes.find(x => x.id === assignment.quiz_id);
   if (!qz) { showToast('Error', 'This quiz is no longer available.', 'error'); return; }
 
-  // Fetch via the SAFE function — no correct_index included, so the
-  // answer key never reaches the browser for someone taking the quiz.
-  // Grading happens server-side via grade_and_submit_quiz_attempt().
-  const { data: safeQuestions, error: sqErr } = await supa
-    .rpc('get_safe_quiz_questions', { p_question_ids: qz.question_ids || [] });
-  if (sqErr) { showToast('Error', 'Could not load quiz questions: ' + sqErr.message, 'error'); return; }
-  if (!(safeQuestions||[]).length) { showToast('Error', 'This quiz has no valid questions.', 'error'); return; }
+  // Server-side: builds (or resumes) the frozen question snapshot and
+  // shuffled question/option order, and enforces one-time-submission +
+  // hard-deadline rules. The browser never generates or re-generates
+  // the shuffle itself — that would let someone "re-roll" an easier
+  // layout by refreshing, and would break the frozen-snapshot guarantee.
+  const { data, error } = await supa.rpc('start_or_resume_quiz_attempt', { p_assignment_id: assignmentId });
+  if (error) { showToast('Could not start quiz', error.message, 'error'); loadMyQuizzes(); return; }
+  const result = Array.isArray(data) ? data[0] : data;
+  if (!result) { showToast('Error', 'Could not start this quiz.', 'error'); return; }
 
-  let attempt = Array.isArray(assignment.quiz_attempts) && assignment.quiz_attempts.length
-    ? assignment.quiz_attempts[assignment.quiz_attempts.length-1] : null;
-
-  if (!attempt || attempt.status !== 'in_progress') {
-    // Shuffle question order per attempt — anti-cheating (different
-    // people see questions in a different order, so "Q3 is B" doesn't
-    // travel). Grading is unaffected: it checks answers by question_id,
-    // never by display position.
-    const shuffledOrder = [...(qz.question_ids||[])];
-    for (let i = shuffledOrder.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [shuffledOrder[i], shuffledOrder[j]] = [shuffledOrder[j], shuffledOrder[i]];
-    }
-    const { data, error } = await supa.from('quiz_attempts').insert({
-      assignment_id: assignmentId, quiz_id: qz.id,
-      user_name: currentStaff?.name || currentUser?.email || 'Unknown',
-      user_id: currentUser?.id || null,
-      time_limit_min: qz.time_limit_min,
-      question_order: shuffledOrder,
-      status: 'in_progress',
-    }).select().single();
-    if (error) { showToast('Could not start quiz', error.message, 'error'); return; }
-    attempt = data;
-    await supa.from('quiz_assignments').update({ status: 'in_progress' }).eq('id', assignmentId);
-  }
-
-  // Use this attempt's saved order if present (resuming keeps the same
-  // order); fall back to the quiz's default order for attempts created
-  // before this feature existed.
-  const orderIds = Array.isArray(attempt.question_order) && attempt.question_order.length
-    ? attempt.question_order : (qz.question_ids || []);
-  const questions = orderIds.map(id => (safeQuestions||[]).find(q => q.id === id)).filter(Boolean);
+  const questions = Array.isArray(result.question_snapshot) ? result.question_snapshot : [];
   if (!questions.length) { showToast('Error', 'This quiz has no valid questions.', 'error'); return; }
 
-  const deadline = new Date(attempt.started_at).getTime() + attempt.time_limit_min * 60000;
+  const deadline = new Date(result.deadline).getTime();
   if (Date.now() > deadline) {
-    await _quizExpireAttempt(attempt, assignment);
     showToast('Time expired', 'This quiz\'s time limit has already passed.', 'error');
     loadMyQuizzes();
     return;
   }
 
-  _activeQuizAttempt = { assignment, quiz: qz, questions, attempt, answers: attempt.answers || {}, deadline };
+  _activeQuizAttempt = {
+    assignment, quiz: qz, questions,
+    attempt: { id: result.attempt_id, started_at: result.started_at, time_limit_min: result.time_limit_min },
+    answers: result.answers || {},
+    optionOrder: result.option_order || {},
+    deadline,
+    currentIndex: 0, // for the mandatory-answer-before-next flow
+  };
   document.getElementById('takeQuizTitle').textContent = qz.title;
   renderTakeQuizQuestions();
   document.getElementById('takeQuizModal').classList.remove('hidden');
@@ -9380,43 +9492,101 @@ async function startQuizAttempt(assignmentId) {
   _tickQuizTimer();
 }
 
+function _getShuffledOptions(q) {
+  const opts = Array.isArray(q.options) ? q.options : [];
+  const order = (_activeQuizAttempt.optionOrder || {})[q.id];
+  // order[displayPosition] = originalIndex. Falls back to unshuffled for
+  // question types with no stored order (e.g. true_false, or older
+  // attempts from before shuffling existed).
+  if (!Array.isArray(order) || order.length !== opts.length) {
+    return opts.map((o, i) => ({ text: o, originalIndex: i }));
+  }
+  return order.map(origIdx => ({ text: opts[origIdx], originalIndex: origIdx }));
+}
+
 function renderTakeQuizQuestions() {
   const ctx = _activeQuizAttempt;
   const body = document.getElementById('takeQuizBody');
-  body.innerHTML = ctx.questions.map((q, i) => {
-    const opts = Array.isArray(q.options) ? q.options : [];
-    const selected = ctx.answers[q.id];
-    const type = q.question_type || 'mcq';
+  const i = ctx.currentIndex || 0;
+  const q = ctx.questions[i];
+  if (!q) return;
 
-    let inputHtml;
-    if (type === 'subjective') {
-      inputHtml = `<textarea class="form-textarea" rows="4" placeholder="Type your answer…" onblur="setSubjectiveAnswer('${q.id}', this.value)">${escapeHtml(selected || '')}</textarea>
-        ${q.requires_manual_grading ? '<div style="font-size:11px;color:var(--text3);margin-top:4px">This answer will be reviewed by an Admin/QA after you submit.</div>' : '<div style="font-size:11px;color:var(--text3);margin-top:4px">This question isn\'t scored — your response is just collected for reference.</div>'}`;
-    } else if (type === 'multi_select') {
-      const selectedArr = Array.isArray(selected) ? selected : [];
-      inputHtml = `<div style="display:flex;flex-direction:column;gap:6px">
-        ${opts.map((o,oi) => `<label style="display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:6px;cursor:pointer;background:${selectedArr.includes(oi)?'rgba(79,142,247,.12)':'var(--surface2)'};border:1px solid ${selectedArr.includes(oi)?'var(--accent)':'transparent'}">
-          <input type="checkbox" ${selectedArr.includes(oi)?'checked':''} onchange="toggleMultiAnswer('${q.id}',${oi})">
-          <span style="font-size:13px">${escapeHtml(o)}</span>
-        </label>`).join('')}
-        <div style="font-size:11px;color:var(--text3);margin-top:2px">Select all that apply.</div>
-      </div>`;
-    } else {
-      // mcq / true_false — single answer, radio
-      inputHtml = `<div style="display:flex;flex-direction:column;gap:6px">
-        ${opts.map((o,oi) => `<label style="display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:6px;cursor:pointer;background:${selected===oi?'rgba(79,142,247,.12)':'var(--surface2)'};border:1px solid ${selected===oi?'var(--accent)':'transparent'}">
-          <input type="radio" name="quizq_${q.id}" ${selected===oi?'checked':''} onchange="selectQuizAnswer('${q.id}',${oi})">
-          <span style="font-size:13px">${escapeHtml(o)}</span>
-        </label>`).join('')}
-      </div>`;
-    }
+  const selected = ctx.answers[q.id];
+  const type = q.question_type || 'mcq';
+  const shuffledOpts = _getShuffledOptions(q);
+  const isPreview = !!ctx.isPreview;
 
-    return `<div id="takeQuizQ_${i}" style="margin-bottom:20px;padding-bottom:16px;border-bottom:1px solid var(--border);scroll-margin-top:110px">
-      <div style="font-weight:600;font-size:14px;margin-bottom:10px">${i+1}. ${escapeHtml(q.question_text)}</div>
-      ${inputHtml}
+  // In preview mode, the correct option(s) are marked directly — the
+  // Admin/Manager reviewing already has full access to this data
+  // elsewhere in Quiz Management, this just makes it visible in-flow so
+  // mistakes (wrong option marked correct, etc.) are easy to catch.
+  const correctSet = isPreview
+    ? new Set(type === 'multi_select' ? (q.correct_indices||[]) : [q.correct_index])
+    : null;
+
+  let inputHtml;
+  if (type === 'subjective') {
+    inputHtml = `<textarea class="form-textarea" rows="5" placeholder="Type your answer…" oninput="setSubjectiveAnswer('${q.id}', this.value)" onpaste="return false" style="user-select:text">${escapeHtml(selected || '')}</textarea>
+      ${q.requires_manual_grading ? '<div style="font-size:11px;color:var(--text3);margin-top:4px">This answer will be reviewed by an Admin/QA after you submit.</div>' : '<div style="font-size:11px;color:var(--text3);margin-top:4px">This question isn\'t scored — your response is just collected for reference.</div>'}
+      ${isPreview && q.reference_answer ? `<div style="font-size:11px;color:var(--accent);margin-top:8px;padding:8px 10px;background:rgba(79,142,247,.08);border-radius:6px"><strong>Reference answer:</strong> ${escapeHtml(q.reference_answer)}</div>` : ''}`;
+  } else if (type === 'multi_select') {
+    const selectedArr = Array.isArray(selected) ? selected : [];
+    inputHtml = `<div style="display:flex;flex-direction:column;gap:6px">
+      ${shuffledOpts.map(({text:o, originalIndex:oi}) => {
+        const isCorrect = isPreview && correctSet.has(oi);
+        return `<label style="display:flex;align-items:center;gap:8px;padding:10px 12px;border-radius:6px;cursor:pointer;background:${isCorrect?'rgba(34,197,94,.12)':selectedArr.includes(oi)?'rgba(79,142,247,.12)':'var(--surface2)'};border:1px solid ${isCorrect?'var(--green)':selectedArr.includes(oi)?'var(--accent)':'transparent'}">
+        <input type="checkbox" ${selectedArr.includes(oi)?'checked':''} onchange="toggleMultiAnswer('${q.id}',${oi})">
+        <span style="font-size:14px">${escapeHtml(o)}</span>
+        ${isCorrect?'<span style="margin-left:auto;color:var(--green);font-size:12px;font-weight:700">✓ Correct</span>':''}
+      </label>`;}).join('')}
+      <div style="font-size:11px;color:var(--text3);margin-top:2px">Select all that apply.</div>
     </div>`;
-  }).join('');
+  } else {
+    inputHtml = `<div style="display:flex;flex-direction:column;gap:6px">
+      ${shuffledOpts.map(({text:o, originalIndex:oi}) => {
+        const isCorrect = isPreview && correctSet.has(oi);
+        return `<label style="display:flex;align-items:center;gap:8px;padding:10px 12px;border-radius:6px;cursor:pointer;background:${isCorrect?'rgba(34,197,94,.12)':selected===oi?'rgba(79,142,247,.12)':'var(--surface2)'};border:1px solid ${isCorrect?'var(--green)':selected===oi?'var(--accent)':'transparent'}">
+        <input type="radio" name="quizq_${q.id}" ${selected===oi?'checked':''} onchange="selectQuizAnswer('${q.id}',${oi})">
+        <span style="font-size:14px">${escapeHtml(o)}</span>
+        ${isCorrect?'<span style="margin-left:auto;color:var(--green);font-size:12px;font-weight:700">✓ Correct</span>':''}
+      </label>`;}).join('')}
+    </div>`;
+  }
+
+  const isAnswered = isPreview || _isQuestionAnswered(q, ctx); // preview never blocks navigation
+  const isLast = i === ctx.questions.length - 1;
+
+  body.innerHTML = `
+    ${isPreview ? `<div style="background:rgba(167,139,250,.12);border:1px solid rgba(167,139,250,.35);color:#a78bfa;font-size:11px;font-weight:700;padding:6px 12px;border-radius:6px;margin-bottom:14px;text-align:center">👁️ PREVIEW MODE — correct answers shown, nothing is saved</div>` : ''}
+    <div id="takeQuizQ_${i}" style="scroll-margin-top:110px" oncopy="return false" oncut="return false" oncontextmenu="return false">
+      <div style="font-weight:600;font-size:15px;margin-bottom:14px;user-select:none;-webkit-user-select:none">${i+1}. ${escapeHtml(q.question_text)} <span style="font-weight:400;color:var(--text3);font-size:12px">(⭐ ${q.points ?? 1}pt)</span></div>
+      ${inputHtml}
+    </div>
+    <div style="display:flex;justify-content:space-between;margin-top:24px">
+      <button class="btn btn-ghost" onclick="_goToQuizQuestion(${i-1})" ${i===0?'disabled style="opacity:.4;cursor:not-allowed"':''}>← Previous</button>
+      ${isLast
+        ? `<button class="btn btn-primary" onclick="${isPreview?'closeQuizPreview()':'submitQuizAttempt(false)'}" ${!isAnswered?'disabled title="Answer this question first" style="opacity:.5;cursor:not-allowed"':''}>${isPreview?'✅ Finish Preview':'✅ Submit Quiz'}</button>`
+        : `<button class="btn btn-primary" onclick="_goToQuizQuestion(${i+1})" ${!isAnswered?'disabled title="Answer this question before moving on" style="opacity:.5;cursor:not-allowed"':''}>Next →</button>`}
+    </div>`;
   _updateQuizProgress();
+}
+function _goToQuizQuestion(targetIndex) {
+  const ctx = _activeQuizAttempt;
+  if (targetIndex < 0 || targetIndex >= ctx.questions.length) return;
+  // Moving forward requires the CURRENT question to be answered first —
+  // moving backward to review/change a previous answer is always allowed.
+  // Preview mode skips this entirely — Admin/Manager can freely browse
+  // every question without answering, since they're reviewing content,
+  // not taking the quiz for real.
+  if (!ctx.isPreview && targetIndex > ctx.currentIndex) {
+    const current = ctx.questions[ctx.currentIndex];
+    if (!_isQuestionAnswered(current, ctx)) {
+      showToast('Answer required', 'Please answer this question before moving on.', 'error');
+      return;
+    }
+  }
+  ctx.currentIndex = targetIndex;
+  renderTakeQuizQuestions();
 }
 function _isQuestionAnswered(q, ctx) {
   const v = ctx.answers[q.id];
@@ -9430,16 +9600,15 @@ function _renderTakeQuizNav() {
   if (!ctx || !nav) return;
   nav.innerHTML = ctx.questions.map((q, i) => {
     const answered = _isQuestionAnswered(q, ctx);
-    return `<button onclick="_scrollToQuizQuestion(${i})" title="Question ${i+1}${answered?' — answered':''}" style="width:28px;height:28px;border-radius:50%;font-size:11px;font-weight:700;cursor:pointer;border:1px solid ${answered?'var(--green)':'var(--border)'};background:${answered?'rgba(34,197,94,.18)':'var(--surface2)'};color:${answered?'var(--green)':'var(--text3)'}">${i+1}</button>`;
+    const isCurrent = i === ctx.currentIndex;
+    return `<button onclick="_goToQuizQuestion(${i})" title="Question ${i+1}${answered?' — answered':''}" style="width:28px;height:28px;border-radius:50%;font-size:11px;font-weight:700;cursor:pointer;border:2px solid ${isCurrent?'var(--accent)':answered?'var(--green)':'var(--border)'};background:${answered?'rgba(34,197,94,.18)':'var(--surface2)'};color:${answered?'var(--green)':'var(--text3)'}">${i+1}</button>`;
   }).join('');
-}
-function _scrollToQuizQuestion(i) {
-  document.getElementById('takeQuizQ_'+i)?.scrollIntoView({ behavior:'smooth', block:'start' });
 }
 function selectQuizAnswer(questionId, optionIndex) {
   _activeQuizAttempt.answers[questionId] = optionIndex;
   _updateQuizProgress();
   _persistQuizProgress();
+  renderTakeQuizQuestions(); // refresh so Next/Submit button enables immediately
 }
 function toggleMultiAnswer(questionId, optionIndex) {
   const ctx = _activeQuizAttempt;
@@ -9447,15 +9616,20 @@ function toggleMultiAnswer(questionId, optionIndex) {
   const idx = current.indexOf(optionIndex);
   if (idx >= 0) current.splice(idx, 1); else current.push(optionIndex);
   ctx.answers[questionId] = current;
-  renderTakeQuizQuestions(); // re-render so the selected-state styling updates
+  renderTakeQuizQuestions();
   _persistQuizProgress();
 }
 function setSubjectiveAnswer(questionId, value) {
   _activeQuizAttempt.answers[questionId] = value;
   _updateQuizProgress();
   _persistQuizProgress();
+  // Deliberately NOT re-rendering here (unlike the other answer types) —
+  // this fires on every keystroke; re-rendering would fight the user's
+  // typing/cursor position. The Next/Submit button's enabled state
+  // catches up on the next actual navigation attempt.
 }
 function _persistQuizProgress() {
+  if (_activeQuizAttempt.isPreview) return; // nothing to save — no real attempt exists
   // Persist progress silently so a refresh doesn't lose answers
   supa.from('quiz_attempts').update({ answers: _activeQuizAttempt.answers }).eq('id', _activeQuizAttempt.attempt.id);
 }
@@ -9466,7 +9640,7 @@ function _updateQuizProgress() {
     return v !== '' && v !== null && v !== undefined && !(Array.isArray(v) && v.length === 0);
   }).length;
   const el = document.getElementById('takeQuizProgress');
-  if (el) el.textContent = `${answered} of ${ctx.questions.length} answered`;
+  if (el) el.textContent = `${answered} of ${ctx.questions.length} answered · Question ${(ctx.currentIndex||0)+1} of ${ctx.questions.length}`;
   _renderTakeQuizNav();
 }
 
@@ -9543,6 +9717,7 @@ async function _quizOpenKbArticle(id) {
 async function _showQuizResultModal(scorePct, passed, correct, total, wasAutoSubmit, wrongKbIds, needsReview, questionBreakdown) {
   const body = document.getElementById('quizResultBody');
 
+  const anyRevealed = (questionBreakdown||[]).some(qb => qb.correctAnswerText != null);
   const breakdownHtml = (questionBreakdown && questionBreakdown.length) ? `
     <div style="border-top:1px solid var(--border);padding-top:14px;margin-top:14px">
       <div style="font-size:12px;font-weight:600;color:var(--text2);margin-bottom:8px">Question breakdown</div>
@@ -9555,16 +9730,22 @@ async function _showQuizResultModal(scorePct, passed, correct, total, wasAutoSub
             : qb.status === 'pending' ? 'Pending Marking'
             : 'Not scored';
           const scoreColor = qb.status === 'correct' ? 'var(--green)' : qb.status === 'incorrect' ? 'var(--red)' : qb.status === 'pending' ? '#a78bfa' : 'var(--text3)';
+          // Correct answer only ever shown once this attempt is fully
+          // finalized — see showQuizResultFromAttempt for exactly when
+          // that becomes true.
+          const correctLine = (qb.status === 'incorrect' && qb.correctAnswerText != null)
+            ? `<div style="font-size:11px;color:var(--green);margin-top:2px">Correct answer: ${escapeHtml(qb.correctAnswerText)}</div>` : '';
           return `<div style="padding:8px 10px;background:${bg};border-radius:6px">
             <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px">
               <div style="font-size:12px;font-weight:600">${icon} ${i+1}. ${escapeHtml(qb.text)}</div>
               <span style="font-size:11px;font-weight:700;color:${scoreColor};white-space:nowrap">${scoreLabel}</span>
             </div>
             <div style="font-size:11px;color:var(--text3);margin-top:2px">Your answer: ${escapeHtml(qb.yourAnswer)}</div>
+            ${correctLine}
           </div>`;
         }).join('')}
       </div>
-      <div style="font-size:10px;color:var(--text3);margin-top:8px">Correct answers aren't shown here so this quiz can be retaken fairly if you're reassigned it later.</div>
+      <div style="font-size:10px;color:var(--text3);margin-top:8px">${anyRevealed ? 'Correct answers are shown because this quiz has been fully graded and finalized.' : 'Correct answers will be shown here once this quiz is fully graded and finalized.'}</div>
     </div>` : '';
 
   if (needsReview) {
@@ -9618,30 +9799,52 @@ async function showQuizResultFromAttempt(attemptId, wasAutoSubmit) {
   if (!_quizzes.length) await loadQuizzesList(false); // ensure quiz definitions are actually loaded, not stale/empty
   const qz = _quizzes.find(x => x.id === data.quiz_id);
   if (!qz) console.warn('[Quiz] showQuizResultFromAttempt: quiz', data.quiz_id, 'not found in _quizzes — breakdown will be empty. Try reopening My Quizzes.');
-  // Total should be the quiz's actual question count, not just how many
-  // were answered (an unanswered question is still part of the total).
-  const total = qz && Array.isArray(qz.question_ids) ? qz.question_ids.length : (data.answers ? Object.keys(data.answers).length : 0);
+
+  // Prefer this attempt's own frozen snapshot — guarantees the question
+  // text/options shown match exactly what was actually presented, even
+  // if the quiz has since been edited. Falls back to a live fetch only
+  // for attempts that predate the snapshot feature.
+  const hasSnapshot = Array.isArray(data.question_snapshot) && data.question_snapshot.length > 0;
+  const questionIds = hasSnapshot ? data.question_snapshot.map(q => q.id) : (qz?.question_ids || []);
+  const total = questionIds.length || (data.answers ? Object.keys(data.answers).length : 0);
   const correctCount = Math.round((data.score_pct||0)/100 * total);
 
-  // Build the per-question breakdown from the SAFE view (no answer key)
-  // plus the server-computed question_results map — staff never sees
-  // correct_index/correct_indices at any point, only whether their own
-  // answer was right or wrong.
+  // Fully finalized = not pending review AND we actually have revealed
+  // answers stored (belt-and-suspenders — both conditions should always
+  // agree, but only trust the reveal if both do).
+  const isFinalized = data.status !== 'pending_review' && data.revealed_answers && Object.keys(data.revealed_answers).length > 0;
+  const revealed = data.revealed_answers || {};
+
   let breakdown = [];
-  if (qz && Array.isArray(qz.question_ids) && qz.question_ids.length) {
-    const { data: safeQs, error: safeErr } = await supa.rpc('get_safe_quiz_questions', { p_question_ids: qz.question_ids });
-    if (safeErr) console.error('[Quiz] showQuizResultFromAttempt: could not load safe questions', safeErr);
+  if (questionIds.length) {
+    let questionsSource;
+    if (hasSnapshot) {
+      questionsSource = data.question_snapshot;
+    } else {
+      const { data: safeQs, error: safeErr } = await supa.rpc('get_safe_quiz_questions', { p_question_ids: questionIds });
+      if (safeErr) console.error('[Quiz] showQuizResultFromAttempt: could not load safe questions', safeErr);
+      questionsSource = safeQs || [];
+    }
     const results = data.question_results || {};
-    breakdown = qz.question_ids.map(qid => {
-      const q = (safeQs||[]).find(x => x.id === qid);
-      if (!q) { console.warn('[Quiz] question', qid, 'from this quiz not found via get_safe_quiz_questions — skipped from breakdown.'); return null; }
+    breakdown = questionIds.map(qid => {
+      const q = questionsSource.find(x => x.id === qid);
+      if (!q) { console.warn('[Quiz] question', qid, 'not found in snapshot/safe-fetch — skipped from breakdown.'); return null; }
       const yourVal = data.answers ? data.answers[qid] : undefined;
       let status;
       if (q.question_type === 'subjective' && !q.requires_manual_grading) status = 'ungraded';
       else if (results.hasOwnProperty(qid)) status = results[qid] ? 'correct' : 'incorrect';
       else status = 'pending'; // manually-graded subjective, not graded yet
       const points = q.points ?? 1;
-      return { text: q.question_text, yourAnswer: _formatQuizAnswerDisplay(q, yourVal), status, points };
+      // Correct answer text only included once fully finalized — this is
+      // the ONLY point in the whole client-side flow where the answer
+      // key is ever exposed, and only for this specific attempt's own
+      // record, only after grading is fully done.
+      let correctAnswerText = null;
+      if (isFinalized && revealed.hasOwnProperty(qid)) {
+        const rv = revealed[qid];
+        correctAnswerText = Array.isArray(rv) ? rv.join(', ') : (rv ?? null);
+      }
+      return { text: q.question_text, yourAnswer: _formatQuizAnswerDisplay(q, yourVal), status, points, correctAnswerText };
     }).filter(Boolean);
     if (!breakdown.length) console.warn('[Quiz] Breakdown ended up empty. If question_results is missing from quiz_attempts or points is missing from get_safe_quiz_questions, run the latest quiz SQL migrations.');
   }
