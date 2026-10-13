@@ -2187,7 +2187,7 @@ const TEAM_ROSTER_OVERRIDE = {
   ],
   'Asriza Bin Anwar': [
     'Muhammad Aidil Ashraf Bin Mukhtar', 'Siti Fatimah Binti Mansor', 'Nor Azira Binti Saidin',
-    'Muhammad Iman Hadzri Bin Mohd Nadziri'
+    'Muhammad Iman Hadzri Bin Mohd Nadziri', 'Afiq Syahmi Bin Shahrir Zaman'
   ],
   'Asrul Rezman Bin Muhamad Fauzi': [
     'Ammar Syatbi Bin Mohd Shabry', 'Nurfatini Idayu Binti Suti', 'Mohamad Syafiq Izzat Bin Mohamad Yusof',
@@ -2195,7 +2195,7 @@ const TEAM_ROSTER_OVERRIDE = {
   ],
   'Intan Ardina Binti Ramli': [
     'Nor Hasyimah Binti Abdul Latif', 'Anis Izzati Binti Abd Khani', 'Nor Hakimah Ahmad Hanafiah',
-    'Amalina Sofea Binti Fauzi', 'Mohamad Noor Shah Bin Nordin'
+    'Amalina Sofea Binti Fauzi', 'Mohamad Noor Shah Bin Nordin', 'Siti Aisyah Binti Azman'
   ],
   'Saputra Hanim Purnama Bin Tarsan': [
     'Johari Bin Bahardin', 'Siti Nursafwanah Binti Daim', "Mu'ammar Ilham Bin Hairol Bakti",
@@ -2492,6 +2492,7 @@ const ROLE_MAP_NAME = {
   'mohd asri syafiq bin ashaari':            'qa',
   'nur syafiqa binti mohd ismail':           'qa',
   // Agents
+  'afiq syahmi bin shahrir zaman':           'agent',
   'amalina sofea binti fauzi':               'agent',
   'ammar syatbi bin mohd shabry':            'agent',
   'anis izzati binti abd khani':             'agent',
@@ -2515,6 +2516,7 @@ const ROLE_MAP_NAME = {
   'nuranati zulaika binti zulkiefly':        'agent',
   'nurfatini idayu binti suti':              'agent',
   'nurzamalisa binti mohammed zamri':        'agent',
+  'siti aisyah binti azman':                 'agent',
   'siti fatimah binti mansor':               'agent',
   'siti nursafwanah binti daim':             'agent',
   'siti ruqaiyah binti hussain':             'agent',
@@ -3109,9 +3111,12 @@ function findTLForAgent(agent) {
     if (tl) return tl;
   }
   // Strategy 2: find a TL in the same team
+  // Only trust a team match when exactly ONE TL shares the team. A generic
+  // department team like "Operation" holds every TL, and picking the first
+  // one alphabetically silently mis-assigned agents (e.g. to Asriza).
   if (agent.team) {
-    const tl = allStaff.find(x => x.team === agent.team && isTLRole(x.role));
-    if (tl) return tl;
+    const tls = allStaff.filter(x => x.team === agent.team && isTLRole(x.role));
+    if (tls.length === 1) return tls[0];
   }
   return null;
 }
@@ -10556,7 +10561,10 @@ async function loadRoleManagement() {
       id: s.id,
       name: s.name,
       email,
-      role: resolvedRole || s.role || 'agent',
+      // staff_role in the staff table is e.g. "Inbound Agent" -- normalise any
+      // "... agent" role to 'agent' so new agents not yet in ROLE_MAP_NAME still
+      // appear on the Team Roster (or in Unassigned) instead of vanishing.
+      role: resolvedRole || (/\bagent\b/.test(s.role || '') ? 'agent' : s.role) || 'agent',
       source,
       team: s.team || '',
       isOverride
