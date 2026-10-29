@@ -2183,19 +2183,25 @@ let allStaff = [];           // all staff for autocomplete
 const TEAM_ROSTER_OVERRIDE = {
   'Zaid Amirul Bin Shaharom': [
     'Fatin Nadhirah Binti Aziz', 'Muhammad Rasdan Bin Sulaiman', 'Nurzamalisa Binti Mohammed Zamri',
-    'Nur Erika Adlyn Binti Mohd Rashdy', 'Muhammad Azim Bin Kamal Bacha', 'Muhammad Danial Bin Rusli'
+    // Muhammad Danial Bin Rusli -- left 30 Jun 2026
+    'Nur Erika Adlyn Binti Mohd Rashdy', 'Muhammad Azim Bin Kamal Bacha',
+    'Sharifah Nur Sabrina Binti Syed Mohd Rizal Barakbah'
   ],
   'Asriza Bin Anwar': [
     'Muhammad Aidil Ashraf Bin Mukhtar', 'Siti Fatimah Binti Mansor', 'Nor Azira Binti Saidin',
-    'Muhammad Iman Hadzri Bin Mohd Nadziri', 'Afiq Syahmi Bin Shahrir Zaman'
+    'Muhammad Iman Hadzri Bin Mohd Nadziri', 'Afiq Syahmi Bin Shahrir Zaman',
+    'Mohamad Elham Zickrie Bin Mohamad Kushairi'
   ],
   'Asrul Rezman Bin Muhamad Fauzi': [
     'Ammar Syatbi Bin Mohd Shabry', 'Nurfatini Idayu Binti Suti', 'Mohamad Syafiq Izzat Bin Mohamad Yusof',
-    "Nur Suhailah Binti Ros Mustapha Kamal", 'Nuranati Zulaika Binti Zulkiefly'
+    "Nur Suhailah Binti Ros Mustapha Kamal", 'Nuranati Zulaika Binti Zulkiefly',
+    'Amir Amirul Bin Mohd Khairi'
   ],
   'Intan Ardina Binti Ramli': [
     'Nor Hasyimah Binti Abdul Latif', 'Anis Izzati Binti Abd Khani', 'Nor Hakimah Ahmad Hanafiah',
-    'Amalina Sofea Binti Fauzi', 'Mohamad Noor Shah Bin Nordin', 'Siti Aisyah Binti Azman'
+    // Amalina Sofea Binti Fauzi -- left 15 Oct 2026 (history kept in qa_evaluations)
+    'Mohamad Noor Shah Bin Nordin', 'Siti Aisyah Binti Azman',
+    'Fakhor Al Suyuf Bin Mumtaz'
   ],
   'Saputra Hanim Purnama Bin Tarsan': [
     'Johari Bin Bahardin', 'Siti Nursafwanah Binti Daim', "Mu'ammar Ilham Bin Hairol Bakti",
@@ -2212,13 +2218,33 @@ const TEAM_ROSTER_OVERRIDE = {
 // display them without falsely implying a TL relationship, and so they
 // don't get flagged as a data error in the "Unassigned" warning.
 const NON_TL_AGENT_GROUPS = {
+  'Outbound': ['Siti Ruqaiyah Binti Hussain'],
 };
+
+// Staff who have left. Their staff rows and evaluations are kept for history,
+// but they are hidden from the Team Roster and the New Evaluation agent picker.
+// Add a name here on/after the person's last working day.
+// lastDay is the person's last working day (YYYY-MM-DD). They stay visible up
+// to and including that day, and are hidden automatically from the next day.
+const FORMER_STAFF = [
+  { name: 'Muhammad Danial Bin Rusli',     lastDay: '2026-06-30' },
+  { name: 'Amalina Sofea Binti Fauzi',     lastDay: '2026-10-15' },
+  { name: 'Muhammad Azim Bin Kamal Bacha', lastDay: '2026-10-31' },
+];
 
 // Normalize a name for comparison: lowercase, trim, strip apostrophes and
 // collapse whitespace. Handles cases like "Mu'ammar" vs "Muammar" where the
 // staff table and a manually-typed roster don't spell a name identically.
 function normName(n) {
   return (n || '').toLowerCase().trim().replace(/['’]/g, '').replace(/\s+/g, ' ');
+}
+function todayLocalISO() {
+  const d = new Date();
+  return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+}
+function isFormerStaff(n) {
+  const k = normName(n), today = todayLocalISO();
+  return FORMER_STAFF.some(f => normName(f.name) === k && today > f.lastDay);
 }
 
 // Reverse lookup: normalized agent name -> TL name
@@ -2449,6 +2475,10 @@ const ROLE_MAP_EMAIL = {
   // maria.affifah@xox.com.my -- wrong spelling, use maria.afifah@xox.com.my
   'noor.shah@xox.com.my':          'agent',
   'syafiq.izzat@xox.com.my':       'agent',
+  'elham.kushairi@xox.com.my':     'agent',
+  'fakhor.mumtaz@xox.com.my':      'agent',
+  'amir.khairi@xox.com.my':        'agent',
+  'sabrina.rizal@xox.com.my':      'agent',
   'ilham.hairol@xox.com.my':       'agent',
   'ashraf.mukhtar@xox.com.my':     'agent',
   'azim.kamal@xox.com.my':         'agent',
@@ -2493,6 +2523,10 @@ const ROLE_MAP_NAME = {
   'nur syafiqa binti mohd ismail':           'qa',
   // Agents
   'afiq syahmi bin shahrir zaman':           'agent',
+  'amir amirul bin mohd khairi':             'agent',
+  'fakhor al suyuf bin mumtaz':              'agent',
+  'mohamad elham zickrie bin mohamad kushairi': 'agent',
+  'sharifah nur sabrina binti syed mohd rizal barakbah': 'agent',
   'amalina sofea binti fauzi':               'agent',
   'ammar syatbi bin mohd shabry':            'agent',
   'anis izzati binti abd khani':             'agent',
@@ -2676,6 +2710,9 @@ async function onLoggedIn(user) {
       console.log('[QA App] Role set from email map:', userEmail, '->', directEmailRole);
     } else {
       console.log('[QA App] No role override for:', currentStaff?.name, '/', userEmail, '-- DB role:', currentStaff?.role);
+      // staff_role like "Inbound Agent" / "Outbound Agent" -> 'agent', so new
+      // agents not yet in the hardcoded maps get agent access, not a broken role.
+      if (/\bagent\b/.test(currentStaff?.role || '')) currentStaff.role = 'agent';
     }
   }
 
@@ -3144,8 +3181,8 @@ function filterAgents(val) {
   if (!allStaff.length) { list.classList.remove('open'); return; }
 
   // Match by role keyword first; fallback to all staff if no role set
-  let filtered = allStaff.filter(s => isAgentRole(s.role) && s.name.toLowerCase().includes(query));
-  if (!filtered.length) filtered = allStaff.filter(s => s.name.toLowerCase().includes(query));
+  let filtered = allStaff.filter(s => !isFormerStaff(s.name) && isAgentRole(s.role) && s.name.toLowerCase().includes(query));
+  if (!filtered.length) filtered = allStaff.filter(s => !isFormerStaff(s.name) && s.name.toLowerCase().includes(query));
   filtered = filtered.slice(0, 15);
   if (!filtered.length) { list.classList.remove('open'); return; }
 
@@ -10641,7 +10678,7 @@ function renderTeamRoster(rows) {
   if (!el) return;
 
   const tls    = rows.filter(r => r.role === 'tl');
-  const agents = rows.filter(r => r.role === 'agent');
+  const agents = rows.filter(r => r.role === 'agent' && !isFormerStaff(r.name));
 
   if (!tls.length) {
     el.innerHTML = '<div class="text-sm" style="text-align:center;padding:20px;color:var(--text3)">No Team Leaders found.</div>';
