@@ -2475,6 +2475,8 @@ const ROLE_MAP_EMAIL = {
   // maria.affifah@xox.com.my -- wrong spelling, use maria.afifah@xox.com.my
   'noor.shah@xox.com.my':          'agent',
   'syafiq.izzat@xox.com.my':       'agent',
+  'afiq.syahmi@xox.com.my':        'agent',
+  'aisyah.azman@xox.com.my':       'agent',
   'elham.kushairi@xox.com.my':     'agent',
   'fakhor.mumtaz@xox.com.my':      'agent',
   'amir.khairi@xox.com.my':        'agent',
@@ -2682,12 +2684,12 @@ async function onLoggedIn(user) {
       };
       console.log('[QA App] Found staff record:', currentStaff.name, '| role:', currentStaff.role);
     } else {
-      currentStaff = { id: user.id, name: user.email.split('@')[0], role: 'qa' };
+      currentStaff = { id: user.id, name: user.email.split('@')[0], role: 'agent' }; // least access if staff record unreadable
       console.warn('[QA App] Could not find staff record for', user.email, '-- using fallback');
     }
   } else {
     console.error('[QA App] No staff table found! Tried:', TABLE_CANDIDATES);
-    currentStaff = { id: user.id, name: user.email.split('@')[0], role: 'qa' };
+    currentStaff = { id: user.id, name: user.email.split('@')[0], role: 'agent' }; // least access if staff record unreadable
   }
 
   window._staffTable = staffTable; // expose for debugging
