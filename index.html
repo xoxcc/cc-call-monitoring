@@ -654,6 +654,8 @@
           <div class="page-header-row">
             <div><h1>All Evaluations</h1><p>Full evaluation history</p></div>
             <div style="display:flex;gap:8px">
+              <button class="btn btn-ghost" id="importMasterBtn" onclick="document.getElementById('masterlistFile').click()" style="color:var(--accent);border-color:var(--accent)">📥 Import masterlist</button>
+              <input type="file" id="masterlistFile" accept=".xlsx,.xls" style="display:none" onchange="importMasterlist(this)">
               <button class="btn btn-ghost" onclick="exportEvals('csv')">📄 Export CSV</button>
               <button class="btn btn-ghost" onclick="exportEvals('excel')" style="color:var(--green);border-color:var(--green)">📊 Export Excel</button>
               <button class="btn btn-primary" onclick="showPage('new-eval')" id="evalsNewBtn">+ New</button>
@@ -2077,8 +2079,8 @@ window.onunhandledrejection = function(e) {
 // ===============================================
 //  SUPABASE INIT
 // ===============================================
-const SUPA_URL = 'https://jrfiyliesitsgnehxqtv.supabase.co';
-const SUPA_KEY = 'sb_publishable_-AOpf0GlT5MeQh5-NMZc9g_CD2xu9Ch';
+const SUPA_URL = 'https://kqspaqsrykqydbsolcop.supabase.co';
+const SUPA_KEY = 'sb_publishable_6g7q0LGA2N60PbE3XFEaTg_wHcYwGvq';
 const supa = supabase.createClient(SUPA_URL, SUPA_KEY);
 
 // ===============================================
@@ -3014,6 +3016,8 @@ function updateNavVisibility() {
   document.querySelectorAll('[onclick*="exportEvals"]').forEach(function(el) {
     el.style.display = canExport ? '' : 'none';
   });
+  var impBtn = document.getElementById('importMasterBtn');
+  if (impBtn) impBtn.style.display = (isAdmin || (currentStaff?.role||'').toLowerCase()==='manager') ? '' : 'none';
 
   // My Team: TL, Manager, Admin only
   const navTeam = document.getElementById('nav-my-team');
@@ -10991,6 +10995,93 @@ function supabaseLoadFailed() {
 // ==============================================
 //  EXPORT
 // ==============================================
+
+// ── Import the QA "Call Monitoring Masterlist" Excel into qa_evaluations ──
+async function importMasterlist(input) {
+  const file = input.files && input.files[0]; input.value = '';
+  if (!file) return;
+  try {
+    setLoading(true, 'Reading masterlist…');
+    const wb = XLSX.read(await file.arrayBuffer(), { type: 'array' });
+    const norm = s => String(s || '').toLowerCase().replace(/\(.*?\)/g, '').replace(/[^a-z]/g, '');
+    const clean = v => v == null ? '' : String(v).replace(/[\t\r]+/g, ' ').replace(/\s*\n\s*/g, ' ').trim();
+    const serialDate = v => {
+      if (typeof v === 'number' && v > 20000) { const d = new Date(Math.round((v - 25569) * 86400000)); return d.getUTCFullYear() + '-' + String(d.getUTCMonth() + 1).padStart(2, '0') + '-' + String(d.getUTCDate()).padStart(2, '0'); }
+      const m = String(v || '').match(/^(\d{1,2})[-\/.](\d{1,2})[-\/.](\d{2,4})/);
+      if (m) return (m[3].length === 2 ? '20' + m[3] : m[3]) + '-' + m[2].padStart(2, '0') + '-' + m[1].padStart(2, '0');
+      const iso = String(v || '').match(/^(\d{4})-(\d{2})-(\d{2})/); return iso ? iso[0] : null;
+    };
+    const serialTime = v => {
+      if (typeof v === 'number') { const t = Math.round((v % 1) * 86400); return String(Math.floor(t / 3600)).padStart(2, '0') + ':' + String(Math.floor(t % 3600 / 60)).padStart(2, '0') + ':' + String(t % 60).padStart(2, '0'); }
+      return clean(v) || null;
+    };
+    // staff, TLs, QA logins
+    const { data: staff } = await supa.from('staff').select('id,name,team,staff_role,email');
+    const { data: ccu } = await supa.from('cc_users').select('id,email');
+    const byName = {}; (staff || []).forEach(s => { byName[norm(s.name)] = s; });
+    const tlByTeam = {}; (staff || []).filter(s => /team leader/i.test(s.staff_role || '')).forEach(s => { tlByTeam[norm(s.name.split(' ')[0])] = s; });
+    const qaUid = {}; (ccu || []).forEach(u => { qaUid[(u.email || '').toLowerCase()] = u.id; });
+    // already imported (by Call ID)
+    const have = new Set(); { const { data: ex } = await supa.from('qa_evaluations').select('contact_id'); (ex || []).forEach(r => r.contact_id && have.add(r.contact_id)); }
+    const out = []; let skippedDup = 0, noAgent = new Set(), sheetsUsed = 0;
+    for (const name of wb.SheetNames) {
+      const aoa = XLSX.utils.sheet_to_json(wb.Sheets[name], { header: 1, raw: true, defval: null });
+      const hi = aoa.findIndex(r => r.some(c => /monitored date/i.test(String(c || ''))));
+      if (hi < 0) continue; sheetsUsed++;
+      const col = {}; aoa[hi].forEach((c, j) => { const k = String(c || '').toLowerCase().trim(); if (k) col[k] = j; });
+      const ix = (...ks) => { for (const k of ks) { const f = Object.keys(col).find(x => x.startsWith(k)); if (f) return col[f]; } return -1; };
+      const C = { mdate: ix('monitored date'), by: ix('monitoring by'), agent: ix("agent's name", 'agent'), call: ix('call id'), cdate: ix('date of the call'), time: ix('time'), calling: ix('calling no'), msisdn: ix('msisdn'), dur: ix('duration'),
+        len: ix('type'), toc: ix('type of call'), score: ix('score'), result: ix('result'), tpl: ix('template'), cat: ix('remark (low'), rem: ix('remarks'), chan: ix('channel'), status: ix('status'), fb: ix('feedback'), adv: ix('advise') };
+      for (let i = hi + 1; i < aoa.length; i++) {
+        const r = aoa[i]; const g = k => C[k] >= 0 ? r[C[k]] : null;
+        const mdate = serialDate(g('mdate')), agentRaw = clean(g('agent')); if (!mdate || !agentRaw) continue;
+        const callId = clean(g('call')) || null;
+        if (callId && have.has(callId)) { skippedDup++; continue; }
+        const ag = byName[norm(agentRaw)]; if (!ag) noAgent.add(agentRaw);
+        const tl = ag && tlByTeam[norm(ag.team || '')];
+        const qaName = clean(g('by')); const qaStaff = byName[norm(qaName)] || (staff || []).find(x => norm(x.name.split(' ').slice(0, 3).join(' ')) === norm(qaName.split(' ').slice(0, 3).join(' ')));
+        let sc = Number(g('score')); if (!isFinite(sc)) sc = 0; if (sc <= 1.0001) sc = sc * 100; sc = Math.round(sc * 100) / 100;
+        const tpl = clean(g('tpl')).toLowerCase();
+        const cat = /general/.test(tpl) ? 'general' : 'standard';
+        const st = clean(g('status')), stl = st.toLowerCase();
+        const status = /^pending/.test(stl) ? 'submitted' : 'closed';
+        const parts = []; const toc = clean(g('toc')), len = clean(g('len')), ch = clean(g('chan')), catRem = clean(g('cat'));
+        if (toc) parts.push('Type of call: ' + toc); if (len) parts.push('Call length: ' + len); if (clean(g('tpl'))) parts.push('Template: ' + clean(g('tpl')));
+        if (clean(g('result'))) parts.push('Result: ' + clean(g('result'))); if (catRem) parts.push('Flag: ' + catRem); if (ch) parts.push('Channel: ' + ch); if (st) parts.push('Status: ' + st);
+        if (clean(g('fb'))) parts.push('Agent feedback: ' + clean(g('fb'))); if (clean(g('adv'))) parts.push('Advise: ' + clean(g('adv')));
+        const created = new Date(mdate + 'T09:00:00+08:00').toISOString();
+        out.push({
+          agent_id: ag ? ag.id : null, agent_name: ag ? ag.name : agentRaw, tl_id: tl ? tl.id : null, tl_name: tl ? tl.name : null,
+          eval_type: 'historical', csat: 'no', call_category: cat, date: serialDate(g('cdate')) || mdate, timestamp: serialTime(g('time')), duration: serialTime(g('dur')),
+          calling_num: clean(g('calling')) || null, msisdn: clean(g('msisdn')) || null, contact_id: callId,
+          remarks: parts.join(' · ') || null, call_remarks: clean(g('rem')) || null,
+          questions: [], answers: {}, fatal_answers: {}, has_fatal: false, score: sc, earned_pts: sc, total_wt: 100, status,
+          workflow: [{ role: 'qa', action: 'Imported from masterlist', ts: created, note: '', by: qaName }],
+          qa_user_id: (qaStaff && qaUid[(qaStaff.email || '').toLowerCase()]) || null, qa_user_name: qaStaff ? qaStaff.name : qaName,
+          created_at: created, updated_at: created
+        });
+        if (callId) have.add(callId);
+      }
+    }
+    setLoading(false);
+    if (!sheetsUsed) { alert('No "Monitored Date" header was found in that file.'); return; }
+    if (!out.length) { alert('Nothing new to import. ' + skippedDup + ' evaluation(s) are already in the system.'); return; }
+    const closed = out.filter(o => o.status === 'closed').length;
+    const msg = 'Import ' + out.length + ' evaluation(s) from the masterlist?\n\n• Pending (awaiting feedback): ' + (out.length - closed) + '\n• Closed: ' + closed + '\n• Skipped (Call ID already in the system or repeated in the file): ' + skippedDup
+      + (noAgent.size ? '\n• Agents not in the staff list (imported by name only): ' + [...noAgent].join(', ') : '')
+      + '\n\nThe masterlist has scores only, not the individual question answers.';
+    if (!confirm(msg)) return;
+    setLoading(true, 'Importing…');
+    for (let i = 0; i < out.length; i += 100) {
+      const { error } = await supa.from('qa_evaluations').insert(out.slice(i, i + 100));
+      if (error) { setLoading(false); alert('Import stopped after ' + i + ' rows: ' + error.message + '\n\nRows already imported are saved; run the import again to continue (duplicates are skipped by Call ID).'); return; }
+    }
+    setLoading(false);
+    showToast('Imported', out.length + ' evaluation(s) imported. Refreshing…', 'success');
+    setTimeout(() => location.reload(), 1200);
+  } catch (e) { setLoading(false); console.error(e); alert('Import failed: ' + (e.message || e)); }
+}
+
 async function exportEvals(fmt) {
   setLoading(false);
   var all = evaluations && evaluations.length > 0 ? evaluations : null;
